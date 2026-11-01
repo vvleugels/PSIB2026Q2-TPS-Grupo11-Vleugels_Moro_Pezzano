@@ -7,6 +7,7 @@ import re
 
 import mne
 import numpy as np
+from .processing import ContinuousFilter, FilterConfig
 
 
 def natural_key(value):
@@ -61,6 +62,7 @@ class Segment:
     values_uv: np.ndarray
     start: float
     stop: float
+    channels: tuple = ()
 
 
 class Recording:
@@ -69,6 +71,7 @@ class Recording:
         self.raw = raw
         self.metadata = metadata
         self.warning = warning
+        self.filter = ContinuousFilter(raw)
         self.sfreq = float(raw.info['sfreq'])
         self.duration = raw.n_times / self.sfreq
         self.channels = [name for name, kind in zip(raw.ch_names, raw.get_channel_types())
@@ -88,7 +91,25 @@ class Recording:
                        first / self.sfreq, last / self.sfreq)
 
     def close(self):
+        self.filter.channels.clear()
         self.raw.close()
+
+    def read_channels(self, channels, start, config=FilterConfig(), seconds=10):
+        if not channels or len(channels) > 8 or any(c not in self.channels for c in channels):
+            raise ValueError('Seleccioná entre 1 y 8 electrodos del registro.')
+        if not config.enabled:
+            segments = [self.read_window(c, start, seconds) for c in channels]
+            first = segments[0]
+            return Segment(first.times, np.stack([s.values_uv for s in segments]),
+                           first.start, first.stop, tuple(channels))
+        if not math.isfinite(start) or not 0 <= start < self.duration:
+            raise ValueError('Inicio fuera del registro.')
+        self.filter.prepare(config)
+        first = min(round(start * self.sfreq), self.raw.n_times - 1)
+        last = min(first + round(seconds * self.sfreq), self.raw.n_times)
+        values = np.stack([self.filter.channel(c, config)[first:last] for c in channels])
+        return Segment(np.arange(first, last) / self.sfreq, values * 1e6,
+                       first / self.sfreq, last / self.sfreq, tuple(channels))
 
 
 def open_recording(study):

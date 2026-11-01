@@ -13,6 +13,8 @@ from test_data import make_recording
 
 class GuiTests(unittest.TestCase):
     def setUp(self):
+        import gc
+        gc.collect()  # Dispose prior Tk objects on the UI thread, before starting workers.
         try:
             self.root = tk.Tk()
         except tk.TclError as exc:
@@ -22,9 +24,15 @@ class GuiTests(unittest.TestCase):
         make_recording(self.temp.name)
         make_recording(self.temp.name, subject='sub-02', session='ses-2')
         (Path(self.temp.name) / 'sub-03').mkdir()
-        self.app = App(self.root, Path(self.temp.name))
-        self.addCleanup(self.app.close)
+        self.app = App(self.root, Path(self.temp.name), Path(self.temp.name) / 'annotations')
+        self.addCleanup(self.cleanup_app)
         self.wait_ready()
+
+    def cleanup_app(self):
+        if self.app.store:
+            self.app.store.dirty = False  # Failed tests must not open a modal on cleanup.
+        self.app.close()
+        self.app.executor.shutdown(wait=True)
 
     def wait_ready(self):
         deadline = time.monotonic() + 10
@@ -109,3 +117,90 @@ class GuiTests(unittest.TestCase):
         self.wait_ready()
         self.assertEqual(len(self.app.ax.lines), 0)
         self.assertIn('Archivo ilegible', self.app.status.get())
+
+    def test_filter_transaction_rolls_back_then_multichannel_preserves_time(self):
+        from eeg_viewer.processing import FilterConfig
+        self.select()
+        a = self.app
+        before = a.ax.lines[0].get_ydata().copy()
+        a.apply_config(FilterConfig(True))  # 12.5 s is too short for a 0.2-Hz FIR.
+        self.wait_ready()
+        self.assertFalse(a.config.enabled)
+        np.testing.assert_array_equal(a.ax.lines[0].get_ydata(), before)
+        self.assertIn('demasiado corto', a.status.get())
+        a.start_text.set('5'); a.go(); self.wait_ready()
+        a.select_epoch(1)
+        a.apply_config(FilterConfig(True, 2, 30)); self.wait_ready()
+        self.assertTrue(a.config.enabled)
+        self.assertEqual((a.start, a.selected_epoch), (5, 1))
+        a.multi.set(True); a.toggle_multi()
+        a.channel_list.selection_set(0, 1); a.multi_changed(); self.wait_ready()
+        self.assertEqual(len(a.figure.axes), 2)
+        self.assertEqual(a.start, 5)
+        a.multi.set(False); a.toggle_multi(); self.wait_ready()
+        self.assertEqual(len(a.figure.axes), 1)
+        self.assertEqual(a.start, 5)
+
+    def test_global_annotations_recover_and_keyboard_ignores_text(self):
+        from types import SimpleNamespace
+        self.select()
+        a = self.app
+        a.select_epoch(1)
+        a.mark_state.set('Con artefactos'); a.reason.set('Ocular'); a.note.set('parpadeo')
+        a.apply_mark()
+        self.assertEqual(a.save_label.get(), 'Guardado')
+        a.channel_box.current(1); a.select_channel(); self.wait_ready()
+        self.assertEqual(a.selected_epoch, 1)
+        self.assertEqual(a.store.records[1]['state'], 'Con artefactos')
+        a.shortcut(SimpleNamespace(widget=a.note_entry), 'Aceptada')
+        self.assertEqual(a.store.records[1]['state'], 'Con artefactos')
+        a.select_study(); self.wait_ready()
+        self.assertEqual(a.store.records[1]['note'], 'parpadeo')
+        self.assertEqual(a.store.records[1]['state'], 'Con artefactos')
+
+    def test_click_and_navigation_select_visible_epoch(self):
+        from types import SimpleNamespace
+        self.select()
+        a = self.app
+        a.plot_clicked(SimpleNamespace(inaxes=a.ax, xdata=7.0))
+        self.assertEqual(a.selected_epoch, 1)
+        a.navigate(10); self.wait_ready()
+        self.assertEqual(a.selected_epoch, 2)
+        a.select_epoch(0, navigate=True); self.wait_ready()
+        self.assertEqual(a.start, 0)
+
+    def test_failed_save_preserves_changes_and_cancels_navigation(self):
+        from unittest.mock import patch
+        self.select()
+        a = self.app
+        with patch.object(a.store, 'save', side_effect=OSError('Disco lleno')):
+            a.mark_state.set('Aceptada'); a.apply_mark()
+            self.assertTrue(a.store.dirty)
+            self.assertEqual(a.save_label.get(), 'Cambios sin guardar')
+            with patch('eeg_viewer.review_ui.messagebox.askyesnocancel', return_value=None):
+                a.patient.set('sub-02'); a.select_patient()
+                self.assertEqual(a.patient.get(), 'sub-01')
+                self.assertIsNotNone(a.recording)
+                a.close()
+                self.assertFalse(a.closed)
+        self.assertTrue(a.save_annotations())
+
+    def test_obsolete_filter_completion_cannot_change_next_study(self):
+        from eeg_viewer.processing import FilterConfig
+        self.select()
+        a = self.app
+        ready, release = threading.Event(), threading.Event()
+        self.addCleanup(release.set)
+        original = a.recording.filter.prepare
+        def slow(config):
+            ready.set(); release.wait(5)
+            return original(config)
+        a.recording.filter.prepare = slow
+        a.apply_config(FilterConfig(True, 2, 30))
+        self.assertTrue(ready.wait(2))
+        a.patient.set('sub-02'); a.select_patient()
+        a.study_box.current(0); a.select_study()
+        release.set(); self.wait_ready()
+        self.assertFalse(a.config.enabled)
+        self.assertEqual(a.recording.study.participant, 'sub-02')
+        self.assertIsNone(a.displayed)

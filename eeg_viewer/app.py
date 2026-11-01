@@ -9,6 +9,9 @@ from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
 
 from .data import discover, open_recording
+from .annotations import AnnotationStore
+from .review_ui import ReviewUI
+from pathlib import Path
 
 BG = '#f2f5f5'
 INK = '#0f2e36'
@@ -28,10 +31,11 @@ class Toolbar(NavigationToolbar2Tk):
     )
 
 
-class App:
-    def __init__(self, root, data_dir):
+class App(ReviewUI):
+    def __init__(self, root, data_dir, annotations_dir=None):
         self.root = root
-        self.data_dir = data_dir
+        self.data_dir = Path(data_dir)
+        self.annotations_dir = Path(annotations_dir) if annotations_dir else self.data_dir.parent / "annotations"
         self.inventory = {}
         self.studies = []
         self.recording = None
@@ -50,6 +54,7 @@ class App:
         self.start_text = tk.StringVar(value='0')
         self.status = tk.StringVar(value='Buscando participantes…')
         self.window_text = tk.StringVar(value='Ventanas de 10 segundos')
+        self.init_review()
         root.title('PSIB — Explorador EEG')
         root.geometry('1280x800')
         root.minsize(960, 640)
@@ -74,7 +79,9 @@ class App:
         bar.pack(fill='x')
         tk.Label(bar, text='PSIB — Explorador EEG', font=('DejaVu Sans', 18, 'bold'),
                  bg=INK, fg='white').pack(side='left')
-        tk.Label(bar, text='●  Señal sin procesar', bg=INK, fg='#b6e2df',
+        self.config_button = ttk.Button(bar, text='Configuración', command=self.configuration_dialog)
+        self.config_button.pack(side='right', padx=(12, 0))
+        tk.Label(bar, textvariable=self.signal_label, bg=INK, fg='#b6e2df',
                  font=('DejaVu Sans', 10)).pack(side='right')
         tk.Frame(self.root, height=3, bg=AMBER).pack(fill='x')
         bottom = ttk.Frame(self.root, padding=(16, 10))
@@ -84,22 +91,29 @@ class App:
         self.panes = tk.PanedWindow(self.root, orient='horizontal', bg=BG,
                                    sashwidth=10, borderwidth=0)
         self.panes.pack(fill='both', expand=True, padx=14, pady=14)
-        sidebar = ttk.Frame(self.panes, width=320)
+        side_container = ttk.Frame(self.panes, width=340)
+        side_canvas = tk.Canvas(side_container, bg=BG, highlightthickness=0, width=340)
+        side_scroll = ttk.Scrollbar(side_container, command=side_canvas.yview)
+        side_scroll.pack(side='right', fill='y')
+        side_canvas.configure(yscrollcommand=side_scroll.set)
+        side_canvas.pack(fill='both', expand=True)
+        sidebar = ttk.Frame(side_canvas)
+        side_window = side_canvas.create_window(0, 0, window=sidebar, anchor='nw')
+        side_canvas.bind('<Configure>', lambda e: side_canvas.itemconfigure(side_window, width=e.width))
+        sidebar.bind('<Configure>', lambda e: side_canvas.configure(scrollregion=side_canvas.bbox('all')))
         main = ttk.Frame(self.panes)
-        self.panes.add(sidebar, minsize=300, stretch='never')
+        self.panes.add(side_container, minsize=300, stretch='never')
         self.panes.add(main, minsize=590, stretch='always')
         selection = self.card(sidebar, 'SELECCIONAR REGISTRO')
         self.patient_box = self.selector(selection, '1  Paciente', self.patient, self.select_patient)
         self.study_box = self.selector(selection, '2  Estudio', self.study, self.select_study)
         self.channel_box = self.selector(selection, '3  Electrodo', self.channel, self.select_channel)
-        ttk.Label(selection, text='Elegí un paciente, su estudio y luego\nun electrodo para visualizar la señal.',
-                  style='Muted.TLabel', wraplength=280).pack(anchor='w', pady=(14, 4))
-        notes = self.card(sidebar, 'EXPLORACIÓN TEMPORAL')
-        ttk.Label(notes, text='Una señal por vez\nVentanas de 10 segundos\nCuadrícula vertical cada 5 segundos',
-                  style='Card.TLabel', justify='left').pack(anchor='w', pady=8)
-        ttk.Label(notes, text='Los datos originales se conservan.\nNo se aplica ningún procesamiento.',
-                  style='Muted.TLabel', wraplength=280).pack(anchor='w', pady=8)
+        self.build_review_sidebar(sidebar, selection)
         info = self.card(main, 'INFORMACIÓN DEL ESTUDIO')
+        self.info_card = info.master
+        self.compact_text = tk.StringVar(value='Seleccioná un estudio para ver su información.')
+        self.compact_info = ttk.Label(main, textvariable=self.compact_text, padding=8,
+                                      style='Card.TLabel', wraplength=550)
         self.info_fields = {}
         grid = ttk.Frame(info, style='Card.TFrame')
         grid.pack(fill='x', pady=8)
@@ -118,6 +132,7 @@ class App:
         file_label.pack(fill='x')
         file_label.bind('<Configure>', lambda e: file_label.configure(wraplength=max(100, e.width)))
         chart = self.card(main, 'SEÑAL EN EL TIEMPO', expand=True)
+        self.chart_card = chart.master
         controls = ttk.Frame(chart, style='Card.TFrame')
         controls.pack(fill='x', pady=(8, 4))
         self.previous = ttk.Button(controls, text='← Anterior', command=lambda: self.navigate(-10))
@@ -131,14 +146,36 @@ class App:
         self.go_button = ttk.Button(controls, text='Ir', command=self.go)
         self.go_button.pack(side='left', padx=6)
         ttk.Label(chart, textvariable=self.window_text, style='Muted.TLabel').pack(anchor='w', pady=4)
+        self.build_review_editor(chart)
+        self.plot_container = ttk.Frame(chart)
+        self.plot_view = tk.Canvas(self.plot_container, background='white', highlightthickness=0)
+        plot_scroll = ttk.Scrollbar(self.plot_container, command=self.plot_view.yview)
+        plot_scroll.pack(side='right', fill='y')
+        self.plot_view.configure(yscrollcommand=plot_scroll.set)
+        self.plot_view.pack(fill='both', expand=True)
         self.figure = Figure(figsize=(8, 4), dpi=100, facecolor='white', layout='constrained')
         self.ax = self.figure.add_subplot(111)
-        self.canvas = FigureCanvasTkAgg(self.figure, master=chart)
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_view)
         self.toolbar = Toolbar(self.canvas, chart, pack_toolbar=False)
         self.toolbar.configure(background='white')
         self.toolbar.pack(side='bottom', fill='x')
-        self.canvas.get_tk_widget().pack(fill='both', expand=True)
+        self.plot_container.pack(fill='both', expand=True)
+        self.plot_window = self.plot_view.create_window(0, 0, window=self.canvas.get_tk_widget(), anchor='nw')
+        self.plot_view.bind('<Configure>', self.resize_plot)
+        self.canvas.mpl_connect('button_press_event', self.plot_clicked)
+        self.root.bind('<Configure>', self.responsive_layout, add='+')
         self.update_controls()
+
+    def responsive_layout(self, event):
+        if event.widget != self.root:
+            return
+        if event.height < 850:
+            self.info_card.pack_forget()
+            self.compact_info.pack(fill='x', pady=(0, 10), before=self.chart_card)
+            self.compact_info.configure(wraplength=max(300, self.chart_card.winfo_width() - 20))
+        else:
+            self.compact_info.pack_forget()
+            self.info_card.pack(fill='x', pady=(0, 10), before=self.chart_card)
 
     @staticmethod
     def card(parent, title, expand=False):
@@ -164,18 +201,18 @@ class App:
             self.future.cancel()
         self.busy = False
 
-    def submit(self, work, callback):
+    def submit(self, work, callback, on_error=None):
         token = self.generation
         self.busy = True
         self.update_controls()
         future = self.executor.submit(work)
         self.future = future
-        future.add_done_callback(lambda f: self.events.put((token, callback, f)))
+        future.add_done_callback(lambda f: self.events.put((token, callback, f, on_error)))
 
     def poll(self):
         while True:
             try:
-                token, callback, future = self.events.get_nowait()
+                token, callback, future, on_error = self.events.get_nowait()
             except queue.Empty:
                 break
             if token != self.generation or future.cancelled():
@@ -184,8 +221,11 @@ class App:
             try:
                 callback(future.result())
             except Exception as exc:
-                self.clear_plot('No se pudo cargar la señal')
-                self.status.set(f'Error: {exc}')
+                if on_error:
+                    on_error(exc)
+                else:
+                    self.clear_plot('No se pudo cargar la señal')
+                    self.status.set(f'Error: {exc}')
             self.update_controls()
         if not self.closed:
             self.poll_id = self.root.after(50, self.poll)
@@ -197,11 +237,18 @@ class App:
                         else 'No se encontraron participantes en la carpeta data.')
 
     def clear_info(self):
+        self.compact_text.set('Seleccioná un estudio para ver su información.')
         for var in self.info_fields.values():
             var.set('—')
         self.file_text.set('Seleccioná un estudio para ver su información.')
 
     def select_patient(self, event=None):
+        if not self.may_leave():
+            self.patient.set(self.active_patient)
+            return
+        self.active_patient = self.patient.get()
+        self.active_study_index = -1
+        self.reset_review()
         self.invalidate()
         self.recording = None
         self.study.set('')
@@ -228,9 +275,17 @@ class App:
     def load(self, study):
         self.release_recording()
         self.worker_recording = open_recording(study)
+        self.worker_recording.annotations = AnnotationStore(
+            self.annotations_dir, self.worker_recording, self.data_dir)
         return self.worker_recording
 
     def select_study(self, event=None):
+        if not self.may_leave():
+            if self.active_study_index >= 0:
+                self.study_box.current(self.active_study_index)
+            return
+        self.active_study_index = self.study_box.current()
+        self.reset_review()
         self.invalidate()
         self.recording = None
         self.channel.set('')
@@ -258,9 +313,14 @@ class App:
         for var, value in zip(self.info_fields.values(), values):
             var.set(value)
         self.file_text.set(study.path.name)
+        self.compact_text.set(f'{study.participant} · {study.label}\n'
+                              f'{recording.duration:g} s · {recording.sfreq:g} Hz · '
+                              f'{len(recording.channels)} EEG · Referencia: {reference}\n'
+                              f'{study.path.name}')
         self.channel_box.configure(values=recording.channels, state='readonly')
         self.clear_plot('Elegí un electrodo para ver su señal')
         self.status.set(recording.warning or 'Estudio cargado. Elegí un electrodo.')
+        self.review_loaded(recording)
 
     def reset_time(self):
         self.start = self.stop = 0.0
@@ -268,17 +328,25 @@ class App:
         self.window_text.set('Ventanas de 10 segundos')
 
     def select_channel(self, event=None):
-        self.reset_time()
-        self.show_window(0)
+        if self.multi.get() and self.recording and self.channel.get():
+            self.channel_list.selection_clear(0, 'end')
+            self.channel_list.selection_set(self.recording.channels.index(self.channel.get()))
+            self.last_multi = self.channel_list.curselection()
+        self.show_window(self.start)
 
     def show_window(self, start):
-        if self.recording is None or not self.channel.get():
+        if self.recording is None:
             return
+        channels = self.visible_channels()
         self.invalidate()
-        recording, channel = self.recording, self.channel.get()
+        if not channels:
+            self.clear_plot('Elegí al menos un electrodo')
+            self.update_controls()
+            return
+        recording, config = self.recording, self.config
         self.clear_plot('Cargando señal…')
-        self.status.set(f'Leyendo {channel} desde {start:g} s…')
-        self.submit(lambda: recording.read_window(channel, start), self.segment_loaded)
+        self.status.set(f'Leyendo {", ".join(channels)} desde {start:g} s…')
+        self.submit(lambda: recording.read_channels(channels, start, config), self.segment_loaded)
 
     def reset_toolbar(self):
         if self.toolbar.mode:
@@ -289,7 +357,11 @@ class App:
         self.toolbar.update()
 
     def clear_plot(self, message):
-        self.ax.clear()
+        self.displayed = None
+        self.epoch_artists = []
+        self.figure.clear()
+        self.ax = self.figure.add_subplot(111)
+        self.resize_plot()
         self.ax.set_axis_off()
         self.ax.text(.5, .5, message, transform=self.ax.transAxes, ha='center', va='center',
                      fontsize=12, color=MUTED)
@@ -301,39 +373,36 @@ class App:
         self.start_text.set(f'{self.start:g}')
         self.window_text.set(f'{self.start:g}–{self.stop:g} s de {self.recording.duration:g} s'
                              f'   ·   {len(segment.times):,} muestras   ·   Cuadrícula: 5 s')
-        self.ax.clear()
-        self.ax.set_axis_on()
-        line, = self.ax.plot(segment.times, segment.values_uv, color=TEAL, linewidth=.8)
-        # Preserve every sample in the rendered path, including brief extremes.
-        line.get_path().should_simplify = False
-        self.ax.set_xlim(segment.start, segment.stop)
-        self.ax.margins(y=.08)
-        self.ax.set_xlabel('Tiempo desde el inicio (s)')
-        self.ax.set_ylabel('Amplitud (µV)')
-        self.ax.set_title(f'{self.recording.study.participant} · {self.channel.get()}', loc='left', fontsize=11)
-        self.ax.xaxis.set_major_locator(MultipleLocator(5))
-        self.ax.grid(axis='x', color='#bdccce', linewidth=.8)
-        self.ax.grid(axis='y', color='#edf1f1', linewidth=.5)
-        for spine in self.ax.spines.values():
-            spine.set_color('#d9e1e2')
-        self.reset_toolbar()
-        self.toolbar.push_current()
-        self.canvas.draw_idle()
-        self.status.set(self.recording.warning or 'Señal original · Sin filtros ni procesamiento')
+        if self.store and (self.selected_epoch is None or
+                           self.store.epochs[self.selected_epoch].stop <= self.start or
+                           self.store.epochs[self.selected_epoch].start >= self.stop):
+            self.selected_epoch = next(e.index for e in self.store.epochs
+                                       if e.stop > self.start)
+            self.epoch_tree.selection_set(str(self.selected_epoch))
+            self.epoch_tree.see(str(self.selected_epoch))
+            self.load_editor()
+        self.draw_segment(segment)
+        self.status.set(self.recording.warning or f'{self.config.label} · Epochs de 5 s · Sin exclusión de muestras')
 
     def update_controls(self):
-        enabled = self.recording is not None and bool(self.channel.get()) and not self.busy
+        enabled = self.recording is not None and bool(self.visible_channels()) and not self.busy
         self.previous.configure(state='normal' if enabled and self.start > 0 else 'disabled')
         self.next.configure(state='normal' if enabled and self.stop < self.recording.duration else 'disabled')
         self.start_entry.configure(state='normal' if enabled else 'disabled')
         self.go_button.configure(state='normal' if enabled else 'disabled')
+        self.config_button.configure(state='normal' if self.recording and not self.busy else 'disabled')
+        can_mark = (enabled and self.store and not self.store.blocked
+                    and self.selected_epoch is not None and self.displayed is not None)
+        for button in self.mark_buttons + [self.mark_button, self.note_entry]:
+            button.configure(state='normal' if can_mark else 'disabled')
+        self.update_reason()
 
     def navigate(self, delta):
         if not self.busy:
             self.show_window(max(0, self.start + delta))
 
     def go(self):
-        if self.busy or self.recording is None or not self.channel.get():
+        if self.busy or self.recording is None or not self.visible_channels():
             return
         try:
             start = float(self.start_text.get().strip().replace(',', '.'))
@@ -346,6 +415,8 @@ class App:
 
     def close(self):
         if self.closed:
+            return
+        if not self.may_leave():
             return
         self.closed = True
         self.invalidate()
@@ -363,5 +434,8 @@ class App:
 
 def main(data_dir):
     root = tk.Tk()
-    App(root, data_dir)
-    root.mainloop()
+    app = App(root, data_dir)
+    try:
+        root.mainloop()
+    finally:
+        app.executor.shutdown(wait=True)
