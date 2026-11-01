@@ -1,0 +1,95 @@
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+import numpy as np
+from scipy.io import savemat
+
+from eeg_viewer.data import discover, open_recording
+
+
+def make_recording(folder, subject='sub-01', session='ses-1', task='eyesopen'):
+    directory = Path(folder) / subject / session / 'eeg'
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f'{subject}_{session}_task-{task}_eeg.set'
+    # A known waveform in EEGLAB's native µV units, channel-major per sample.
+    values = np.vstack((np.arange(1250) / 10, -np.arange(1250) / 5)).astype('<f4')
+    values.ravel(order='F').tofile(path.with_suffix('.fdt'))
+    savemat(path, {'EEG': {'data': path.with_suffix('.fdt').name, 'nbchan': 2,
+                           'pnts': 1250, 'trials': 1, 'srate': 100., 'xmin': 0.,
+                           'xmax': 12.49,
+                           'chanlocs': np.array([{'labels': 'Cz'}, {'labels': 'Fp1'}], dtype=object)}})
+    path.with_suffix('.json').write_text(json.dumps({'EEGReference': 'FCz'}))
+    return path, values
+
+
+class DataTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.path, self.values = make_recording(self.temp.name)
+
+    def recording(self):
+        recording = open_recording(discover(self.temp.name)['sub-01'][0])
+        self.addCleanup(recording.close)
+        return recording
+
+    def test_exact_values_units_time_and_partial_last_window(self):
+        r = self.recording()
+        self.assertFalse(r.raw.preload)
+        self.assertEqual(r.channels, ['Cz', 'Fp1'])
+        first = r.read_window('Fp1', 0)
+        np.testing.assert_allclose(first.values_uv, self.values[1, :1000])
+        np.testing.assert_allclose(first.times, np.arange(1000) / 100)
+        last = r.read_window('Cz', 10)
+        self.assertEqual((last.start, last.stop), (10, 12.5))
+        np.testing.assert_allclose(last.values_uv, self.values[0, 1000:])
+        self.assertEqual(len(last.times), 250)
+        self.assertEqual(len(r.read_window('Cz', 12.4999).times), 1)
+
+    def test_invalid_time_or_channel(self):
+        r = self.recording()
+        for start in (-1, 12.5, float('nan'), float('inf')):
+            with self.subTest(start=start), self.assertRaises(ValueError):
+                r.read_window('Cz', start)
+        with self.assertRaises(ValueError):
+            r.read_window('missing', 0)
+
+    def test_inventory_sort_and_available_studies(self):
+        make_recording(self.temp.name, subject='sub-10')
+        make_recording(self.temp.name, subject='sub-2', session='ses-2', task='eyesclosed')
+        (Path(self.temp.name) / 'sub-3').mkdir()
+        inv = discover(self.temp.name)
+        self.assertEqual(list(inv), ['sub-01', 'sub-2', 'sub-3', 'sub-10'])
+        self.assertEqual(inv['sub-3'], [])
+        self.assertEqual(inv['sub-2'][0].condition, 'Privación del sueño')
+        self.assertEqual(inv['sub-2'][0].eyes, 'Ojos cerrados')
+
+    def test_missing_and_malformed_files(self):
+        self.path.with_suffix('.json').write_text('broken json')
+        self.assertTrue(self.recording().warning)
+        self.path.with_suffix('.json').unlink()
+        self.assertEqual(self.recording().metadata, {})
+        self.path.with_suffix('.fdt').unlink()
+        with self.assertRaises((FileNotFoundError, OSError)):
+            r = self.recording()
+            r.read_window('Cz', 0)
+
+    def test_broken_set_link_stays_discoverable(self):
+        self.path.unlink()
+        self.path.symlink_to('missing.set')
+        inv = discover(self.temp.name)
+        self.assertEqual(len(inv['sub-01']), 1)
+        with self.assertRaises(FileNotFoundError):
+            open_recording(inv['sub-01'][0])
+
+    def test_truncated_binary_is_rejected_before_plotting(self):
+        with self.path.with_suffix('.fdt').open('r+b') as stream:
+            stream.truncate(100)
+        with self.assertRaisesRegex(ValueError, 'Archivo EEG incompleto'):
+            self.recording()
+
+
+if __name__ == '__main__':
+    unittest.main()

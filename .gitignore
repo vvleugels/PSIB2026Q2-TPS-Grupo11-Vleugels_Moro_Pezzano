@@ -1,2 +1,7 @@
 /data/*
 !/data/.gitkeep
+*.pdf
+
+.venv/
+__pycache__/
+*.py[cod]
