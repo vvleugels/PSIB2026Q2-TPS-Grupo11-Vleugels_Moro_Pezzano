@@ -148,6 +148,9 @@ class GuiTests(unittest.TestCase):
         a.select_epoch(1)
         a.mark_state.set('Con artefactos'); a.reason.set('Ocular'); a.note.set('parpadeo')
         a.apply_mark()
+        self.assertEqual(a.save_label.get(), 'Cambios sin guardar')
+        self.assertFalse(a.store.path.exists())
+        self.assertTrue(a.save_annotations())
         self.assertEqual(a.save_label.get(), 'Guardado')
         a.channel_box.current(1); a.select_channel(); self.wait_ready()
         self.assertEqual(a.selected_epoch, 1)
@@ -177,7 +180,7 @@ class GuiTests(unittest.TestCase):
             a.mark_state.set('Aceptada'); a.apply_mark()
             self.assertTrue(a.store.dirty)
             self.assertEqual(a.save_label.get(), 'Cambios sin guardar')
-            with patch('eeg_viewer.review_ui.messagebox.askyesnocancel', return_value=None):
+            with patch.object(a, 'unsaved_choice', return_value='cancel'):
                 a.patient.set('sub-02'); a.select_patient()
                 self.assertEqual(a.patient.get(), 'sub-01')
                 self.assertIsNotNone(a.recording)
@@ -204,3 +207,79 @@ class GuiTests(unittest.TestCase):
         self.assertFalse(a.config.enabled)
         self.assertEqual(a.recording.study.participant, 'sub-02')
         self.assertIsNone(a.displayed)
+
+    def test_manual_save_required_for_spectral_analysis(self):
+        self.select()
+        a = self.app
+        a.mark_state.set('Aceptada'); a.apply_mark()
+        self.assertTrue(a.store.dirty)
+        self.assertFalse(a.store.path.exists())
+        a.calculate_spectrum()
+        self.assertIn('Guardá', a.spectral_message.get())
+        self.assertIsNone(a.spectral_result)
+        a.save_annotations(); a.calculate_spectrum(); self.wait_ready()
+        self.assertIsNotNone(a.spectral_result, a.spectral_message.get())
+        self.assertEqual(a.spectral_result['sessions'][0]['counts']['used'], 1)
+        self.assertEqual(len(a.band_table.get_children()),4)
+        self.assertEqual(str(a.export_button.cget('state')), 'normal')
+        a.select_epoch(1); a.mark_state.set('Aceptada'); a.apply_mark()
+        self.assertIsNone(a.spectral_result)
+        self.assertEqual(str(a.export_button.cget('state')), 'disabled')
+
+    def test_exploratory_spectrum_and_channel_invalidation(self):
+        self.select()
+        a = self.app
+        a.calculate_spectrum(); self.wait_ready()
+        self.assertIsNone(a.spectral_result)
+        self.assertIn('no hay epochs', a.spectral_message.get())
+        a.include_unreviewed.set(True); a.invalidate_spectrum()
+        a.calculate_spectrum(); self.wait_ready()
+        self.assertTrue(a.spectral_result['exploratory'])
+        self.assertEqual(a.spectral_result['sessions'][0]['counts']['used'],2)
+        a.spectral_db.set(False); a.draw_spectrum()
+        self.assertEqual(a.spectral_figure.axes[0].get_ylabel(),'PSD (µV²/Hz)')
+        a.channel_box.current(1); a.select_channel(); self.wait_ready()
+        self.assertIsNone(a.spectral_result)
+        a.spectral_mode.set('Comparar NS/SD'); a.calculate_spectrum()
+        self.assertIn('estudio único',a.spectral_message.get())
+
+    def test_save_discard_cancel_and_failed_save_on_leave(self):
+        from unittest.mock import patch
+        self.select()
+        a = self.app
+        a.mark_state.set('Aceptada'); a.apply_mark()
+        with patch.object(a,'unsaved_choice',return_value='save'):
+            with patch.object(a.store,'save',side_effect=OSError('Disco lleno')):
+                a.patient.set('sub-02'); a.select_patient()
+                self.assertEqual(a.patient.get(),'sub-01')
+                self.assertTrue(a.store.dirty)
+            a.patient.set('sub-02'); a.select_patient()
+        self.assertEqual(a.patient.get(),'sub-02')
+        a.patient.set('sub-01'); a.select_patient()
+        a.study_box.current(0); a.select_study(); self.wait_ready()
+        self.assertEqual(a.store.records[0]['state'],'Aceptada')
+        a.channel_box.current(0); a.select_channel(); self.wait_ready()
+        a.mark_state.set('Con artefactos'); a.apply_mark()
+        with patch.object(a,'unsaved_choice',return_value='discard'):
+            a.select_study()
+        self.wait_ready()
+        self.assertEqual(a.store.records[0]['state'],'Aceptada')
+
+    def test_obsolete_spectral_result_after_parameter_change(self):
+        from unittest.mock import patch
+        from eeg_viewer.spectral import run_analysis
+        self.select()
+        a = self.app
+        a.include_unreviewed.set(True)
+        ready, release = threading.Event(), threading.Event()
+        self.addCleanup(release.set)
+        def delayed(*args):
+            ready.set(); release.wait(5)
+            return run_analysis(*args)
+        with patch('eeg_viewer.spectral_ui.run_analysis',side_effect=delayed):
+            a.calculate_spectrum()
+            self.assertTrue(ready.wait(2))
+            a.include_unreviewed.set(False); a.invalidate_spectrum()
+            release.set(); self.wait_ready()
+        self.assertIsNone(a.spectral_result)
+        self.assertEqual(str(a.export_button.cget('state')), 'disabled')

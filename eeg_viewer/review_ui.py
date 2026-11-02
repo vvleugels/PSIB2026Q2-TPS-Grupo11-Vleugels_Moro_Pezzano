@@ -1,6 +1,6 @@
 """Epoch review controls and optional multichannel display for the desktop app."""
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 
 from matplotlib.ticker import MultipleLocator
 
@@ -60,7 +60,7 @@ class ReviewUI:
                   wraplength=280).pack(anchor='w', pady=5)
         ttk.Label(epochs, textvariable=self.save_label, style='Muted.TLabel',
                   wraplength=280).pack(anchor='w')
-        ttk.Button(epochs, text='Reintentar guardado', command=self.save_annotations).pack(anchor='w', pady=5)
+        ttk.Button(epochs, text='Guardar anotaciones', command=self.save_annotations).pack(anchor='w', pady=5)
 
     def build_review_editor(self, chart):
         editor = ttk.Frame(chart, style='Card.TFrame')
@@ -139,6 +139,7 @@ class ReviewUI:
                 return recording.read_channels(channels, start, candidate)
             return None
         def done(segment):
+            self.invalidate_spectrum()
             self.config = candidate
             self.signal_label.set(candidate.label)
             if segment is not None:
@@ -177,6 +178,7 @@ class ReviewUI:
             self.show_window(self.start)
 
     def reset_review(self):
+        self.invalidate_spectrum()
         self.store = None
         self.selected_epoch = None
         self.displayed = None
@@ -306,7 +308,8 @@ class ReviewUI:
         self.refresh_epochs()
         self.load_editor()
         self.draw_overlays()
-        self.save_annotations()
+        self.save_label.set('Cambios sin guardar')
+        self.invalidate_spectrum('Hay marcas sin guardar. Guardalas antes de calcular.')
 
     def save_annotations(self):
         if not self.store:
@@ -319,17 +322,39 @@ class ReviewUI:
             self.update_controls()
             return False
         self.save_label.set('Guardado')
+        self.invalidate_spectrum('Anotaciones guardadas. Podés calcular el espectro.')
         return True
+
+    def unsaved_choice(self):
+        dialog = tk.Toplevel(self.root)
+        dialog.title('Cambios sin guardar')
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+        choice = 'cancel'
+        body = ttk.Frame(dialog, padding=18)
+        body.pack(fill='both')
+        ttk.Label(body, text='Hay anotaciones sin guardar. ¿Qué querés hacer?',
+                  wraplength=400).pack(pady=(0, 12))
+        row = ttk.Frame(body)
+        row.pack()
+        def finish(value):
+            nonlocal choice
+            choice = value
+            dialog.destroy()
+        for label, value in (('Guardar', 'save'), ('Descartar', 'discard'), ('Cancelar', 'cancel')):
+            ttk.Button(row, text=label, command=lambda v=value: finish(v)).pack(side='left', padx=4)
+        dialog.protocol('WM_DELETE_WINDOW', lambda: finish('cancel'))
+        dialog.grab_set()
+        self.root.wait_window(dialog)
+        return choice
 
     def may_leave(self):
         if not self.store or not self.store.dirty:
             return True
-        answer = messagebox.askyesnocancel(
-            'Cambios sin guardar', 'Hay anotaciones sin guardar. ¿Reintentar el guardado?\n'
-            'Sí: guardar y continuar. No: descartar los cambios. Cancelar: permanecer.', parent=self.root)
-        if answer is None:
-            return False
-        return self.save_annotations() if answer else True
+        choice = self.unsaved_choice()
+        if choice == 'save':
+            return self.save_annotations()
+        return choice == 'discard'
 
     def draw_overlays(self):
         for artist in getattr(self, 'epoch_artists', []):

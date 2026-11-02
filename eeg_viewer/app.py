@@ -11,6 +11,7 @@ from matplotlib.ticker import MultipleLocator
 from .data import discover, open_recording
 from .annotations import AnnotationStore
 from .review_ui import ReviewUI
+from .spectral_ui import SpectralUI
 from pathlib import Path
 
 BG = '#f2f5f5'
@@ -31,7 +32,7 @@ class Toolbar(NavigationToolbar2Tk):
     )
 
 
-class App(ReviewUI):
+class App(ReviewUI, SpectralUI):
     def __init__(self, root, data_dir, annotations_dir=None):
         self.root = root
         self.data_dir = Path(data_dir)
@@ -55,6 +56,7 @@ class App(ReviewUI):
         self.status = tk.StringVar(value='Buscando participantes…')
         self.window_text = tk.StringVar(value='Ventanas de 10 segundos')
         self.init_review()
+        self.init_spectral()
         root.title('PSIB — Explorador EEG')
         root.geometry('1280x800')
         root.minsize(960, 640)
@@ -131,8 +133,14 @@ class App(ReviewUI):
         file_label = ttk.Label(info, textvariable=self.file_text, style='Muted.TLabel')
         file_label.pack(fill='x')
         file_label.bind('<Configure>', lambda e: file_label.configure(wraplength=max(100, e.width)))
-        chart = self.card(main, 'SEÑAL EN EL TIEMPO', expand=True)
-        self.chart_card = chart.master
+        self.view_tabs = ttk.Notebook(main)
+        self.view_tabs.pack(fill='both', expand=True)
+        temporal = ttk.Frame(self.view_tabs)
+        spectral = ttk.Frame(self.view_tabs)
+        self.view_tabs.add(temporal, text='Señal temporal')
+        self.view_tabs.add(spectral, text='Análisis espectral')
+        chart = self.card(temporal, 'SEÑAL EN EL TIEMPO', expand=True)
+        self.chart_card = self.view_tabs
         controls = ttk.Frame(chart, style='Card.TFrame')
         controls.pack(fill='x', pady=(8, 4))
         self.previous = ttk.Button(controls, text='← Anterior', command=lambda: self.navigate(-10))
@@ -163,6 +171,7 @@ class App(ReviewUI):
         self.plot_window = self.plot_view.create_window(0, 0, window=self.canvas.get_tk_widget(), anchor='nw')
         self.plot_view.bind('<Configure>', self.resize_plot)
         self.canvas.mpl_connect('button_press_event', self.plot_clicked)
+        self.build_spectral(spectral, Toolbar)
         self.root.bind('<Configure>', self.responsive_layout, add='+')
         self.update_controls()
 
@@ -196,6 +205,9 @@ class App(ReviewUI):
         return box
 
     def invalidate(self):
+        if self.spectral_pending:
+            self.spectral_pending = False
+            self.spectral_message.set('Cálculo cancelado. Volvé a calcular.')
         self.generation += 1
         if self.future is not None:
             self.future.cancel()
@@ -328,6 +340,7 @@ class App(ReviewUI):
         self.window_text.set('Ventanas de 10 segundos')
 
     def select_channel(self, event=None):
+        self.invalidate_spectrum()
         if self.multi.get() and self.recording and self.channel.get():
             self.channel_list.selection_clear(0, 'end')
             self.channel_list.selection_set(self.recording.channels.index(self.channel.get()))
@@ -396,6 +409,7 @@ class App(ReviewUI):
         for button in self.mark_buttons + [self.mark_button, self.note_entry]:
             button.configure(state='normal' if can_mark else 'disabled')
         self.update_reason()
+        self.update_spectral_controls()
 
     def navigate(self, delta):
         if not self.busy:
@@ -422,11 +436,12 @@ class App(ReviewUI):
         self.invalidate()
         self.root.after_cancel(self.poll_id)
         # Matplotlib schedules idle draws on Tk; cancel them before destroying it.
-        for attr in ('_idle_draw_id', '_event_loop_id'):
-            job = getattr(self.canvas, attr, None)
-            if job:
-                self.canvas.get_tk_widget().after_cancel(job)
-                setattr(self.canvas, attr, None)
+        for canvas in (self.canvas, self.spectral_canvas):
+            for attr in ('_idle_draw_id', '_event_loop_id'):
+                job = getattr(canvas, attr, None)
+                if job:
+                    canvas.get_tk_widget().after_cancel(job)
+                    setattr(canvas, attr, None)
         self.executor.submit(self.release_recording)
         self.executor.shutdown(wait=False)
         self.root.destroy()
