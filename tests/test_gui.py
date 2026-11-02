@@ -147,11 +147,10 @@ class GuiTests(unittest.TestCase):
         a = self.app
         a.select_epoch(1)
         a.mark_state.set('Con artefactos'); a.reason.set('Ocular'); a.note.set('parpadeo')
-        a.apply_mark()
-        self.assertEqual(a.save_label.get(), 'Cambios sin guardar')
-        self.assertFalse(a.store.path.exists())
-        self.assertTrue(a.save_annotations())
-        self.assertEqual(a.save_label.get(), 'Guardado')
+        self.assertTrue(a.store.dirty)  # The note is debounced.
+        self.assertTrue(a.flush_autosave())
+        self.assertTrue(a.store.path.exists())
+        self.assertEqual(a.save_label.get(), 'Guardado automáticamente')
         a.channel_box.current(1); a.select_channel(); self.wait_ready()
         self.assertEqual(a.selected_epoch, 1)
         self.assertEqual(a.store.records[1]['state'], 'Con artefactos')
@@ -177,9 +176,9 @@ class GuiTests(unittest.TestCase):
         self.select()
         a = self.app
         with patch.object(a.store, 'save', side_effect=OSError('Disco lleno')):
-            a.mark_state.set('Aceptada'); a.apply_mark()
+            a.mark_state.set('Aceptada')
             self.assertTrue(a.store.dirty)
-            self.assertEqual(a.save_label.get(), 'Cambios sin guardar')
+            self.assertEqual(a.save_label.get(), 'Error de guardado · Cambios en memoria')
             with patch.object(a, 'unsaved_choice', return_value='cancel'):
                 a.patient.set('sub-02'); a.select_patient()
                 self.assertEqual(a.patient.get(), 'sub-01')
@@ -208,21 +207,20 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(a.recording.study.participant, 'sub-02')
         self.assertIsNone(a.displayed)
 
-    def test_manual_save_required_for_spectral_analysis(self):
+    def test_autosave_allows_spectral_analysis_without_manual_save(self):
         self.select()
         a = self.app
-        a.mark_state.set('Aceptada'); a.apply_mark()
-        self.assertTrue(a.store.dirty)
-        self.assertFalse(a.store.path.exists())
-        a.calculate_spectrum()
-        self.assertIn('Guardá', a.spectral_message.get())
-        self.assertIsNone(a.spectral_result)
-        a.save_annotations(); a.calculate_spectrum(); self.wait_ready()
+        a.mark_state.set('Aceptada')
+        self.assertFalse(a.store.dirty)
+        self.assertTrue(a.store.path.exists())
+        a.note.set('nota pendiente')
+        a.calculate_spectrum(); self.wait_ready()
+        self.assertFalse(a.store.dirty)
         self.assertIsNotNone(a.spectral_result, a.spectral_message.get())
         self.assertEqual(a.spectral_result['sessions'][0]['counts']['used'], 1)
         self.assertEqual(len(a.band_table.get_children()),4)
         self.assertEqual(str(a.export_button.cget('state')), 'normal')
-        a.select_epoch(1); a.mark_state.set('Aceptada'); a.apply_mark()
+        a.select_epoch(1); a.mark_state.set('Aceptada')
         self.assertIsNone(a.spectral_result)
         self.assertEqual(str(a.export_button.cget('state')), 'disabled')
 
@@ -247,7 +245,8 @@ class GuiTests(unittest.TestCase):
         from unittest.mock import patch
         self.select()
         a = self.app
-        a.mark_state.set('Aceptada'); a.apply_mark()
+        with patch.object(a.store, 'save', side_effect=OSError('Disco lleno')):
+            a.mark_state.set('Aceptada')
         with patch.object(a,'unsaved_choice',return_value='save'):
             with patch.object(a.store,'save',side_effect=OSError('Disco lleno')):
                 a.patient.set('sub-02'); a.select_patient()
@@ -259,9 +258,10 @@ class GuiTests(unittest.TestCase):
         a.study_box.current(0); a.select_study(); self.wait_ready()
         self.assertEqual(a.store.records[0]['state'],'Aceptada')
         a.channel_box.current(0); a.select_channel(); self.wait_ready()
-        a.mark_state.set('Con artefactos'); a.apply_mark()
-        with patch.object(a,'unsaved_choice',return_value='discard'):
-            a.select_study()
+        with patch.object(a.store, 'save', side_effect=OSError('Disco lleno')):
+            a.mark_state.set('Con artefactos')
+            with patch.object(a,'unsaved_choice',return_value='discard'):
+                a.select_study()
         self.wait_ready()
         self.assertEqual(a.store.records[0]['state'],'Aceptada')
 
@@ -283,3 +283,168 @@ class GuiTests(unittest.TestCase):
             release.set(); self.wait_ready()
         self.assertIsNone(a.spectral_result)
         self.assertEqual(str(a.export_button.cget('state')), 'disabled')
+
+    def test_note_autosaves_on_pause_and_navigation_without_marking_other_epoch(self):
+        import json
+        self.select()
+        a = self.app
+        self.assertFalse(a.store.path.exists())
+        a.mark_state.set('Con artefactos')
+        a.reason.set('Ocular')
+        a.note.set('parpadeo')
+        self.assertTrue(a.store.dirty)
+        deadline = time.monotonic() + 2
+        while a.store.dirty and time.monotonic() < deadline:
+            self.root.update()
+            time.sleep(.01)
+        self.assertFalse(a.store.dirty)
+        self.assertEqual(json.loads(a.store.path.read_text())['epochs'][0]['note'], 'parpadeo')
+        a.note.set('nota antes de navegar')
+        a.select_epoch(1)
+        self.assertFalse(a.store.dirty)
+        self.assertEqual(a.store.records[0]['note'], 'nota antes de navegar')
+        self.assertEqual(a.store.records[1]['state'], 'Sin revisar')
+        self.assertIsNone(a.store.records[1]['reviewed_at'])
+        before = a.store.path.read_bytes()
+        a.select_epoch(0)
+        self.assertEqual(a.store.path.read_bytes(), before)
+        self.assertEqual(a.note.get(), 'nota antes de navegar')
+
+    def test_pending_note_saved_on_close_and_failure_blocks_spectrum(self):
+        import json
+        from unittest.mock import patch
+        self.select()
+        a = self.app
+        a.mark_state.set('Aceptada')
+        a.note.set('última nota')
+        with patch.object(a.store, 'save', side_effect=OSError('Disco lleno')):
+            a.calculate_spectrum()
+            self.assertIsNone(a.spectral_result)
+            self.assertIn('No se pudieron guardar', a.spectral_message.get())
+            a.select_epoch(1)
+            self.assertEqual(a.selected_epoch, 0)
+        path = a.store.path
+        a.close()
+        self.assertTrue(a.closed)
+        self.assertEqual(json.loads(path.read_text())['epochs'][0]['note'], 'última nota')
+
+    def test_screening_navigation_scope_autoaccepts_and_preserves_manual_marks(self):
+        self.select()
+        a = self.app
+        a.mark_state.set('Aceptada')
+        manual = dict(a.store.records[0])
+        a.screening_high.set('75')
+        a.start_screening(); self.wait_ready()
+        self.assertEqual(set(a.screening_result['findings']), {0, 1})
+        self.assertEqual(a.epoch_tree.item('0')['values'][-1], 'Alta')
+        self.assertIn('Fp1', a.screening_detail.get())
+        a.next_suspect(1); self.wait_ready()
+        self.assertEqual(a.selected_epoch, 1)
+        a.next_suspect(1); self.wait_ready()
+        self.assertEqual(a.selected_epoch, 0)  # Wrap around.
+        self.assertEqual(a.store.records[0], manual)
+        self.assertEqual(a.store.records[1]['state'], 'Sin revisar')
+        self.assertEqual(a.store.records[2]['state'], 'Aceptada')
+        self.assertIn('screening', a.store.records[2])
+        self.assertFalse(a.store.dirty)
+        a.screening_all.set(False)
+        self.assertIsNone(a.screening_result)
+        self.assertEqual(a.epoch_tree.item('0')['values'][-1], '')
+        a.start_screening(); self.wait_ready()
+        self.assertEqual(a.screening_result['channels'], ('Cz',))
+        self.assertEqual(a.screening_result['findings'], {})
+        self.assertEqual(a.store.records[0], manual)
+        self.assertEqual(a.store.records[1]['state'], 'Aceptada')
+        a.select_epoch(1)
+        self.assertIn('Aceptación automática', a.context_label.get())
+        a.calculate_spectrum(); self.wait_ready()
+        self.assertEqual(a.spectral_result['sessions'][0]['counts']['used'], 2)
+        from eeg_viewer.annotations import AnnotationStore
+        saved = AnnotationStore(a.annotations_dir, a.recording, a.data_dir)
+        self.assertFalse(saved.blocked)
+        self.assertEqual(saved.records, a.store.records)
+
+    def test_obsolete_screening_result_is_ignored_on_parameter_or_patient_change(self):
+        from unittest.mock import patch
+        from eeg_viewer.screening import scan_recording
+        self.select()
+        a = self.app
+        for change in ('threshold', 'filter', 'patient'):
+            ready, release = threading.Event(), threading.Event()
+            self.addCleanup(release.set)
+            def delayed(*args):
+                ready.set(); release.wait(5)
+                return scan_recording(*args)
+            with patch('eeg_viewer.screening_ui.scan_recording', side_effect=delayed):
+                a.start_screening()
+                self.assertTrue(ready.wait(2))
+                if change == 'threshold':
+                    a.screening_high.set('200')
+                elif change == 'filter':
+                    from eeg_viewer.processing import FilterConfig
+                    a.apply_config(FilterConfig(True, 2, 30))
+                else:
+                    a.patient.set('sub-02'); a.select_patient()
+                release.set()
+                # Wait for the obsolete worker as well as UI processing.
+                a.executor.submit(lambda: None).result(timeout=5)
+                self.wait_ready()
+            self.assertIsNone(a.screening_result)
+            self.assertFalse(a.screening_pending)
+        self.assertEqual(a.patient.get(), 'sub-02')
+
+    def test_screening_uses_active_filter_and_invalidates_only_after_successful_change(self):
+        from eeg_viewer.processing import FilterConfig
+        self.select()
+        a = self.app
+        self.assertTrue(a.screening_use_filter.get())
+        self.assertIn('Filtrado desactivado', a.screening_signal.get())
+        a.screening_all.set(False)
+        filtering = FilterConfig(True, 2, 30)
+        a.apply_config(filtering); self.wait_ready()
+        a.start_screening(); self.wait_ready()
+        result = a.screening_result
+        self.assertEqual(result['filter'], filtering)
+        self.assertIn(filtering.label, a.screening_summary.get())
+        self.assertIn(filtering.label, a.screening_detail.get())
+        a.apply_config(FilterConfig(True)); self.wait_ready()  # Too short: keep prior filter/results.
+        self.assertEqual(a.config, filtering)
+        self.assertIs(a.screening_result, result)
+        a.apply_config(FilterConfig(True, 3, 25)); self.wait_ready()
+        self.assertIsNone(a.screening_result)
+        self.assertEqual(a.screening_signal.get(), a.config.label)
+        self.assertEqual(a.epoch_tree.item('0')['values'][-1], '')
+        a.screening_use_filter.set(False)
+        a.start_screening(); self.wait_ready()
+        original = a.screening_result
+        self.assertFalse(original['filter'].enabled)
+        self.assertIn('Original', a.screening_summary.get())
+        a.apply_config(FilterConfig(True, 4, 20)); self.wait_ready()
+        self.assertIs(a.screening_result, original)
+        self.assertEqual(a.screening_signal.get(), 'Original · Sin filtrar')
+
+    def test_screening_autosave_failure_keeps_batch_in_memory_and_allows_retry(self):
+        import json
+        from unittest.mock import patch
+        self.select()
+        a = self.app
+        a.store.save()
+        before = a.store.path.read_bytes()
+        with patch.object(a.store, 'save', side_effect=OSError('Disco lleno')):
+            a.start_screening(); self.wait_ready()
+            self.assertEqual([r['state'] for r in a.store.records], ['Aceptada'] * 3)
+            self.assertTrue(a.store.dirty)
+            self.assertEqual(a.store.path.read_bytes(), before)
+            self.assertIn('Guardado pendiente', a.screening_summary.get())
+            a.calculate_spectrum()
+            self.assertIsNone(a.spectral_result)
+        self.assertTrue(a.save_annotations())
+        self.assertFalse(a.store.dirty)
+        saved = json.loads(a.store.path.read_text())
+        self.assertTrue(all(r['screening']['high_uv'] == 150 for r in saved['epochs']))
+        # A protected annotation file is not modified by a later scan.
+        a.store.blocked = 'Anotaciones protegidas'
+        before = a.store.path.read_bytes()
+        a.start_screening(); self.wait_ready()
+        self.assertIn('No se pudieron actualizar', a.screening_summary.get())
+        self.assertEqual(a.store.path.read_bytes(), before)

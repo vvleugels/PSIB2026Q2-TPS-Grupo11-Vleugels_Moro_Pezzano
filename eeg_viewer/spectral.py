@@ -219,8 +219,9 @@ def plot_result(figure, result, db=True):
         values = psd_db(session['psd_uv2_hz']) if db else session['psd_uv2_hz']
         ax.plot(session['frequencies'], values, color=colors.get(session['session']),
                 label=f"{session['condition']} (n={session['counts']['used']})", linewidth=1.2)
-    upper = min(max(45, result['spectral']['edges'][-1]),
-                min(s['frequencies'][-1] for s in result['sessions']))
+    filtering = result['filter']
+    upper = filtering['high'] + 5 if filtering['enabled'] else max(45, result['spectral']['edges'][-1])
+    upper = min(upper, min(s['frequencies'][-1] for s in result['sessions']))
     ax.set_xlim(0, upper)
     ax.set_xlabel('Frecuencia (Hz)')
     ax.set_ylabel('PSD (dB)\nre 1 µV²/Hz' if db else 'PSD (µV²/Hz)')

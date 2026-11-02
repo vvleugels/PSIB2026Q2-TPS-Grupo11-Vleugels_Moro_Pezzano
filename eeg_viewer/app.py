@@ -12,6 +12,7 @@ from .data import discover, open_recording
 from .annotations import AnnotationStore
 from .review_ui import ReviewUI
 from .spectral_ui import SpectralUI
+from .screening_ui import ScreeningUI
 from pathlib import Path
 
 BG = '#f2f5f5'
@@ -32,7 +33,7 @@ class Toolbar(NavigationToolbar2Tk):
     )
 
 
-class App(ReviewUI, SpectralUI):
+class App(ReviewUI, SpectralUI, ScreeningUI):
     def __init__(self, root, data_dir, annotations_dir=None):
         self.root = root
         self.data_dir = Path(data_dir)
@@ -57,6 +58,7 @@ class App(ReviewUI, SpectralUI):
         self.window_text = tk.StringVar(value='Ventanas de 10 segundos')
         self.init_review()
         self.init_spectral()
+        self.init_screening()
         root.title('PSIB — Explorador EEG')
         root.geometry('1280x800')
         root.minsize(960, 640)
@@ -205,6 +207,9 @@ class App(ReviewUI, SpectralUI):
         return box
 
     def invalidate(self):
+        if self.screening_pending:
+            self.screening_pending = False
+            self.screening_summary.set('Barrido cancelado. Volvé a buscar.')
         if self.spectral_pending:
             self.spectral_pending = False
             self.spectral_message.set('Cálculo cancelado. Volvé a calcular.')
@@ -348,6 +353,8 @@ class App(ReviewUI, SpectralUI):
         self.show_window(self.start)
 
     def show_window(self, start):
+        if not self.flush_autosave():
+            return
         if self.recording is None:
             return
         channels = self.visible_channels()
@@ -406,10 +413,12 @@ class App(ReviewUI, SpectralUI):
         self.config_button.configure(state='normal' if self.recording and not self.busy else 'disabled')
         can_mark = (enabled and self.store and not self.store.blocked
                     and self.selected_epoch is not None and self.displayed is not None)
-        for button in self.mark_buttons + [self.mark_button, self.note_entry]:
+        for button in self.mark_buttons + [self.note_entry]:
             button.configure(state='normal' if can_mark else 'disabled')
+        self.retry_save_button.configure(state='normal' if self.store and self.store.dirty and not self.busy else 'disabled')
         self.update_reason()
         self.update_spectral_controls()
+        self.update_screening_controls()
 
     def navigate(self, delta):
         if not self.busy:

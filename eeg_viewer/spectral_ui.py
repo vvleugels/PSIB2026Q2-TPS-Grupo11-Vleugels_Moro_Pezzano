@@ -170,8 +170,8 @@ class SpectralUI:
     def calculate_spectrum(self):
         if self.busy or not self.recording or not self.channel.get():
             return
-        if self.store.dirty:
-            self.spectral_message.set('Guardá las anotaciones antes de calcular.')
+        if not self.flush_autosave():
+            self.spectral_message.set('No se pudieron guardar las anotaciones. Reintentá el guardado antes de calcular.')
             return
         if self.store.blocked:
             self.spectral_message.set(self.store.blocked)

@@ -67,32 +67,93 @@ cambio de referencia ni normalización. Se dibujan todas las muestras del tramo.
 - Los estados son **Sin revisar**, **Aceptada** y **Con artefactos**. Todas comienzan
   sin revisar. Las marcas son **globales para la epoch del estudio**, no por canal.
 - Elegir estado, motivo opcional (ocular, muscular, movimiento/electrodo u otro)
-  y nota de hasta 500 caracteres; pulsar **Aplicar marca**. Se puede cambiar la
-  evaluación tantas veces como sea necesario. **Aplicar marca** cambia la memoria;
-  pulsar **Guardar anotaciones** para escribir las decisiones en disco.
-- Atajos fuera de campos de texto: **A** acepta, **U** vuelve a sin revisar; **R** selecciona artefactos y enfoca el motivo, para completar y pulsar
-  **Aplicar marca**. Los cambios del formulario pasan a memoria al aplicarlos, y a disco al guardar.
+  y nota de hasta 500 caracteres. El estado y el motivo se guardan automáticamente
+  al cambiarlos; las notas, tras 400 ms sin escribir. No hay que aplicar ni guardar
+  cada marca. Se puede cambiar la evaluación tantas veces como sea necesario.
+- Atajos fuera de campos de texto: **A** acepta, **U** vuelve a sin revisar;
+  **R** marca artefactos y enfoca el motivo. Todos guardan automáticamente.
 - Los contadores resumen el progreso. Las epochs con artefactos siguen visibles:
   esta versión **no elimina ni excluye muestras**.
 - Cambiar de filtro o canal conserva las marcas. El editor muestra el filtro y los
   canales observados durante la última evaluación; activar un filtro nuevo no
   revalida automáticamente una decisión anterior.
 
+## Barrido de posibles artefactos
+
+Después de elegir un electrodo, pulsar **Buscar posibles artefactos** en el panel
+lateral. Por defecto recorre todos los canales EEG del estudio; desactivar
+**Todos los electrodos EEG** limita el barrido a los visibles (uno o hasta ocho).
+Se calcula `máximo − mínimo` por canal en cada epoch de 5 s. Por defecto está
+marcado **Usar el filtro activo**: utiliza la misma configuración de filtrado que
+la vista temporal y el análisis espectral. El FIR se aplica al **canal continuo
+completo antes de dividirlo en epochs**, aprovechando la caché existente. El panel,
+el resumen y el detalle identifican **Filtrada · X–Y Hz** o **Original**.
+
+Si el filtrado está desactivado en **Configuración**, el barrido utiliza el original
+y lo indica explícitamente; esta opción no enciende el filtro automáticamente.
+Desmarcar **Usar el filtro activo** permite revisar siempre la señal original,
+aunque se esté mostrando una señal filtrada. Así se pueden distinguir avisos por
+deriva que disminuyen con el pasabanda de problemas visibles en la adquisición.
+
+Los límites iniciales, ajustables en µV pico a pico, son **Alta > 150** y
+**Plana < 1**. Son valores de partida, no umbrales validados para este conjunto
+de datos. Una epoch recibe un aviso si al menos uno de los canales analizados
+cruza un límite. La igualdad no dispara el aviso; se exige `0 ≤ plana < alta`.
+El barrido original también avisa de muestras no finitas. Si se solicita filtrado
+y existen muestras no finitas, se detiene e indica usar el original para localizarlas,
+porque filtrar esos valores puede extender el problema a otras epochs.
+Se incluye el tramo final parcial;
+un tramo de una sola muestra se identifica como insuficiente, no como plano.
+
+La columna **Aviso** muestra Alta, Plana u otro problema. El gráfico añade
+**REVISAR** y el editor detalla los canales y amplitudes de la epoch seleccionada.
+**← Sospechosa / Sospechosa →** recorre los avisos, volviendo al principio/final
+cuando corresponde. El resumen identifica qué electrodos, límites y filtrado se utilizaron.
+Si el canal que disparó el aviso no está visible, seleccionarlo para inspeccionarlo.
+
+Al terminar, las epochs **Sin revisar** que no tienen avisos pasan a **Aceptada**
+y se guardan automáticamente en una sola operación. Las que tienen avisos quedan
+pendientes de revisión. Se conservan las aceptaciones y rechazos manuales, junto
+con sus notas. Una aceptación automática significa que se cumplen los límites del
+barrido, no que se haya realizado una inspección visual; los avisos pueden incluir
+actividad fisiológica de gran amplitud y no detectan todos los artefactos.
+
+Las marcas automáticas guardan el método, los umbrales, los canales y el filtro
+utilizados. El editor las identifica como **Aceptación automática**. Al repetir el
+barrido, se reevalúan las decisiones automáticas: si una epoch antes aceptada ahora
+tiene avisos, vuelve a **Sin revisar**. Cambiar manualmente su estado o nota la
+convierte en una decisión manual que los barridos posteriores conservan.
+Las aceptadas completas participan en el análisis espectral; las parciales siguen
+excluidas. Si falla el guardado, los cambios quedan en memoria y se puede reintentar.
+
+Los avisos del barrido permanecen en memoria para el estudio; cambiar umbrales,
+alcance o estudio los descarta y exige repetir el barrido. Esto no borra las marcas
+guardadas: se reevalúan al ejecutar el próximo barrido. Las muestras no se modifican.
+Al usar el filtro activo, cambiar sus cortes o encenderlo/apagarlo descarta los
+avisos y exige repetir el barrido. Si una nueva configuración falla, se conservan
+el filtro y los avisos anteriores. En el modo original, cambiar el filtro de
+visualización conserva los avisos: siguen refiriéndose al original y a los canales
+indicados en el resumen.
+
 ## Anotaciones y protección de datos
 
-El botón **Guardar anotaciones** guarda las marcas aplicadas en `annotations/<registro>_eeg.json`,
+El guardado automático escribe las marcas en `annotations/<registro>_eeg.json`,
 fuera de `data`. Estos archivos están excluidos de Git: respaldarlos por separado.
 Al abrir un estudio se recuperan las marcas guardadas.
 
 El JSON versionado contiene identidad de los archivos fuente (ruta relativa,
 tamaño y modificación), frecuencia, número de muestras, límites de cada epoch,
 estado, motivo, nota, fecha UTC, canales observados y configuración de filtrado,
-incluyendo la versión de MNE. La escritura utiliza un temporal y reemplazo atómico.
+incluyendo la versión de MNE. Las marcas del barrido incluyen además su método y
+umbrales de aceptación automática. La escritura utiliza un temporal y reemplazo atómico.
 
-Al aplicar una marca aparece **Cambios sin guardar**. Las marcas permanecen en
-memoria hasta pulsar **Guardar anotaciones**. Antes de cambiar de estudio, paciente
-o cerrar, la aplicación ofrece **Guardar**, **Descartar** o **Cancelar**. Si falla
-el guardado se conserva la revisión en memoria y se cancela la navegación.
+El indicador muestra **Guardando…** y luego **Guardado automáticamente**.
+Las notas pendientes se guardan antes de cambiar de epoch, ventana, canal, filtro,
+estudio o paciente, calcular el espectro o cerrar. Si falla el guardado, se conservan
+los cambios en memoria y se habilita **Reintentar guardado**; se bloquean el cambio
+de epoch/ventana y el análisis hasta resolverlo. Al cambiar de estudio o paciente,
+o cerrar con cambios que no se pudieron guardar, se ofrece **Guardar**, **Descartar**
+o **Cancelar**.
 Si cambia el origen, el archivo de anotaciones fue modificado externamente o su
 contenido es inválido, se protege contra sobrescritura y se informa el problema.
 Conservar una copia del archivo y resolver la inconsistencia antes de continuar
@@ -106,12 +167,14 @@ multicanal pertenece únicamente a la vista temporal. NS/SD compara el mismo
 participante, electrodo y condición de ojos, sin mezclar ojos abiertos y cerrados.
 Se requiere igual frecuencia de muestreo y al menos una epoch elegible por sesión.
 
-Por defecto se usan solo las epochs **Aceptadas** y guardadas. **Incluir también
+Por defecto se usan solo las epochs **Aceptadas** y guardadas, incluidas las
+aceptadas automáticamente por el barrido. **Incluir también
 las no revisadas** habilita un análisis **Exploratorio**, claramente identificado.
 Siempre se excluyen las epochs con artefactos y las parciales. Las parciales se
 cuentan por separado; los otros conteos se refieren a epochs completas. Si no hay
-archivo de anotaciones, todas las epochs se consideran no revisadas. Si hay cambios
-sin guardar, o un archivo inválido/incompatible, el cálculo se bloquea.
+archivo de anotaciones, todas las epochs se consideran no revisadas. Las notas
+pendientes se guardan antes de calcular. Si falla ese guardado o hay un archivo
+inválido/incompatible, el cálculo se bloquea.
 
 Welch se calcula de manera independiente por epoch completa de 5 s, **sin concatenar
 intervalos**. Se promedian las PSD con igual peso en escala lineal. Se aplica el
@@ -155,7 +218,10 @@ con participante, condición de ojos, electrodo y fecha UTC, sin sobrescribir re
   y límites de epochs utilizadas, referencias, parámetros efectivos y versiones.
 - `PSD.png`: solo si se activa **Incluir gráfico PNG**, apagado por defecto.
 
-La figura exportada usa la escala elegida y el rango espectral inicial completo,
+Con el filtro activo, el eje de frecuencias llega al corte superior más **5 Hz**,
+sin superar la frecuencia máxima disponible en la PSD. Sin filtrado, conserva el
+rango habitual (al menos 45 Hz o hasta el límite superior de las bandas).
+La figura exportada usa la escala elegida y este mismo rango inicial,
 con leyenda y etiqueta exploratoria cuando corresponde. Los CSV siempre conservan
 valores lineales. La exportación es manual y no modifica anotaciones ni datos originales.
 
@@ -170,6 +236,7 @@ la referencia proviene del JSON. Los campos ausentes se indican como no disponib
 - `eeg_viewer/processing.py`: configuración y caché del filtro continuo.
 - `eeg_viewer/annotations.py`: epochs, identidad del origen y persistencia atómica.
 - `eeg_viewer/spectral.py`: Welch por epoch, bandas y exportación.
+- `eeg_viewer/screening.py`, `eeg_viewer/screening_ui.py`: barrido de amplitud y avisos de revisión.
 - `eeg_viewer/app.py`, `eeg_viewer/review_ui.py` y `eeg_viewer/spectral_ui.py`:
   interfaz y coordinación asíncrona.
 

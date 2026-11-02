@@ -106,11 +106,18 @@ class AnnotationStore:
                         self.recording.sfreq)
                 elif actual['state'] != STATES[0] or actual['filter'] is not None:
                     raise ValueError('Falta el contexto de revisión.')
+                if actual.get('screening') is not None:
+                    from .screening import ScreeningConfig
+                    screening = actual['screening']
+                    if (not isinstance(screening, dict) or screening['method'] != 'peak_to_peak'
+                            or actual['reviewed_at'] is None or actual['state'] == STATES[2]):
+                        raise ValueError('Contexto del barrido automático inválido.')
+                    ScreeningConfig(screening['high_uv'], screening['flat_uv']).validate()
             self.records = records
         except (OSError, ValueError, KeyError, TypeError, OverflowError) as exc:
             self.blocked = f'Anotaciones protegidas: {exc} Archivo: {self.path.name}'
 
-    def mark(self, index, state, reason, note, channels, config):
+    def mark(self, index, state, reason, note, channels, config, *, screening=None):
         if self.blocked:
             raise ValueError(self.blocked)
         if state not in STATES or reason not in REASONS or len(note) > 500:
@@ -119,7 +126,42 @@ class AnnotationStore:
             state=state, reason=reason if state == STATES[2] else '', note=note,
             reviewed_at=datetime.now(timezone.utc).isoformat(), channels=list(channels),
             filter=config.context())
+        if screening is None:
+            self.records[index].pop('screening', None)
+        else:
+            self.records[index]['screening'] = dict(screening)
         self.dirty = True
+
+    def apply_screening(self, result):
+        """Accept eligible epochs and recheck prior automatic decisions as a batch.
+
+        Explicit manual acceptance/rejection takes precedence. A prior automatic
+        acceptance returns to unreviewed if a new scan flags it. Saving is left
+        to the caller so the whole batch is written once.
+        """
+        if self.blocked:
+            raise ValueError(self.blocked)
+        if result['total'] != len(self.epochs):
+            raise ValueError('El barrido no coincide con las epochs del estudio.')
+        config = result['config']
+        context = dict(method='peak_to_peak', high_uv=config.high_uv, flat_uv=config.flat_uv)
+        filtering = result['filter']
+        filter_context = filtering.context()
+        channels = list(result['channels'])
+        counts = dict(accepted=0, pending=0)
+        for index, record in enumerate(self.records):
+            automatic = record.get('screening') is not None
+            if not automatic and record['state'] != STATES[0]:
+                continue
+            state = STATES[0] if index in result['findings'] else STATES[1]
+            if state == STATES[0] and not automatic:
+                continue
+            if (record['state'] == state and record.get('screening') == context
+                    and record['channels'] == channels and record['filter'] == filter_context):
+                continue
+            self.mark(index, state, '', record['note'], channels, filtering, screening=context)
+            counts['accepted' if state == STATES[1] else 'pending'] += 1
+        return counts
 
     def save(self):
         if self.blocked:

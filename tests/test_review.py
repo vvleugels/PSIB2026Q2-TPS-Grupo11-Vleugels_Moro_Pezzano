@@ -162,3 +162,33 @@ class AnnotationTests(unittest.TestCase):
         payload['epochs'][0]['filter'] = None
         self.store.path.write_text(json.dumps(payload))
         self.assertTrue(self.open_store().blocked)
+
+    def test_automatic_acceptance_roundtrip_recheck_and_manual_override(self):
+        from eeg_viewer.screening import ScreeningConfig, scan_recording
+        self.store.mark(0, STATES[0], '', 'nota existente', ['Cz'], FilterConfig())
+        self.store.mark(1, STATES[2], 'Ocular', 'revisión manual', ['Fp1'], FilterConfig())
+        manual = dict(self.store.records[1])
+        def scan(high):
+            return scan_recording(self.recording, self.recording.channels, ScreeningConfig(high, 1))
+        counts = self.store.apply_screening(scan(150))
+        self.assertEqual(counts, dict(accepted=2, pending=0))
+        self.assertEqual(self.store.records[0]['state'], STATES[1])
+        self.assertEqual(self.store.records[0]['note'], 'nota existente')
+        self.assertEqual(self.store.records[1], manual)
+        self.assertEqual(self.store.records[0]['screening']['high_uv'], 150)
+        self.store.save()
+        self.store = self.open_store()
+        self.assertFalse(self.store.blocked)
+        self.assertEqual(self.store.apply_screening(scan(150)), dict(accepted=0, pending=0))
+        self.assertFalse(self.store.dirty)
+        counts = self.store.apply_screening(scan(75))
+        self.assertEqual(counts, dict(accepted=1, pending=1))
+        self.assertEqual(self.store.records[0]['state'], STATES[0])
+        self.assertEqual(self.store.records[1], manual)
+        self.store.mark(0, STATES[1], '', 'confirmada manualmente', ['Cz'], FilterConfig())
+        self.assertNotIn('screening', self.store.records[0])
+        self.store.apply_screening(scan(75))
+        self.assertEqual(self.store.records[0]['state'], STATES[1])
+        self.assertEqual(self.store.records[0]['note'], 'confirmada manualmente')
+        self.store.save()
+        self.assertFalse(self.open_store().blocked)
