@@ -5,6 +5,11 @@ filtrar opcionalmente, revisar artefactos en epochs de 5 segundos y analizar
 espectros con Welch y potencia por bandas. Python,
 Tkinter, Matplotlib y MNE; los archivos EEG originales nunca se modifican.
 
+El [piloto de limpieza EEG y validación](VALIDATION.md) se ejecuta por separado con
+`validate_eeg.py`. Implementa el motor experimental de 4 segundos y la revisión
+humana previa a la integración; todavía no modifica el flujo de esta GUI ni habilita
+aceptación automática definitiva.
+
 ## Instalación y ejecución
 
 Requiere Python 3.10 o superior y una sesión gráfica. Desde la carpeta del proyecto:
