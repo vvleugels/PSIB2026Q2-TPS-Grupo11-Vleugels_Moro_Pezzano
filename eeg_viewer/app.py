@@ -7,6 +7,7 @@ from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
+from tkinter import font as tkfont
 
 from .data import discover, open_recording
 from .annotations import AnnotationStore
@@ -72,17 +73,44 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
     def build(self):
         style = ttk.Style(self.root)
         style.theme_use('clam')
-        style.configure('.', font=('DejaVu Sans', 10), background=BG, foreground=INK)
+        families = set(tkfont.families(self.root))
+        family = next((name for name in ('Inter', 'Segoe UI', 'Ubuntu', 'Noto Sans',
+                                         'Cantarell', 'DejaVu Sans') if name in families), None)
+        self.ui_font = (family, 10) if family else ('TkDefaultFont', 10)
+        self.ui_bold = (family, 10, 'bold') if family else ('TkDefaultFont', 10, 'bold')
+        style.configure('.', font=self.ui_font, background=BG, foreground=INK)
         style.configure('Card.TFrame', background='white')
         style.configure('Card.TLabel', background='white')
         style.configure('Muted.TLabel', background='white', foreground=MUTED)
-        style.configure('TButton', padding=(10, 7))
-        style.configure('TCombobox', padding=5)
+        style.configure('CardTitle.TLabel', background='white', foreground=MUTED,
+                        font=(family, 9, 'bold') if family else ('TkDefaultFont', 9, 'bold'))
+        style.configure('TButton', padding=(11, 7), background='#e6edee', borderwidth=1)
+        style.map('TButton', background=[('disabled', '#f0f4f4'), ('active', '#d5e0e2')],
+                  foreground=[('disabled', '#a2b0b3')])
+        style.configure('Accent.TButton', padding=(15, 8), background=TEAL,
+                        foreground='white', font=self.ui_bold, bordercolor=TEAL)
+        style.map('Accent.TButton', background=[('disabled', '#a9cfd3'), ('active', '#0a5f67')],
+                  foreground=[('disabled', 'white')])
+        style.configure('TCombobox', padding=5, fieldbackground='white', arrowcolor=MUTED)
         style.map('TCombobox', fieldbackground=[('readonly', 'white')])
+        style.configure('TEntry', padding=5, fieldbackground='white')
+        style.map('TEntry', fieldbackground=[('readonly', '#eef2f3'), ('disabled', '#eef2f3')])
+        style.configure('TNotebook', background=BG, borderwidth=0)
+        style.configure('TNotebook.Tab', padding=(18, 8), background='#e3eaeb', foreground=MUTED)
+        style.map('TNotebook.Tab', background=[('selected', 'white')],
+                  foreground=[('selected', '#0a5f67')])
+        style.configure('Treeview', rowheight=25, background='white', fieldbackground='white')
+        style.configure('Treeview.Heading', font=self.ui_bold, padding=(6, 5))
         bar = tk.Frame(self.root, bg=INK, padx=20, pady=16)
         bar.pack(fill='x')
-        tk.Label(bar, text='PSIB — Explorador EEG', font=('DejaVu Sans', 18, 'bold'),
-                 bg=INK, fg='white').pack(side='left')
+        brand = tk.Frame(bar, bg=INK)
+        brand.pack(side='left')
+        tk.Label(brand, text='PSIB — Explorador EEG',
+                 font=(family, 18, 'bold') if family else ('TkDefaultFont', 18, 'bold'),
+                 bg=INK, fg='white').pack(anchor='w')
+        tk.Label(brand, text='REVISIÓN Y ANÁLISIS DE SEÑALES EEG',
+                 font=(family, 9, 'bold') if family else ('TkDefaultFont', 9, 'bold'),
+                 bg=INK, fg='#b6e2df').pack(anchor='w', pady=(2, 0))
         self.config_button = ttk.Button(bar, text='Configuración', command=self.configuration_dialog)
         self.config_button.pack(side='right', padx=(12, 0))
         tk.Label(bar, textvariable=self.signal_label, bg=INK, fg='#b6e2df',
@@ -194,8 +222,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         border.pack(fill='both' if expand else 'x', expand=expand, pady=(0, 10))
         inner = ttk.Frame(border, style='Card.TFrame', padding=12)
         inner.pack(fill='both', expand=True)
-        ttk.Label(inner, text=title, style='Muted.TLabel',
-                  font=('DejaVu Sans', 9, 'bold')).pack(anchor='w', pady=(0, 5))
+        ttk.Label(inner, text=title.upper(), style='CardTitle.TLabel').pack(anchor='w', pady=(0, 5))
         return inner
 
     @staticmethod

@@ -22,9 +22,11 @@ python gui.py
 ```
 
 En Ubuntu/Debian, si faltan Tkinter o venv: `sudo apt install python3-tk python3-venv`.
-En Windows, activar con `.venv\Scripts\activate` y usar `python` al crear el entorno.
-Se puede ejecutar el lanzador por su ruta absoluta desde otro directorio: `data`
-y `annotations` siempre se resuelven junto al proyecto.
+En Windows, hace doble clic en `TPS.bat`. En el primer inicio crea `.venv` e instala
+las dependencias; hace falta una conexión a internet. Si falla la instalación,
+corregí el problema y volvé a ejecutar el lanzador: reintentará la instalación.
+También se puede ejecutar `TPS.bat` por su ruta absoluta desde otro directorio:
+`data` y `annotations` siempre se resuelven junto al proyecto.
 
 ## Explorar y filtrar
 
