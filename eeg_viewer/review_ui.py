@@ -6,6 +6,7 @@ from matplotlib.ticker import MultipleLocator
 
 from .annotations import STATES, REASONS
 from .processing import FilterConfig
+from .theme import BORDER, IRIS, TEXT, autowrap, style_dialog
 
 COLORS = {'Sin revisar': '#edf1f2', 'Aceptada': '#d5eee2', 'Con artefactos': '#f9d8d5'}
 
@@ -35,11 +36,16 @@ class ReviewUI:
         self.note.trace_add('write', lambda *args: self.editor_changed(debounce=True))
 
     def build_review_sidebar(self, parent, selection):
-        ttk.Checkbutton(selection, text='Varios electrodos (hasta 8)', variable=self.multi,
-                        command=self.toggle_multi).pack(anchor='w', pady=(8, 0))
-        self.multi_frame = ttk.Frame(selection)
+        self.multi_toggle = ttk.Checkbutton(selection, text='Varios electrodos (hasta 8)',
+                                            variable=self.multi, style='Card.TCheckbutton',
+                                            command=self.toggle_multi)
+        self.multi_toggle.pack(anchor='w', pady=(8, 0))
+        self.multi_frame = ttk.Frame(selection, style='Card.TFrame')
         self.channel_list = tk.Listbox(self.multi_frame, selectmode='multiple', exportselection=False,
-                                       height=5, font=('DejaVu Sans', 10))
+                                       height=5, relief='flat', highlightthickness=1,
+                                       highlightbackground=BORDER, highlightcolor=IRIS,
+                                       selectbackground=IRIS, selectforeground='white',
+                                       foreground=TEXT, activestyle='none')
         scroll = ttk.Scrollbar(self.multi_frame, command=self.channel_list.yview)
         self.channel_list.configure(yscrollcommand=scroll.set)
         scroll.pack(side='right', fill='y')
@@ -65,9 +71,9 @@ class ReviewUI:
         for state in STATES:
             self.epoch_tree.tag_configure(state, background=COLORS[state])
         self.epoch_tree.bind('<<TreeviewSelect>>', self.epoch_from_list)
-        ttk.Label(epochs, textvariable=self.count_label, style='Card.TLabel',
-                  wraplength=280).pack(anchor='w', pady=5)
-        ttk.Label(epochs, textvariable=self.save_label, style='Muted.TLabel',
+        ttk.Label(epochs, textvariable=self.count_label, style='CardBold.TLabel',
+                  wraplength=280).pack(anchor='w', pady=(6, 2))
+        ttk.Label(epochs, textvariable=self.save_label, style='CardMuted.TLabel',
                   wraplength=280).pack(anchor='w')
         self.retry_save_button = ttk.Button(epochs, text='Reintentar guardado',
                                             command=self.save_annotations, state='disabled')
@@ -75,14 +81,14 @@ class ReviewUI:
 
     def build_review_editor(self, chart):
         editor = ttk.Frame(chart, style='Card.TFrame')
-        editor.pack(side='bottom', fill='x', pady=(6, 0))
-        ttk.Label(editor, textvariable=self.epoch_label, style='Card.TLabel').pack(anchor='w')
+        editor.pack(side='bottom', fill='x', pady=(8, 0))
+        ttk.Label(editor, textvariable=self.epoch_label, style='CardBold.TLabel').pack(anchor='w')
         row = ttk.Frame(editor, style='Card.TFrame')
         row.pack(fill='x', pady=3)
         self.mark_buttons = []
         for label, key in zip(STATES, ('U', 'A', 'R')):
             button = ttk.Radiobutton(row, text=f'{label} ({key})', value=label,
-                                     variable=self.mark_state)
+                                     variable=self.mark_state, style='Card.TRadiobutton')
             button.pack(side='left', padx=(0, 10))
             self.mark_buttons.append(button)
         row = ttk.Frame(editor, style='Card.TFrame')
@@ -90,14 +96,14 @@ class ReviewUI:
         self.reason_box = ttk.Combobox(row, textvariable=self.reason, values=REASONS,
                                        state='disabled', width=20)
         self.reason_box.pack(side='left')
-        ttk.Label(row, text='Nota', style='Card.TLabel').pack(side='left', padx=6)
+        ttk.Label(row, text='Nota', style='Card.TLabel').pack(side='left', padx=(10, 6))
         self.note_entry = ttk.Entry(row, textvariable=self.note, validate='key',
                                     validatecommand=(self.root.register(lambda value: len(value) <= 500), '%P'))
         self.note_entry.pack(side='left', fill='x', expand=True)
-        ttk.Label(editor, textvariable=self.screening_detail, style='Muted.TLabel',
-                  wraplength=750).pack(anchor='w')
-        ttk.Label(editor, textvariable=self.context_label, style='Muted.TLabel',
-                  wraplength=750).pack(anchor='w')
+        for variable in (self.screening_detail, self.context_label):
+            label = ttk.Label(editor, textvariable=variable, style='CardMuted.TLabel')
+            label.pack(fill='x', anchor='w')
+            autowrap(label)
         for key, state in zip(('u', 'a', 'r'), STATES):
             self.root.bind(f'<KeyPress-{key}>', lambda event, s=state: self.shortcut(event, s))
             self.root.bind(f'<KeyPress-{key.upper()}>', lambda event, s=state: self.shortcut(event, s))
@@ -107,6 +113,7 @@ class ReviewUI:
         dialog.title('Configuración de filtrado')
         dialog.transient(self.root)
         dialog.resizable(False, False)
+        style_dialog(dialog)
         body = ttk.Frame(dialog, padding=20)
         body.pack(fill='both')
         enabled = tk.BooleanVar(value=self.config.enabled)
@@ -116,7 +123,8 @@ class ReviewUI:
         for label, variable in (('Corte inferior (Hz)', low), ('Corte superior (Hz)', high)):
             ttk.Label(body, text=label).pack(anchor='w')
             ttk.Entry(body, textvariable=variable).pack(fill='x', pady=(0, 8))
-        ttk.Label(body, text='FIR · Fase cero · Ventana Hamming\nSe aplica sobre el canal continuo completo.').pack(anchor='w', pady=5)
+        ttk.Label(body, text='FIR · Fase cero · Ventana Hamming\nSe aplica sobre el canal continuo completo.',
+                  style='Muted.TLabel').pack(anchor='w', pady=5)
         error = tk.StringVar()
         ttk.Label(body, textvariable=error, foreground='#a12b25', wraplength=420).pack(fill='x')
         ttk.Button(body, text='Restablecer valores del paper',
@@ -133,7 +141,7 @@ class ReviewUI:
                 return
             dialog.destroy()
             self.apply_config(candidate)
-        ttk.Button(buttons, text='Aplicar', command=apply).pack(side='right')
+        ttk.Button(buttons, text='Aplicar', style='Accent.TButton', command=apply).pack(side='right')
         ttk.Button(buttons, text='Cancelar', command=dialog.destroy).pack(side='right', padx=8)
         dialog.grab_set()
 
@@ -402,6 +410,7 @@ class ReviewUI:
         dialog.title('Cambios sin guardar')
         dialog.transient(self.root)
         dialog.resizable(False, False)
+        style_dialog(dialog)
         choice = 'cancel'
         body = ttk.Frame(dialog, padding=18)
         body.pack(fill='both')
@@ -414,7 +423,8 @@ class ReviewUI:
             choice = value
             dialog.destroy()
         for label, value in (('Guardar', 'save'), ('Descartar', 'discard'), ('Cancelar', 'cancel')):
-            ttk.Button(row, text=label, command=lambda v=value: finish(v)).pack(side='left', padx=4)
+            ttk.Button(row, text=label, style='Accent.TButton' if value == 'save' else 'TButton',
+                       command=lambda v=value: finish(v)).pack(side='left', padx=4)
         dialog.protocol('WM_DELETE_WINDOW', lambda: finish('cancel'))
         dialog.grab_set()
         self.root.wait_window(dialog)

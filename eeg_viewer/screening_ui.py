@@ -4,6 +4,7 @@ from tkinter import ttk
 
 from .screening import ScreeningConfig, scan_recording
 from .processing import FilterConfig
+from .theme import autowrap
 
 
 class ScreeningUI:
@@ -23,14 +24,16 @@ class ScreeningUI:
 
     def build_screening(self, parent):
         card = self.card(parent, 'POSIBLES ARTEFACTOS')
-        ttk.Label(card, text='Pico a pico por epoch de 5 s',
-                  style='Muted.TLabel', wraplength=280).pack(anchor='w')
-        ttk.Label(card, text='Sin avisos: aceptación y guardado automáticos.\nConserva las decisiones manuales.',
-                  style='Muted.TLabel', wraplength=280).pack(anchor='w')
+        intro = ttk.Label(card, style='CardMuted.TLabel',
+                          text='Pico a pico por epoch de 5 s. Sin avisos: aceptación y guardado '
+                               'automáticos. Conserva las decisiones manuales.')
+        intro.pack(fill='x', pady=(2, 6))
+        autowrap(intro)
         self.screening_filter_button = ttk.Checkbutton(
-            card, text='Usar el filtro activo', variable=self.screening_use_filter)
+            card, text='Usar el filtro activo', variable=self.screening_use_filter,
+            style='Card.TCheckbutton')
         self.screening_filter_button.pack(anchor='w')
-        ttk.Label(card, textvariable=self.screening_signal, style='Muted.TLabel',
+        ttk.Label(card, textvariable=self.screening_signal, style='CardMuted.TLabel',
                   wraplength=280).pack(anchor='w')
         row = ttk.Frame(card, style='Card.TFrame')
         row.pack(fill='x', pady=6)
@@ -42,23 +45,25 @@ class ScreeningUI:
             self.screening_entries.append(entry)
         ttk.Label(row, text='µV', style='Card.TLabel').pack(side='left')
         self.screening_all_button = ttk.Checkbutton(
-            card, text='Todos los electrodos EEG', variable=self.screening_all)
+            card, text='Todos los electrodos EEG', variable=self.screening_all,
+            style='Card.TCheckbutton')
         self.screening_all_button.pack(anchor='w')
         ttk.Label(card, text='Desactivado: solo los electrodos visibles.',
-                  style='Muted.TLabel', wraplength=280).pack(anchor='w')
+                  style='CardMuted.TLabel', wraplength=280).pack(anchor='w')
         self.screening_button = ttk.Button(card, text='Buscar posibles artefactos',
-                                           command=self.start_screening)
-        self.screening_button.pack(fill='x', pady=6)
+                                           style='Accent.TButton', command=self.start_screening)
+        self.screening_button.pack(fill='x', pady=8)
         row = ttk.Frame(card, style='Card.TFrame')
         row.pack(fill='x')
         self.screening_nav = []
         for text, direction in (('← Sospechosa', -1), ('Sospechosa →', 1)):
-            button = ttk.Button(row, text=text,
+            button = ttk.Button(row, text=text, style='Tool.TButton',
                                 command=lambda step=direction: self.next_suspect(step))
-            button.pack(side='left', expand=True, fill='x')
+            button.pack(side='left', expand=True, fill='x', padx=(0, 4) if direction < 0 else 0)
             self.screening_nav.append(button)
-        ttk.Label(card, textvariable=self.screening_summary, style='Muted.TLabel',
-                  wraplength=280).pack(anchor='w', pady=(6, 0))
+        summary = ttk.Label(card, textvariable=self.screening_summary, style='CardMuted.TLabel')
+        summary.pack(fill='x', anchor='w', pady=(6, 0))
+        autowrap(summary)
 
     def clear_screening(self, *args):
         if self.screening_pending:

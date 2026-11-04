@@ -5,6 +5,7 @@ from tkinter import ttk, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
+from .theme import BG, CARD, IRIS, IRIS_LIGHT, TEXT, style_dialog
 from .spectral import SpectralConfig, select_studies, run_analysis, plot_result, export_result
 
 
@@ -22,52 +23,63 @@ class SpectralUI:
 
     def build_spectral(self, parent, toolbar_class):
         # Keep a usable plot height on small windows; the whole tab can scroll.
-        self.spectral_view = tk.Canvas(parent, highlightthickness=0)
+        self.spectral_view = tk.Canvas(parent, highlightthickness=0, background=CARD)
         tab_scroll = ttk.Scrollbar(parent, command=self.spectral_view.yview)
         tab_scroll.pack(side='right', fill='y')
         self.spectral_view.configure(yscrollcommand=tab_scroll.set)
         self.spectral_view.pack(fill='both', expand=True)
-        body = ttk.Frame(self.spectral_view)
+        body = ttk.Frame(self.spectral_view, style='Card.TFrame')
         body_window = self.spectral_view.create_window(0, 0, window=body, anchor='nw')
         def resize(event):
-            height = max(560, event.height)
+            height = max(780, event.height)
             self.spectral_view.itemconfigure(body_window, width=event.width, height=height)
             self.spectral_view.configure(scrollregion=(0, 0, event.width, height))
         self.spectral_view.bind('<Configure>', resize)
         parent = body
-        controls = ttk.Frame(parent, padding=(8, 8, 8, 0))
+        controls = ttk.Frame(parent, style='Card.TFrame', padding=(0, 0, 0, 0))
         controls.pack(fill='x')
         mode = ttk.Combobox(controls, textvariable=self.spectral_mode,
                             values=('Estudio actual', 'Comparar NS/SD'), state='readonly', width=22)
         mode.pack(side='left')
         mode.bind('<<ComboboxSelected>>', lambda e: self.invalidate_spectrum())
-        self.calculate_button = ttk.Button(controls, text='Calcular', command=self.calculate_spectrum)
+        self.calculate_button = ttk.Button(controls, text='Calcular', style='Accent.TButton',
+                                           command=self.calculate_spectrum)
         self.calculate_button.pack(side='left', padx=6)
         self.spectral_settings_button = ttk.Button(controls, text='Parámetros espectrales',
                                                    command=self.spectral_dialog)
         self.spectral_settings_button.pack(side='left')
-        options = ttk.Frame(parent, padding=(8, 4))
+        options = ttk.Frame(parent, style='Card.TFrame', padding=(0, 6))
         options.pack(fill='x')
         ttk.Checkbutton(options, text='Incluir también las no revisadas (exploratorio)',
-                        variable=self.include_unreviewed, command=self.invalidate_spectrum).pack(side='left')
+                        variable=self.include_unreviewed, style='Card.TCheckbutton',
+                        command=self.invalidate_spectrum).pack(side='left')
         ttk.Checkbutton(options, text='Escala dB', variable=self.spectral_db,
-                        command=self.draw_spectrum).pack(side='right')
-        ttk.Label(parent, textvariable=self.spectral_message, wraplength=750,
-                  padding=(8, 4)).pack(fill='x')
-        summary_frame = ttk.Frame(parent, padding=(8, 0))
+                        style='Card.TCheckbutton', command=self.draw_spectrum).pack(side='right')
+        # Nota teal con el estado del resultado, como las notas de figuras de la guía.
+        note = tk.Frame(parent, background=IRIS_LIGHT)
+        note.pack(fill='x', pady=(0, 6))
+        tk.Frame(note, background=IRIS, width=4).pack(side='left', fill='y')
+        message = ttk.Label(note, textvariable=self.spectral_message, style='Info.TLabel',
+                            padding=(12, 8))
+        message.pack(side='left', fill='x', expand=True)
+        message.bind('<Configure>', lambda e: message.configure(wraplength=max(e.width - 30, 200)))
+        summary_frame = ttk.Frame(parent, style='Card.TFrame')
         summary_frame.pack(fill='x')
         self.spectral_summary = tk.Text(summary_frame, height=4, width=1, wrap='word',
-                                        font=('DejaVu Sans', 9), state='disabled', relief='flat')
+                                        state='disabled', relief='flat', background=BG,
+                                        foreground=TEXT, padx=10, pady=6, borderwidth=0,
+                                        font='TkDefaultFont')
         scroll = ttk.Scrollbar(summary_frame, command=self.spectral_summary.yview)
         scroll.pack(side='right', fill='y')
         self.spectral_summary.configure(yscrollcommand=scroll.set)
         self.spectral_summary.pack(fill='x', expand=True)
-        export_bar = ttk.Frame(parent, padding=8)
+        export_bar = ttk.Frame(parent, style='Card.TFrame', padding=(0, 8, 0, 0))
         export_bar.pack(side='bottom', fill='x')
         self.export_button = ttk.Button(export_bar, text='Exportar resultados', command=self.export_spectrum)
         self.export_button.pack(side='left')
-        ttk.Checkbutton(export_bar, text='Incluir gráfico PNG', variable=self.export_png).pack(side='left', padx=8)
-        table_frame = ttk.Frame(parent, padding=(8, 0))
+        ttk.Checkbutton(export_bar, text='Incluir gráfico PNG', variable=self.export_png,
+                        style='Card.TCheckbutton').pack(side='left', padx=8)
+        table_frame = ttk.Frame(parent, style='Card.TFrame', padding=(0, 6, 0, 0))
         table_frame.pack(side='bottom', fill='x')
         columns = ('session', 'band', 'range', 'absolute', 'relative')
         self.band_table = ttk.Treeview(table_frame, columns=columns, show='headings', height=4)
@@ -82,6 +94,7 @@ class SpectralUI:
         self.spectral_figure = Figure(figsize=(8, 4), dpi=100, layout='constrained')
         self.spectral_canvas = FigureCanvasTkAgg(self.spectral_figure, parent)
         self.spectral_toolbar = toolbar_class(self.spectral_canvas, parent, pack_toolbar=False)
+        self.spectral_toolbar.configure(background='white')
         self.spectral_toolbar.pack(side='bottom', fill='x')
         self.spectral_canvas.get_tk_widget().pack(fill='both', expand=True)
         self.invalidate_spectrum('Seleccioná un estudio y un electrodo.')
@@ -121,6 +134,7 @@ class SpectralUI:
         dialog.title('Parámetros espectrales')
         dialog.transient(self.root)
         dialog.resizable(False, False)
+        style_dialog(dialog)
         body = ttk.Frame(dialog, padding=16)
         body.pack(fill='both')
         values = (self.spectral_config.seconds, self.spectral_config.overlap, *self.spectral_config.edges)
@@ -131,7 +145,8 @@ class SpectralUI:
             ttk.Label(body, text=label).grid(row=row, column=0, sticky='w', pady=4)
             ttk.Entry(body, textvariable=var, width=14).grid(row=row, column=1, padx=12)
         message = tk.StringVar()
-        ttk.Label(body, textvariable=message, wraplength=400).grid(row=7, column=0, columnspan=2, pady=8)
+        ttk.Label(body, textvariable=message, wraplength=400, style='Muted.TLabel').grid(
+            row=7, column=0, columnspan=2, pady=8)
         def candidate():
             nums = [float(v.get().strip().replace(',', '.')) for v in variables]
             return SpectralConfig(nums[0], nums[1], tuple(nums[2:]))
@@ -163,7 +178,8 @@ class SpectralUI:
         buttons = ttk.Frame(body)
         buttons.grid(row=8, column=0, columnspan=2, pady=6)
         for label, callback in (('Restablecer', reset), ('Cancelar', dialog.destroy), ('Aplicar', apply)):
-            ttk.Button(buttons, text=label, command=callback).pack(side='left', padx=3)
+            ttk.Button(buttons, text=label, style='Accent.TButton' if label == 'Aplicar' else 'TButton',
+                       command=callback).pack(side='left', padx=3)
         preview()
         dialog.grab_set()
 

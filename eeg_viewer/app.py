@@ -1,26 +1,26 @@
 """Interfaz Tkinter; las lecturas se ejecutan en un único hilo de trabajo."""
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 import queue
+import sys
 import tkinter as tk
 from tkinter import ttk
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
-from matplotlib.ticker import MultipleLocator
-from tkinter import font as tkfont
+from PIL import ImageTk
 
 from .data import discover, open_recording
-from .annotations import AnnotationStore
+from .annotations import AnnotationStore, STATES
 from .review_ui import ReviewUI
 from .spectral_ui import SpectralUI
 from .screening_ui import ScreeningUI
-from pathlib import Path
+from .theme import (INK, INK_MUTED, INK_SOFT, IRIS, AMBER, BG, MUTED, Stepper, Tooltip,
+                    apply_theme, autowrap, callout, card, mark_image)
 
-BG = '#f2f5f5'
-INK = '#0f2e36'
-TEAL = '#0e7c86'
-AMBER = '#f5a524'
-MUTED = '#62767c'
+PROJECT = Path(__file__).resolve().parent.parent
+STEP_TITLES = ('Elegir paciente', 'Elegir estudio', 'Elegir electrodo',
+               'Buscar artefactos (opcional)', 'Revisar epochs', 'Calcular espectro')
 
 
 class Toolbar(NavigationToolbar2Tk):
@@ -51,141 +51,181 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='eeg-reader')
         self.closed = False
         self.busy = False
+        self.inventory_ready = False
+        self.sidebar_visible = True
+        self.sidebar_width = 350
         self.patient = tk.StringVar()
         self.study = tk.StringVar()
         self.channel = tk.StringVar()
         self.start_text = tk.StringVar(value='0')
         self.status = tk.StringVar(value='Buscando participantes…')
         self.window_text = tk.StringVar(value='Ventanas de 10 segundos')
+        self.instruction = tk.StringVar(value='Buscando participantes en la carpeta data…')
         self.init_review()
         self.init_spectral()
         self.init_screening()
         root.title('PSIB — Explorador EEG')
-        root.geometry('1280x800')
         root.minsize(960, 640)
-        root.configure(bg=BG)
         root.protocol('WM_DELETE_WINDOW', self.close)
+        self.maximize()
+        self.fonts = apply_theme(root)
+        self.set_icon()
         self.build()
         self.clear_plot('Elegí un paciente para comenzar')
         self.submit(lambda: discover(data_dir), self.inventory_loaded)
         self.poll_id = root.after(50, self.poll)
 
+    # ------------------------------------------------------------------- look
+    def maximize(self):
+        """Abrir maximizada para que el gráfico y los pasos tengan espacio."""
+        try:
+            if sys.platform == 'win32':
+                self.root.state('zoomed')
+            else:
+                self.root.attributes('-zoomed', True)
+        except tk.TclError:
+            self.root.geometry('1280x800')
+
+    def set_icon(self):
+        """Usa el logo (o assets/icon.png) como ícono de la ventana y de la barra de tareas."""
+        try:
+            self.icon = ImageTk.PhotoImage(mark_image(PROJECT, 64, 'icon', 'logo'), master=self.root)
+            self.root.iconphoto(True, self.icon)
+        except tk.TclError:
+            pass   # un ícono faltante nunca debe impedir abrir la app
+
     def build(self):
-        style = ttk.Style(self.root)
-        style.theme_use('clam')
-        families = set(tkfont.families(self.root))
-        family = next((name for name in ('Inter', 'Segoe UI', 'Ubuntu', 'Noto Sans',
-                                         'Cantarell', 'DejaVu Sans') if name in families), None)
-        self.ui_font = (family, 10) if family else ('TkDefaultFont', 10)
-        self.ui_bold = (family, 10, 'bold') if family else ('TkDefaultFont', 10, 'bold')
-        style.configure('.', font=self.ui_font, background=BG, foreground=INK)
-        style.configure('Card.TFrame', background='white')
-        style.configure('Card.TLabel', background='white')
-        style.configure('Muted.TLabel', background='white', foreground=MUTED)
-        style.configure('CardTitle.TLabel', background='white', foreground=MUTED,
-                        font=(family, 9, 'bold') if family else ('TkDefaultFont', 9, 'bold'))
-        style.configure('TButton', padding=(11, 7), background='#e6edee', borderwidth=1)
-        style.map('TButton', background=[('disabled', '#f0f4f4'), ('active', '#d5e0e2')],
-                  foreground=[('disabled', '#a2b0b3')])
-        style.configure('Accent.TButton', padding=(15, 8), background=TEAL,
-                        foreground='white', font=self.ui_bold, bordercolor=TEAL)
-        style.map('Accent.TButton', background=[('disabled', '#a9cfd3'), ('active', '#0a5f67')],
-                  foreground=[('disabled', 'white')])
-        style.configure('TCombobox', padding=5, fieldbackground='white', arrowcolor=MUTED)
-        style.map('TCombobox', fieldbackground=[('readonly', 'white')])
-        style.configure('TEntry', padding=5, fieldbackground='white')
-        style.map('TEntry', fieldbackground=[('readonly', '#eef2f3'), ('disabled', '#eef2f3')])
-        style.configure('TNotebook', background=BG, borderwidth=0)
-        style.configure('TNotebook.Tab', padding=(18, 8), background='#e3eaeb', foreground=MUTED)
-        style.map('TNotebook.Tab', background=[('selected', 'white')],
-                  foreground=[('selected', '#0a5f67')])
-        style.configure('Treeview', rowheight=25, background='white', fieldbackground='white')
-        style.configure('Treeview.Heading', font=self.ui_bold, padding=(6, 5))
-        bar = tk.Frame(self.root, bg=INK, padx=20, pady=16)
-        bar.pack(fill='x')
-        brand = tk.Frame(bar, bg=INK)
-        brand.pack(side='left')
-        tk.Label(brand, text='PSIB — Explorador EEG',
-                 font=(family, 18, 'bold') if family else ('TkDefaultFont', 18, 'bold'),
-                 bg=INK, fg='white').pack(anchor='w')
-        tk.Label(brand, text='REVISIÓN Y ANÁLISIS DE SEÑALES EEG',
-                 font=(family, 9, 'bold') if family else ('TkDefaultFont', 9, 'bold'),
-                 bg=INK, fg='#b6e2df').pack(anchor='w', pady=(2, 0))
-        self.config_button = ttk.Button(bar, text='Configuración', command=self.configuration_dialog)
-        self.config_button.pack(side='right', padx=(12, 0))
-        tk.Label(bar, textvariable=self.signal_label, bg=INK, fg='#b6e2df',
-                 font=('DejaVu Sans', 10)).pack(side='right')
-        tk.Frame(self.root, height=3, bg=AMBER).pack(fill='x')
-        bottom = ttk.Frame(self.root, padding=(16, 10))
+        self.build_appbar()
+        bottom = ttk.Frame(self.root, padding=(14, 6, 14, 12))
         bottom.pack(side='bottom', fill='x')
-        self.status_label = ttk.Label(bottom, textvariable=self.status, wraplength=900)
+        self.status_label = ttk.Label(bottom, textvariable=self.status, style='Bold.TLabel')
         self.status_label.pack(fill='x')
-        self.panes = tk.PanedWindow(self.root, orient='horizontal', bg=BG,
-                                   sashwidth=10, borderwidth=0)
-        self.panes.pack(fill='both', expand=True, padx=14, pady=14)
-        side_container = ttk.Frame(self.panes, width=340)
-        side_canvas = tk.Canvas(side_container, bg=BG, highlightthickness=0, width=340)
-        side_scroll = ttk.Scrollbar(side_container, command=side_canvas.yview)
-        side_scroll.pack(side='right', fill='y')
-        side_canvas.configure(yscrollcommand=side_scroll.set)
-        side_canvas.pack(fill='both', expand=True)
-        sidebar = ttk.Frame(side_canvas)
-        side_window = side_canvas.create_window(0, 0, window=sidebar, anchor='nw')
-        side_canvas.bind('<Configure>', lambda e: side_canvas.itemconfigure(side_window, width=e.width))
-        sidebar.bind('<Configure>', lambda e: side_canvas.configure(scrollregion=side_canvas.bbox('all')))
-        main = ttk.Frame(self.panes)
-        self.panes.add(side_container, minsize=300, stretch='never')
-        self.panes.add(main, minsize=590, stretch='always')
-        selection = self.card(sidebar, 'SELECCIONAR REGISTRO')
-        self.patient_box = self.selector(selection, '1  Paciente', self.patient, self.select_patient)
-        self.study_box = self.selector(selection, '2  Estudio', self.study, self.select_study)
-        self.channel_box = self.selector(selection, '3  Electrodo', self.channel, self.select_channel)
-        self.build_review_sidebar(sidebar, selection)
-        info = self.card(main, 'INFORMACIÓN DEL ESTUDIO')
-        self.info_card = info.master
+        autowrap(self.status_label)
+        self.panes = tk.PanedWindow(self.root, orient='horizontal', background=BG,
+                                    sashwidth=12, sashrelief='flat', borderwidth=0)
+        self.panes.pack(fill='both', expand=True, padx=14, pady=(8, 0))
+        self.build_sidebar()
+        self.main = ttk.Frame(self.panes)
+        self.panes.add(self.sidebar, minsize=300, stretch='never')
+        self.panes.add(self.main, minsize=590, stretch='always')
+        self.build_main(self.main)
+        self.add_tooltips()
+        self.root.bind('<Configure>', self.responsive_layout, add='+')
+        for sequence in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
+            self.root.bind_all(sequence, self.on_wheel, add='+')
+        self.update_controls()
+
+    def build_appbar(self):
+        bar = tk.Frame(self.root, background=INK)
+        bar.pack(fill='x')
+        self.logo = ImageTk.PhotoImage(mark_image(PROJECT, 34, 'logo', 'icon'), master=self.root)
+        tk.Label(bar, image=self.logo, background=INK).pack(side='left', padx=(16, 10), pady=8)
+        tk.Label(bar, text='PSIB', font=self.fonts.title, foreground='white',
+                 background=INK).pack(side='left')
+        tk.Label(bar, text='Explorador EEG · sueño normal y privación de sueño', font=self.fonts.base,
+                 foreground=INK_MUTED, background=INK).pack(side='left', padx=14, pady=(5, 0))
+        button = dict(font=self.fonts.base, relief='flat', borderwidth=0, padx=12, pady=5,
+                      cursor='hand2', background=INK_SOFT, foreground='white',
+                      activebackground=IRIS, activeforeground='white',
+                      disabledforeground='#5f7f86')
+        self.sidebar_button = tk.Button(bar, text='◀ Ocultar panel', command=self.toggle_sidebar, **button)
+        self.sidebar_button.pack(side='right', padx=(8, 16))
+        self.config_button = tk.Button(bar, text='⚙ Filtrado', command=self.configuration_dialog, **button)
+        self.config_button.pack(side='right', padx=8)
+        tk.Label(bar, textvariable=self.signal_label, background=INK, foreground=INK_MUTED,
+                 font=self.fonts.base).pack(side='right', padx=8)
+        tk.Label(bar, text='Señal:', background=INK, foreground=INK_MUTED,
+                 font=self.fonts.small).pack(side='right')
+        tk.Frame(self.root, background=AMBER, height=3).pack(fill='x')
+
+    def build_sidebar(self):
+        """Panel izquierdo con selección, pasos y revisión; se desplaza si no entra en la pantalla."""
+        self.sidebar = tk.Frame(self.panes, background=BG)
+        self.side_canvas = tk.Canvas(self.sidebar, background=BG, highlightthickness=0, width=336)
+        scroll = ttk.Scrollbar(self.sidebar, orient='vertical', command=self.side_canvas.yview)
+        self.side_canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side='right', fill='y')
+        self.side_canvas.pack(side='left', fill='both', expand=True)
+        body = ttk.Frame(self.side_canvas, padding=(0, 0, 8, 8))
+        body_id = self.side_canvas.create_window(0, 0, window=body, anchor='nw')
+        self.side_canvas.bind('<Configure>',
+                              lambda e: self.side_canvas.itemconfigure(body_id, width=e.width))
+        body.bind('<Configure>',
+                  lambda e: self.side_canvas.configure(scrollregion=self.side_canvas.bbox('all')))
+
+        selection = self.card(body, 'Registro')
+        self.patient_box = self.selector(selection, 'Paciente', self.patient, self.select_patient)
+        self.study_box = self.selector(selection, 'Estudio  (ses-1 normal · ses-2 privación)',
+                                       self.study, self.select_study)
+        self.channel_box = self.selector(selection, 'Electrodo', self.channel, self.select_channel)
+
+        steps = self.card(body, 'Pasos')
+        self.stepper = Stepper(steps, self.fonts, len(STEP_TITLES), self.run_step)
+        self.stepper.pack(fill='x', pady=(4, 0))
+        self.hint = ttk.Label(steps, justify='left', style='Card.TLabel')
+        self.hint.pack(fill='x', pady=8)
+        autowrap(self.hint)
+        self.next_button = ttk.Button(steps, text='Ir al siguiente paso ▶', style='Next.TButton',
+                                      command=self.next_step)
+        self.next_button.pack(fill='x')
+
+        self.build_review_sidebar(body, selection)
+
+    def build_main(self, main):
+        # Franja ámbar: qué hacer ahora.
+        callout(main, self.instruction).pack(fill='x', pady=(0, 8))
+
+        outer, info = card(main, 'Información del estudio')
+        self.info_card = outer
         self.compact_text = tk.StringVar(value='Seleccioná un estudio para ver su información.')
         self.compact_info = ttk.Label(main, textvariable=self.compact_text, padding=8,
                                       style='Card.TLabel', wraplength=550)
         self.info_fields = {}
         grid = ttk.Frame(info, style='Card.TFrame')
-        grid.pack(fill='x', pady=8)
+        grid.pack(fill='x', pady=(6, 4))
         for i, label in enumerate(('Paciente', 'Sesión', 'Condición', 'Ojos', 'Duración',
                                    'Muestreo', 'Canales EEG', 'Referencia')):
             row, col = divmod(i, 4)
             cell = ttk.Frame(grid, style='Card.TFrame', padding=(0, 3, 14, 3))
             cell.grid(row=row, column=col, sticky='nsew')
             grid.columnconfigure(col, weight=1)
-            ttk.Label(cell, text=label, style='Muted.TLabel').pack(anchor='w')
+            ttk.Label(cell, text=label, style='CardMuted.TLabel').pack(anchor='w')
             var = tk.StringVar(value='—')
-            ttk.Label(cell, textvariable=var, style='Card.TLabel', wraplength=180).pack(anchor='w')
+            ttk.Label(cell, textvariable=var, style='CardBold.TLabel', wraplength=180).pack(anchor='w')
             self.info_fields[label] = var
         self.file_text = tk.StringVar(value='Seleccioná un estudio para ver su información.')
-        file_label = ttk.Label(info, textvariable=self.file_text, style='Muted.TLabel')
+        file_label = ttk.Label(info, textvariable=self.file_text, style='CardMuted.TLabel')
         file_label.pack(fill='x')
-        file_label.bind('<Configure>', lambda e: file_label.configure(wraplength=max(100, e.width)))
+        autowrap(file_label)
+
         self.view_tabs = ttk.Notebook(main)
         self.view_tabs.pack(fill='both', expand=True)
-        temporal = ttk.Frame(self.view_tabs)
-        spectral = ttk.Frame(self.view_tabs)
+        temporal = ttk.Frame(self.view_tabs, style='Card.TFrame', padding=10)
+        spectral = ttk.Frame(self.view_tabs, style='Card.TFrame', padding=10)
         self.view_tabs.add(temporal, text='Señal temporal')
         self.view_tabs.add(spectral, text='Análisis espectral')
-        chart = self.card(temporal, 'SEÑAL EN EL TIEMPO', expand=True)
+        self.view_tabs.bind('<<NotebookTabChanged>>', lambda e: self.refresh_guide())
         self.chart_card = self.view_tabs
+        chart = temporal
+
         controls = ttk.Frame(chart, style='Card.TFrame')
-        controls.pack(fill='x', pady=(8, 4))
-        self.previous = ttk.Button(controls, text='← Anterior', command=lambda: self.navigate(-10))
+        controls.pack(fill='x', pady=(0, 6))
+        self.previous = ttk.Button(controls, text='◀ Anterior', style='Tool.TButton',
+                                   command=lambda: self.navigate(-10))
         self.previous.pack(side='left')
-        self.next = ttk.Button(controls, text='Siguiente →', command=lambda: self.navigate(10))
-        self.next.pack(side='left', padx=6)
-        ttk.Label(controls, text='Inicio (s)', style='Card.TLabel').pack(side='left', padx=(12, 5))
+        self.next = ttk.Button(controls, text='Siguiente ▶', style='Tool.TButton',
+                               command=lambda: self.navigate(10))
+        self.next.pack(side='left', padx=(4, 0))
+        ttk.Label(controls, text='Inicio (s)', style='Card.TLabel').pack(side='left', padx=(14, 5))
         self.start_entry = ttk.Entry(controls, textvariable=self.start_text, width=9)
         self.start_entry.pack(side='left')
         self.start_entry.bind('<Return>', lambda e: self.go())
-        self.go_button = ttk.Button(controls, text='Ir', command=self.go)
-        self.go_button.pack(side='left', padx=6)
-        ttk.Label(chart, textvariable=self.window_text, style='Muted.TLabel').pack(anchor='w', pady=4)
+        self.go_button = ttk.Button(controls, text='Ir', style='Tool.TButton', command=self.go)
+        self.go_button.pack(side='left', padx=4)
+        ttk.Label(controls, textvariable=self.window_text, style='CardMuted.TLabel').pack(side='right')
+
         self.build_review_editor(chart)
-        self.plot_container = ttk.Frame(chart)
+        self.plot_container = ttk.Frame(chart, style='Card.TFrame')
         self.plot_view = tk.Canvas(self.plot_container, background='white', highlightthickness=0)
         plot_scroll = ttk.Scrollbar(self.plot_container, command=self.plot_view.yview)
         plot_scroll.pack(side='right', fill='y')
@@ -202,36 +242,183 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.plot_view.bind('<Configure>', self.resize_plot)
         self.canvas.mpl_connect('button_press_event', self.plot_clicked)
         self.build_spectral(spectral, Toolbar)
-        self.root.bind('<Configure>', self.responsive_layout, add='+')
-        self.update_controls()
+
+    def add_tooltips(self):
+        tips = [
+            (self.patient_box, 'Participante del estudio (carpeta sub-XX dentro de data).'),
+            (self.study_box, 'ses-1 es sueño normal y ses-2 es privación del sueño; '
+                             'cada una tiene registros con ojos abiertos y cerrados.'),
+            (self.channel_box, 'Electrodo cuya señal se muestra. Cambiarlo conserva el tiempo '
+                               'y la epoch seleccionada.'),
+            (self.multi_toggle, 'Muestra de 1 a 8 electrodos a la vez, en paneles con tiempo compartido.'),
+            (self.next_button, 'Abre la herramienta del primer paso pendiente.'),
+            (self.config_button, 'Activa el filtrado pasabanda FIR y ajusta sus cortes '
+                                 '(por defecto apagado, 0,2–45 Hz).'),
+            (self.sidebar_button, 'Oculta el panel lateral para dar más espacio al gráfico.'),
+            (self.previous, 'Ventana de 10 s anterior.'),
+            (self.next, 'Ventana de 10 s siguiente.'),
+            (self.start_entry, 'Segundo en el que empieza la ventana. Acepta punto o coma decimal; '
+                               'Enter para ir.'),
+            (self.screening_button, 'Mide la amplitud pico a pico de cada epoch. Las epochs sin avisos '
+                                    'se aceptan y guardan automáticamente; las decisiones manuales se conservan.'),
+            (self.epoch_tree, 'Elegí una epoch para llevar el gráfico a ella. También podés hacer clic '
+                              'sobre su intervalo en el gráfico.'),
+            (self.calculate_button, 'Calcula la PSD de Welch y la potencia por bandas con las epochs aceptadas.'),
+            (self.spectral_settings_button, 'Duración del segmento Welch, solapamiento y límites de las bandas.'),
+            (self.export_button, 'Guarda tablas (y opcionalmente el gráfico) en la carpeta que elijas.'),
+        ]
+        for widget, text in tips:
+            Tooltip(widget, text)
+
+    def toggle_sidebar(self):
+        if self.sidebar_visible:
+            self.sidebar_width = self.sidebar.winfo_width()
+            self.panes.forget(self.sidebar)
+            self.sidebar_button.configure(text='▶ Mostrar panel')
+        else:
+            self.panes.add(self.sidebar, before=self.main, minsize=300,
+                           width=self.sidebar_width, stretch='never')
+            self.sidebar_button.configure(text='◀ Ocultar panel')
+        self.sidebar_visible = not self.sidebar_visible
+
+    def on_wheel(self, event):
+        """La rueda desplaza el panel lateral cuando el puntero está sobre él."""
+        try:
+            widget = self.root.winfo_containing(event.x_root, event.y_root)
+        except (KeyError, tk.TclError):
+            return
+        while widget is not None and widget is not self.side_canvas:
+            if isinstance(widget, (tk.Listbox, ttk.Treeview, tk.Text)):
+                return   # esos controles ya se desplazan solos
+            widget = widget.master
+        if widget is None:
+            return
+        steps = -1 if event.num == 4 or (event.num != 5 and event.delta > 0) else 1
+        self.side_canvas.yview_scroll(steps * 3, 'units')
 
     def responsive_layout(self, event):
         if event.widget != self.root:
             return
         if event.height < 850:
             self.info_card.pack_forget()
-            self.compact_info.pack(fill='x', pady=(0, 10), before=self.chart_card)
+            self.compact_info.pack(fill='x', pady=(0, 8), before=self.chart_card)
             self.compact_info.configure(wraplength=max(300, self.chart_card.winfo_width() - 20))
         else:
             self.compact_info.pack_forget()
-            self.info_card.pack(fill='x', pady=(0, 10), before=self.chart_card)
+            self.info_card.pack(fill='x', pady=(0, 8), before=self.chart_card)
 
     @staticmethod
     def card(parent, title, expand=False):
-        border = tk.Frame(parent, bg='white', highlightbackground='#d9e1e2', highlightthickness=1)
-        border.pack(fill='both' if expand else 'x', expand=expand, pady=(0, 10))
-        inner = ttk.Frame(border, style='Card.TFrame', padding=12)
-        inner.pack(fill='both', expand=True)
-        ttk.Label(inner, text=title.upper(), style='CardTitle.TLabel').pack(anchor='w', pady=(0, 5))
+        outer, inner = card(parent, title)
+        outer.pack(fill='both' if expand else 'x', expand=expand, pady=(0, 8))
         return inner
 
     @staticmethod
     def selector(parent, label, variable, callback):
-        ttk.Label(parent, text=label, style='Card.TLabel').pack(anchor='w', pady=(12, 4))
+        ttk.Label(parent, text=label, style='Card.TLabel').pack(anchor='w', pady=(8, 2))
         box = ttk.Combobox(parent, textvariable=variable, state='disabled', width=35)
         box.pack(fill='x')
         box.bind('<<ComboboxSelected>>', callback)
         return box
+
+    # ------------------------------------------------------------ guided steps
+    def pending_epochs(self):
+        if not self.store:
+            return None
+        return [i for i, record in enumerate(self.store.records) if record['state'] == STATES[0]]
+
+    def steps(self):
+        """Filas de la lista de pasos: (título, ayuda, estado) con estado done / todo / skip."""
+        pending = self.pending_epochs()
+        reviewed = pending is not None and not pending
+        shown = self.displayed is not None
+
+        def row(index, hint, done):
+            return STEP_TITLES[index], hint, 'done' if done else 'todo'
+
+        return [
+            row(0, 'Elegí un paciente en la tarjeta «Registro».', bool(self.patient.get())),
+            row(1, 'Elegí un estudio: ses-1 es sueño normal y ses-2 privación del sueño.',
+                self.recording is not None),
+            row(2, 'Elegí un electrodo para ver su señal. Activá «Varios electrodos» para comparar hasta 8.',
+                shown),
+            row(3, 'Presioná «Buscar posibles artefactos»: las epochs sin avisos se aceptan solas. '
+                   'Podés saltear este paso y revisar todo a mano.',
+                self.screening_result is not None or reviewed),
+            row(4, ('Elegí cada epoch pendiente y marcala con A (aceptada), R (con artefactos) '
+                    'o U (sin revisar).' + (f' Quedan {len(pending)}.' if pending else '')),
+                reviewed),
+            row(5, 'Abrí «Análisis espectral» y presioná «Calcular».', self.spectral_result is not None),
+        ]
+
+    def refresh_guide(self):
+        if not hasattr(self, 'stepper'):
+            return
+        steps = self.steps()
+        nxt = next((i for i, step in enumerate(steps) if step[2] == 'todo'), None)
+        self.stepper.update_steps([(title, state) for title, hint, state in steps], nxt)
+        self.hint.configure(text=steps[nxt][1] if nxt is not None else
+                            'Todo listo. Podés exportar el análisis espectral o seguir revisando.')
+        self.next_button.configure(state='normal' if nxt is not None and not self.busy else 'disabled')
+        self.instruction.set(self.instruction_text(nxt))
+
+    def instruction_text(self, nxt):
+        """Una frase con lo que hay que hacer ahora."""
+        if not self.inventory_ready:
+            return 'Buscando participantes en la carpeta data…'
+        if not self.inventory:
+            return 'No hay participantes en la carpeta data. Copiá allí el dataset ds004902 y reiniciá.'
+        if self.busy:
+            return 'Trabajando… esperá a que termine la operación en curso.'
+        if nxt == 0:
+            return 'Empezá eligiendo un paciente en el panel izquierdo. El paso ▶ resaltado en ámbar es siempre el siguiente.'
+        if nxt == 1:
+            return 'Elegí un estudio del paciente: ses-1 es sueño normal y ses-2 es privación del sueño.'
+        if nxt == 2:
+            return 'Elegí un electrodo para ver su señal en ventanas de 10 s.'
+        if nxt == 3:
+            return ('Opcional: buscá posibles artefactos para aceptar automáticamente las epochs limpias, '
+                    'o revisá cada epoch a mano.')
+        if nxt == 4:
+            return ('Revisá las epochs: elegí una en la lista o hacé clic sobre su intervalo en el gráfico, '
+                    'y marcala con A (aceptada), R (con artefactos) o U (sin revisar).')
+        if nxt == 5:
+            return 'Todas las epochs están revisadas. Abrí «Análisis espectral» y presioná «Calcular».'
+        return 'Análisis listo. Exportá los resultados o elegí otro estudio para compararlo.'
+
+    def next_step(self):
+        steps = self.steps()
+        for index, step in enumerate(steps):
+            if step[2] == 'todo':
+                self.run_step(index)
+                return
+
+    def run_step(self, index):
+        """Abre la herramienta de un paso (no hace nada si todavía no está disponible)."""
+        if self.busy:
+            return
+        if index < 3:
+            box = (self.patient_box, self.study_box, self.channel_box)[index]
+            if str(box.cget('state')) == 'disabled':
+                return
+            self.view_tabs.select(0)
+            box.focus_set()
+            try:
+                self.root.tk.call('ttk::combobox::Post', box)
+            except tk.TclError:
+                pass
+        elif index == 3:
+            self.view_tabs.select(0)
+            self.screening_button.invoke()
+        elif index == 4:
+            pending = self.pending_epochs()
+            if pending and self.displayed is not None:
+                self.view_tabs.select(0)
+                later = [i for i in pending if self.selected_epoch is None or i > self.selected_epoch]
+                self.select_epoch((later or pending)[0], navigate=True)
+        elif index == 5:
+            self.view_tabs.select(1)
+            self.calculate_button.invoke()
 
     def invalidate(self):
         if self.screening_pending:
@@ -276,6 +463,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
 
     def inventory_loaded(self, inventory):
         self.inventory = inventory
+        self.inventory_ready = True
         self.patient_box.configure(values=list(inventory), state='readonly' if inventory else 'disabled')
         self.status.set(f'{len(inventory)} participantes disponibles. Elegí un paciente.' if inventory
                         else 'No se encontraron participantes en la carpeta data.')
@@ -446,6 +634,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.update_reason()
         self.update_spectral_controls()
         self.update_screening_controls()
+        self.refresh_guide()
 
     def navigate(self, delta):
         if not self.busy:
@@ -484,6 +673,9 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
 
 
 def main(data_dir):
+    if sys.platform == 'win32':
+        import ctypes   # identidad propia en la barra de tareas, separada de python.exe
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('psib.eeg.explorer')
     root = tk.Tk()
     app = App(root, data_dir)
     try:

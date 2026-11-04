@@ -28,6 +28,15 @@ corregí el problema y volvé a ejecutar el lanzador: reintentará la instalaci�
 También se puede ejecutar `TPS.bat` por su ruta absoluta desde otro directorio:
 `data` y `annotations` siempre se resuelven junto al proyecto.
 
+## Guía en pantalla
+
+La ventana sigue el estilo de la GUI de la guía PSIB. La tarjeta **Pasos** del panel
+izquierdo lista el flujo (paciente, estudio, electrodo, búsqueda opcional de
+artefactos, revisión de epochs y espectro): el paso pendiente se resalta en ámbar
+y **Ir al siguiente paso ▶** abre su herramienta. La franja ámbar sobre el gráfico
+indica qué hacer ahora, y al dejar el mouse sobre un control aparece una ayuda.
+**◀ Ocultar panel** en la barra superior deja más espacio al gráfico.
+
 ## Explorar y filtrar
 
 1. Elegir **Paciente**, **Estudio** y **Electrodo**. `ses-1` es sueño normal y
@@ -37,7 +46,7 @@ También se puede ejecutar `TPS.bat` por su ruta absoluta desde otro directorio:
    el registro. El inicio acepta punto o coma decimal; la última ventana puede ser parcial.
 3. La barra del gráfico permite zoom, desplazamiento y restauración. Cambiar de
    electrodo conserva el tiempo y la epoch seleccionada.
-4. **Configuración** permite activar el filtrado y ajustar sus cortes. Al iniciar,
+4. **⚙ Filtrado**, en la barra superior, permite activar el filtrado y ajustar sus cortes. Al iniciar,
    está apagado y los cortes son **0,2–45 Hz**. **Aplicar** valida y prepara el filtro
    en segundo plano; **Cancelar** conserva la configuración anterior. Restablecer
    recupera esos cortes sin modificar el toggle.
@@ -96,7 +105,7 @@ la vista temporal y el análisis espectral. El FIR se aplica al **canal continuo
 completo antes de dividirlo en epochs**, aprovechando la caché existente. El panel,
 el resumen y el detalle identifican **Filtrada · X–Y Hz** o **Original**.
 
-Si el filtrado está desactivado en **Configuración**, el barrido utiliza el original
+Si el filtrado está desactivado en **⚙ Filtrado**, el barrido utiliza el original
 y lo indica explícitamente; esta opción no enciende el filtro automáticamente.
 Desmarcar **Usar el filtro activo** permite revisar siempre la señal original,
 aunque se esté mostrando una señal filtrada. Así se pueden distinguir avisos por
