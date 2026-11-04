@@ -9,6 +9,20 @@ from .theme import BG, CARD, IRIS, IRIS_LIGHT, TEXT, style_dialog
 from .spectral import SpectralConfig, select_studies, run_analysis, plot_result, export_result
 
 
+# Tabla de bandas: (id, encabezado, ancho). Al comparar NS/SD, cada banda ocupa una fila
+# y la potencia y la relativa de ambas sesiones quedan lado a lado.
+SINGLE_COLUMNS = (('session', 'Sesión', 150), ('band', 'Banda', 80), ('range', 'Hz', 90),
+                  ('absolute', 'Potencia (µV²)', 130), ('relative', 'Relativa (%)', 110))
+COMPARE_COLUMNS = (('band', 'Banda', 80), ('range', 'Hz', 80),
+                   ('abs_ns', 'Potencia NS (µV²)', 130), ('abs_sd', 'Potencia SD (µV²)', 130),
+                   ('rel_ns', 'Relativa NS (%)', 110), ('rel_sd', 'Relativa SD (%)', 110))
+SESSION_CODES = {'ses-1': 'ns', 'ses-2': 'sd'}
+
+
+def format_relative(value):
+    return f'{value:.4g}' if value is not None else 'No disponible'
+
+
 class SpectralUI:
     def init_spectral(self):
         self.spectral_config = SpectralConfig()
@@ -83,10 +97,7 @@ class SpectralUI:
         table_frame.pack(side='bottom', fill='x')
         columns = ('session', 'band', 'range', 'absolute', 'relative')
         self.band_table = ttk.Treeview(table_frame, columns=columns, show='headings', height=4)
-        for name, label, width in zip(columns, ('Sesión', 'Banda', 'Hz', 'Potencia (µV²)', 'Relativa (%)'),
-                                      (150, 80, 90, 130, 110)):
-            self.band_table.heading(name, text=label)
-            self.band_table.column(name, width=width, minwidth=60)
+        self.set_band_columns(SINGLE_COLUMNS)
         scroll = ttk.Scrollbar(table_frame, command=self.band_table.yview)
         scroll.pack(side='right', fill='y')
         self.band_table.configure(yscrollcommand=scroll.set)
@@ -98,6 +109,38 @@ class SpectralUI:
         self.spectral_toolbar.pack(side='bottom', fill='x')
         self.spectral_canvas.get_tk_widget().pack(fill='both', expand=True)
         self.invalidate_spectrum('Seleccioná un estudio y un electrodo.')
+
+    def set_band_columns(self, columns):
+        self.band_table.configure(columns=[name for name, label, width in columns])
+        for name, label, width in columns:
+            self.band_table.heading(name, text=label)
+            self.band_table.column(name, width=width, minwidth=60)
+
+    def fill_band_table(self, sessions):
+        """Una fila por sesión y banda; al comparar NS/SD, una fila por banda con ambas sesiones."""
+        self.band_table.delete(*self.band_table.get_children())
+        codes = [SESSION_CODES.get(session['session']) for session in sessions]
+        if len(sessions) < 2 or sorted(codes) != ['ns', 'sd']:
+            self.set_band_columns(SINGLE_COLUMNS)
+            for session in sessions:
+                for band in session['bands']:
+                    self.band_table.insert('', 'end', values=(
+                        session['condition'], band['band'], f"{band['low_hz']:g}–{band['high_hz']:g}",
+                        f"{band['absolute_uv2']:.6g}", format_relative(band['relative_percent'])))
+            self.band_table.configure(height=4)
+            return
+        self.set_band_columns(COMPARE_COLUMNS)
+        by_code = {code: {band['band']: band for band in session['bands']}
+                   for code, session in zip(codes, sessions)}
+        bands = [band for band in sessions[codes.index('ns')]['bands']]
+        for band in bands:
+            ns, sd = by_code['ns'].get(band['band']), by_code['sd'].get(band['band'])
+            self.band_table.insert('', 'end', values=(
+                band['band'], f"{band['low_hz']:g}–{band['high_hz']:g}",
+                f"{ns['absolute_uv2']:.6g}" if ns else '—', f"{sd['absolute_uv2']:.6g}" if sd else '—',
+                format_relative(ns['relative_percent']) if ns else '—',
+                format_relative(sd['relative_percent']) if sd else '—'))
+        self.band_table.configure(height=max(4, len(bands)))
 
     def invalidate_spectrum(self, message='Resultados pendientes de cálculo.'):
         self.spectral_revision += 1
@@ -227,7 +270,7 @@ class SpectralUI:
 
     def render_spectral_result(self):
         result = self.spectral_result
-        self.band_table.delete(*self.band_table.get_children())
+        self.fill_band_table(result['sessions'])
         lines = []
         for session in result['sessions']:
             count = session['counts']
@@ -235,11 +278,8 @@ class SpectralUI:
                          f"Artefactos: {count['artifacts']} · No revisadas: {count['pending']} · "
                          f"Parciales excluidas: {count['partial']} · Referencia: {session['reference']}")
             lines.extend(session['warnings'])
-            for band in session['bands']:
-                relative = band['relative_percent']
-                self.band_table.insert('', 'end', values=(session['condition'], band['band'],
-                    f"{band['low_hz']:g}–{band['high_hz']:g}", f"{band['absolute_uv2']:.6g}",
-                    f'{relative:.4g}' if relative is not None else 'No disponible'))
+        if len(result['sessions']) > 1:
+            lines.append('NS = sueño normal (ses-1) · SD = privación del sueño (ses-2).')
         effective = result['sessions'][0]['effective']
         lines.append(f"Welch: {effective['seconds']:g} s · {effective['overlap_percent']:g}% · "
                      f"Δf={effective['frequency_step']:g} Hz · Hann · Referencia original. "

@@ -14,6 +14,7 @@ COLORS = {'Sin revisar': '#edf1f2', 'Aceptada': '#d5eee2', 'Con artefactos': '#f
 class ReviewUI:
     def init_review(self):
         self.config = FilterConfig()
+        self.filter_reviewed = False
         self.store = None
         self.selected_epoch = None
         self.displayed = None
@@ -164,6 +165,7 @@ class ReviewUI:
             self.invalidate_spectrum()
             changed = candidate != self.config
             self.config = candidate
+            self.filter_reviewed = True
             if changed and self.screening_use_filter.get():
                 self.clear_screening()
             self.update_screening_signal()

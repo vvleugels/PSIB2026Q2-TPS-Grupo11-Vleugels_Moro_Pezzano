@@ -8,19 +8,20 @@ from tkinter import ttk
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
-from PIL import ImageTk
+from PIL import Image, ImageTk
 
 from .data import discover, open_recording
 from .annotations import AnnotationStore, STATES
 from .review_ui import ReviewUI
 from .spectral_ui import SpectralUI
 from .screening_ui import ScreeningUI
-from .theme import (INK, INK_MUTED, INK_SOFT, IRIS, AMBER, BG, MUTED, Stepper, Tooltip,
-                    apply_theme, autowrap, callout, card, mark_image)
+from .theme import (INK, INK_MUTED, INK_SOFT, IRIS, IRIS_DARK, AMBER, BG, CARD, MUTED, Stepper,
+                    Tooltip, apply_theme, autowrap, callout, card, mark_image, style_dialog)
 
 PROJECT = Path(__file__).resolve().parent.parent
-STEP_TITLES = ('Elegir paciente', 'Elegir estudio', 'Elegir electrodo',
+STEP_TITLES = ('Elegir paciente', 'Elegir estudio', 'Elegir electrodo', 'Revisar filtrado (opcional)',
                'Buscar artefactos (opcional)', 'Revisar epochs', 'Calcular espectro')
+ELECTRODE_IMAGE = 'Electrode-disposition.png'
 
 
 class Toolbar(NavigationToolbar2Tk):
@@ -130,8 +131,6 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
                       disabledforeground='#5f7f86')
         self.sidebar_button = tk.Button(bar, text='◀ Ocultar panel', command=self.toggle_sidebar, **button)
         self.sidebar_button.pack(side='right', padx=(8, 16))
-        self.config_button = tk.Button(bar, text='⚙ Filtrado', command=self.configuration_dialog, **button)
-        self.config_button.pack(side='right', padx=8)
         tk.Label(bar, textvariable=self.signal_label, background=INK, foreground=INK_MUTED,
                  font=self.fonts.base).pack(side='right', padx=8)
         tk.Label(bar, text='Señal:', background=INK, foreground=INK_MUTED,
@@ -157,7 +156,17 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.patient_box = self.selector(selection, 'Paciente', self.patient, self.select_patient)
         self.study_box = self.selector(selection, 'Estudio  (ses-1 normal · ses-2 privación)',
                                        self.study, self.select_study)
-        self.channel_box = self.selector(selection, 'Electrodo', self.channel, self.select_channel)
+        self.channel_box = self.selector(selection, 'Electrodo', self.channel, self.select_channel,
+                                         info=self.show_electrodes)
+
+        filtering = self.card(body, 'Filtrado')
+        row = ttk.Frame(filtering, style='Card.TFrame')
+        row.pack(fill='x', pady=(4, 0))
+        ttk.Label(row, text='Señal:', style='CardMuted.TLabel').pack(side='left')
+        ttk.Label(row, textvariable=self.signal_label, style='CardBold.TLabel').pack(side='left', padx=(6, 0))
+        self.config_button = ttk.Button(filtering, text='⚙ Configurar filtrado',
+                                        command=self.configuration_dialog)
+        self.config_button.pack(fill='x', pady=(6, 0))
 
         steps = self.card(body, 'Pasos')
         self.stepper = Stepper(steps, self.fonts, len(STEP_TITLES), self.run_step)
@@ -254,6 +263,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
             (self.next_button, 'Abre la herramienta del primer paso pendiente.'),
             (self.config_button, 'Activa el filtrado pasabanda FIR y ajusta sus cortes '
                                  '(por defecto apagado, 0,2–45 Hz).'),
+            (self.electrode_info, 'Ver la disposición de los electrodos sobre la cabeza.'),
             (self.sidebar_button, 'Oculta el panel lateral para dar más espacio al gráfico.'),
             (self.previous, 'Ventana de 10 s anterior.'),
             (self.next, 'Ventana de 10 s siguiente.'),
@@ -313,9 +323,18 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         outer.pack(fill='both' if expand else 'x', expand=expand, pady=(0, 8))
         return inner
 
-    @staticmethod
-    def selector(parent, label, variable, callback):
-        ttk.Label(parent, text=label, style='Card.TLabel').pack(anchor='w', pady=(8, 2))
+    def selector(self, parent, label, variable, callback, info=None):
+        row = ttk.Frame(parent, style='Card.TFrame')
+        row.pack(fill='x', pady=(8, 2))
+        ttk.Label(row, text=label, style='Card.TLabel').pack(side='left')
+        if info:
+            icon = tk.Label(row, text='ⓘ', font=self.fonts.bold, foreground=IRIS, background=CARD,
+                            cursor='hand2')
+            icon.pack(side='left', padx=(6, 0))
+            icon.bind('<Button-1>', lambda event: info())
+            icon.bind('<Enter>', lambda event: icon.configure(foreground=IRIS_DARK))
+            icon.bind('<Leave>', lambda event: icon.configure(foreground=IRIS))
+            self.electrode_info = icon
         box = ttk.Combobox(parent, textvariable=variable, state='disabled', width=35)
         box.pack(fill='x')
         box.bind('<<ComboboxSelected>>', callback)
@@ -342,13 +361,15 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
                 self.recording is not None),
             row(2, 'Elegí un electrodo para ver su señal. Activá «Varios electrodos» para comparar hasta 8.',
                 shown),
-            row(3, 'Presioná «Buscar posibles artefactos»: las epochs sin avisos se aceptan solas. '
+            row(3, 'Presioná «⚙ Configurar filtrado» y elegí si filtrar la señal (0,2–45 Hz por defecto). '
+                   'Presioná «Aplicar» aunque lo dejes apagado.', self.filter_reviewed),
+            row(4, 'Presioná «Buscar posibles artefactos»: las epochs sin avisos se aceptan solas. '
                    'Podés saltear este paso y revisar todo a mano.',
                 self.screening_result is not None or reviewed),
-            row(4, ('Elegí cada epoch pendiente y marcala con A (aceptada), R (con artefactos) '
+            row(5, ('Elegí cada epoch pendiente y marcala con A (aceptada), R (con artefactos) '
                     'o U (sin revisar).' + (f' Quedan {len(pending)}.' if pending else '')),
                 reviewed),
-            row(5, 'Abrí «Análisis espectral» y presioná «Calcular».', self.spectral_result is not None),
+            row(6, 'Abrí «Análisis espectral» y presioná «Calcular».', self.spectral_result is not None),
         ]
 
     def refresh_guide(self):
@@ -377,12 +398,15 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         if nxt == 2:
             return 'Elegí un electrodo para ver su señal en ventanas de 10 s.'
         if nxt == 3:
+            return ('Opcional: revisá el filtrado con «⚙ Configurar filtrado». Por defecto la señal se '
+                    'muestra sin filtrar; presioná «Aplicar» para confirmar tu elección.')
+        if nxt == 4:
             return ('Opcional: buscá posibles artefactos para aceptar automáticamente las epochs limpias, '
                     'o revisá cada epoch a mano.')
-        if nxt == 4:
+        if nxt == 5:
             return ('Revisá las epochs: elegí una en la lista o hacé clic sobre su intervalo en el gráfico, '
                     'y marcala con A (aceptada), R (con artefactos) o U (sin revisar).')
-        if nxt == 5:
+        if nxt == 6:
             return 'Todas las epochs están revisadas. Abrí «Análisis espectral» y presioná «Calcular».'
         return 'Análisis listo. Exportá los resultados o elegí otro estudio para compararlo.'
 
@@ -408,17 +432,58 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
             except tk.TclError:
                 pass
         elif index == 3:
+            if self.recording is not None:
+                self.configuration_dialog()
+        elif index == 4:
             self.view_tabs.select(0)
             self.screening_button.invoke()
-        elif index == 4:
+        elif index == 5:
             pending = self.pending_epochs()
             if pending and self.displayed is not None:
                 self.view_tabs.select(0)
                 later = [i for i in pending if self.selected_epoch is None or i > self.selected_epoch]
                 self.select_epoch((later or pending)[0], navigate=True)
-        elif index == 5:
+        elif index == 6:
             self.view_tabs.select(1)
             self.calculate_button.invoke()
+
+    def show_electrodes(self):
+        """Ventana con la disposición de los electrodos (Electrode-disposition.png)."""
+        if getattr(self, 'electrode_window', None) is not None and self.electrode_window.winfo_exists():
+            self.electrode_window.lift()
+            return
+        path = next((p for p in (PROJECT / 'assets' / ELECTRODE_IMAGE, PROJECT / ELECTRODE_IMAGE)
+                     if p.is_file()), None)
+        if path is None:
+            self.status.set(f'No se encontró {ELECTRODE_IMAGE} en la carpeta del proyecto.')
+            return
+        try:
+            with Image.open(path) as image:
+                image = image.convert('RGB')
+        except OSError as exc:
+            self.status.set(f'No se pudo abrir {path.name}: {exc}')
+            return
+        limit = (self.root.winfo_screenwidth() * .8, self.root.winfo_screenheight() * .75)
+        scale = min(1.0, limit[0] / image.width, limit[1] / image.height)
+        if scale < 1:
+            image = image.resize((round(image.width * scale), round(image.height * scale)),
+                                 Image.Resampling.LANCZOS)
+        window = tk.Toplevel(self.root)
+        window.title('Disposición de los electrodos')
+        window.transient(self.root)
+        window.resizable(False, False)
+        style_dialog(window)
+        self.electrode_window = window
+        self.electrode_photo = ImageTk.PhotoImage(image, master=window)
+        body = ttk.Frame(window, padding=12)
+        body.pack(fill='both')
+        current = ', '.join(self.visible_channels())
+        ttk.Label(body, text='Disposición de los electrodos' + (f' · Seleccionado: {current}' if current else ''),
+                  style='Bold.TLabel').pack(anchor='w', pady=(0, 8))
+        tk.Label(body, image=self.electrode_photo, background='white', borderwidth=0).pack()
+        ttk.Button(body, text='Cerrar', command=window.destroy).pack(anchor='e', pady=(10, 0))
+        window.bind('<Escape>', lambda event: window.destroy())
+        window.focus_set()
 
     def invalidate(self):
         if self.screening_pending:
