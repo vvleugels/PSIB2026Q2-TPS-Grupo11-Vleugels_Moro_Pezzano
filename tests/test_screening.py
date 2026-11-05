@@ -6,7 +6,68 @@ import numpy as np
 
 from eeg_viewer.data import Recording, Study
 from eeg_viewer.screening import ScreeningConfig, scan_recording
-from eeg_viewer.processing import FilterConfig
+from eeg_viewer.processing import FILTER_OPTIONS, FilterConfig
+from eeg_viewer.annotations import make_epochs
+from mne.filter import filter_data
+
+
+def reference_scan(recording, channels, config, filter_config=FilterConfig()):
+    """The per-channel / per-epoch algorithm scan_recording used before blocking."""
+    channels = tuple(channels)
+    continuous = None
+    if filter_config.enabled:
+        continuous = {}
+        for channel in channels:
+            if not np.all(np.isfinite(recording.raw.get_data(picks=[channel]))):
+                raise ValueError(f'{channel}: hay muestras no finitas. '
+                                 'Usá el barrido original para localizarlas antes de filtrar.')
+            continuous[channel] = recording.filter.channel(channel, filter_config)
+    epochs = make_epochs(recording.raw.n_times, recording.sfreq)
+    findings = {}
+    for epoch in epochs:
+        values = ([continuous[channel][epoch.first:epoch.last] for channel in channels]
+                  if continuous is not None else recording.raw.get_data(
+                      picks=list(channels), start=epoch.first, stop=epoch.last))
+        issues = []
+        for channel, samples in zip(channels, values):
+            if not np.all(np.isfinite(samples)):
+                kind, amplitude = 'No finitos', None
+            elif len(samples) < 2:
+                kind, amplitude = 'Tramo insuficiente', None
+            else:
+                amplitude = float(np.ptp(samples) * 1e6)
+                if amplitude > config.high_uv:
+                    kind = 'Alta'
+                elif amplitude < config.flat_uv:
+                    kind = 'Plana'
+                else:
+                    continue
+            issues.append(dict(channel=channel, kind=kind, peak_to_peak_uv=amplitude))
+        if issues:
+            findings[epoch.index] = issues
+    return dict(findings=findings, channels=channels, config=config, filter=filter_config,
+                total=len(epochs), partial=sum(epoch.partial for epoch in epochs))
+
+
+def synthetic(n_channels=37, n_times=12_250, sfreq=100, seed=0):
+    """Noisy channels with high, flat and drifting stretches and a partial last epoch."""
+    rng = np.random.default_rng(seed)
+    times = np.arange(n_times) / sfreq
+    values = 20e-6 * rng.standard_normal((n_channels, n_times))
+    values += 300e-6 * np.sin(2 * np.pi * .03 * times) * rng.random((n_channels, 1))
+    for row in range(0, n_channels, 3):
+        start = rng.integers(0, n_times - 600)
+        values[row, start:start + 500] *= 8
+    for row in range(1, n_channels, 5):
+        start = rng.integers(0, n_times - 600)
+        values[row, start:start + 600] = 1e-7
+    names = [f'E{index}' for index in range(n_channels)]
+    return values, names, sfreq
+
+
+def recording_of(values, names, sfreq):
+    raw = mne.io.RawArray(values.copy(), mne.create_info(names, sfreq, 'eeg'), verbose=False)
+    return Recording(Study(Path('synthetic.set'), 'sub-01', 'ses-1', 'eyesopen'), raw, {})
 
 
 class ScreeningTests(unittest.TestCase):

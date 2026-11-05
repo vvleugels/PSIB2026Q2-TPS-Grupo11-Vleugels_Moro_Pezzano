@@ -21,13 +21,13 @@ Requiere Python 3.10 o superior y una sesión gráfica. Desde la carpeta del pro
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-analysis.txt   # incluye requirements.txt
 python gui.py
 ```
 
 En Ubuntu/Debian, si faltan Tkinter o venv: `sudo apt install python3-tk python3-venv`.
 En Windows, hace doble clic en `TPS.bat`. En el primer inicio crea `.venv` e instala
-las dependencias; hace falta una conexión a internet. Si falla la instalación,
+las dependencias (también pandas y Jupyter, para «Resultados del grupo»); hace falta una conexión a internet. Si falla la instalación,
 corregí el problema y volvé a ejecutar el lanzador: reintentará la instalación.
 También se puede ejecutar `TPS.bat` por su ruta absoluta desde otro directorio:
 `data` y `annotations` siempre se resuelven junto al proyecto.
@@ -40,6 +40,34 @@ filtrado opcional, búsqueda opcional de artefactos, revisión de epochs y espec
 y **Ir al siguiente paso ▶** abre su herramienta. La franja ámbar sobre el gráfico
 indica qué hacer ahora, y al dejar el mouse sobre un control aparece una ayuda.
 **◀ Ocultar panel** en la barra superior deja más espacio al gráfico.
+
+## Resultados del grupo
+
+La tercera pestaña reúne el análisis por lotes, la estadística SD vs NS y las figuras,
+sin usar la terminal. Lee y escribe en `results/` (junto a `data/`).
+
+- **Proceso**: tres pasos (1 Potencias por lote, 2 Estadística, 3 Figuras) con su estado
+  (listo, sin resultados o desactualizado si cambió `config.py` o un paso anterior), sus
+  opciones (ojos, procesos en paralelo, recalcular todo, permutaciones) y **Ejecutar**.
+  **Ejecutar todo** los encadena; **Cancelar** detiene el paso en curso (el lote es
+  reanudable). Los pasos corren en un proceso aparte: el explorador sigue disponible.
+  El registro muestra la salida de cada paso y se abre solo si algo falla.
+- **Hipótesis**: H1–H4 y la tabla de dirección esperada vs observada, p corregido y
+  tamaño del efecto, coloreada por acuerdo (verde apoyada, rojo opuesta, gris no
+  significativa). Las referencias siguen pendientes (TODO).
+- **Tablas**: todas las tablas `stats_*.csv`, clusters, exclusiones y resumen por registro,
+  con filtros por ojos, sesión, banda, región y participante, y orden por columna
+  (clic en el encabezado). Se resaltan las filas con p < 0,05.
+- **Figuras**: topomapas, PSD por región, gráficos pareados y theta/beta con su leyenda
+  (`captions.md`); zoom con los botones o Ctrl + rueda y arrastre para mover.
+
+En el panel lateral, **Resultado del lote** muestra para el estudio abierto si el lote lo
+incluyó o lo excluyó (y por qué), las epochs usadas y rechazadas, los canales malos y,
+para el electrodo elegido, sus potencias por banda y el cociente theta/beta. Si el
+electrodo fue un canal malo en el lote se avisa en ámbar. Las epochs que el lote rechazó
+aparecen con «Lote» en la columna Aviso, y su motivo en el detalle de la epoch.
+**Ver exclusiones** abre la tabla de exclusiones filtrada a ese estudio. Aceptada por el
+lote significa «dentro de los límites de amplitud», no inspección visual.
 
 ## Explorar y filtrar
 
@@ -287,11 +315,13 @@ Archivos nuevos:
 - `analysis/stats.py`, `analysis/README.md`: pruebas pareadas, FDR, orden de sesión y clusters.
 - `analysis/hypotheses.py`, `analysis/hypotheses.md`: hipótesis H1–H4 (referencias pendientes, TODO).
 - `analysis/figures.py`: topomapas, PSD por región, gráficos pareados, theta/beta, tabla resumen.
+- `eeg_viewer/results_ui.py`, `eeg_viewer/results_data.py`, `eeg_viewer/pipeline.py`: pestaña
+  «Resultados del grupo», lectura de `results/` y ejecución de los pasos en segundo plano.
 - `notebooks/03_stats.ipynb`, `notebooks/04_results_figures.ipynb`: muestran tablas y figuras
   importando los módulos (no contienen cálculos propios).
 - `report/methods_draft.md`: borrador de Materiales y Métodos con los parámetros exactos.
 - `requirements-analysis.txt`: dependencias adicionales de análisis y notebooks.
-- `tests/test_batch.py`, `tests/test_stats.py`, `tests/test_figures.py`,
+- `tests/test_batch.py`, `tests/test_stats.py`, `tests/test_figures.py`, `tests/test_results.py`,
   `tests/synthetic_features.py`: pruebas con señales y tablas sintéticas.
 
 Salidas en `results/`:

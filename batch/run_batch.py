@@ -199,8 +199,9 @@ def process_recording(recording: Recording) -> dict:
                             epoch=str(e.index + 1)) for e in decision.partial]
     exclusions += [exclusion(study, 'channel', reason, channel=channel)
                    for channel, reason in sorted(decision.bad_channels.items())]
+    epochs_by_index = {e.index: e for e in make_epochs(recording.raw.n_times, recording.sfreq)}
     for index, reason in sorted(decision.rejected.items()):
-        epoch = next(e for e in make_epochs(recording.raw.n_times, recording.sfreq) if e.index == index)
+        epoch = epochs_by_index[index]
         exclusions.append(exclusion(study, 'epoch', f'{epoch.start:g}-{epoch.stop:g} s: {reason}',
                                     epoch=str(index + 1)))
     n_used, n_rejected = len(decision.used), len(decision.rejected)

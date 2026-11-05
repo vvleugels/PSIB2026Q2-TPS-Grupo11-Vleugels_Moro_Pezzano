@@ -4,7 +4,7 @@ from pathlib import Path
 import queue
 import sys
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
@@ -15,6 +15,7 @@ from .annotations import AnnotationStore, STATES
 from .review_ui import ReviewUI
 from .spectral_ui import SpectralUI
 from .screening_ui import ScreeningUI
+from .results_ui import ResultsUI
 from .theme import (INK, INK_MUTED, INK_SOFT, IRIS, IRIS_DARK, AMBER, BG, CARD, MUTED, Stepper,
                     Tooltip, apply_theme, autowrap, callout, card, mark_image, style_dialog)
 
@@ -35,8 +36,8 @@ class Toolbar(NavigationToolbar2Tk):
     )
 
 
-class App(ReviewUI, SpectralUI, ScreeningUI):
-    def __init__(self, root, data_dir, annotations_dir=None):
+class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI):
+    def __init__(self, root, data_dir, annotations_dir=None, results_dir=None):
         self.root = root
         self.data_dir = Path(data_dir)
         self.annotations_dir = Path(annotations_dir) if annotations_dir else self.data_dir.parent / "annotations"
@@ -65,6 +66,8 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.init_review()
         self.init_spectral()
         self.init_screening()
+        # Group results live next to data/ (results/), like annotations/.
+        self.init_results(Path(results_dir) if results_dir else self.data_dir.parent / 'results', PROJECT)
         root.title('PSIB — Explorador EEG')
         root.minsize(960, 640)
         root.protocol('WM_DELETE_WINDOW', self.close)
@@ -178,6 +181,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
                                       command=self.next_step)
         self.next_button.pack(fill='x')
 
+        self.build_batch_card(body)
         self.build_review_sidebar(body, selection)
 
     def build_main(self, main):
@@ -213,7 +217,9 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         spectral = ttk.Frame(self.view_tabs, style='Card.TFrame', padding=10)
         self.view_tabs.add(temporal, text='Señal temporal')
         self.view_tabs.add(spectral, text='Análisis espectral')
-        self.view_tabs.bind('<<NotebookTabChanged>>', lambda e: self.refresh_guide())
+        group = ttk.Frame(self.view_tabs, style='Card.TFrame', padding=10)
+        self.view_tabs.add(group, text='Resultados del grupo')
+        self.view_tabs.bind('<<NotebookTabChanged>>', self.tab_changed)
         self.chart_card = self.view_tabs
         chart = temporal
 
@@ -251,6 +257,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.plot_view.bind('<Configure>', self.resize_plot)
         self.canvas.mpl_connect('button_press_event', self.plot_clicked)
         self.build_spectral(spectral, Toolbar)
+        self.build_results(group)
 
     def add_tooltips(self):
         tips = [
@@ -297,6 +304,8 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
             widget = self.root.winfo_containing(event.x_root, event.y_root)
         except (KeyError, tk.TclError):
             return
+        if self.figure_wheel(event, widget):   # visor de figuras de «Resultados del grupo»
+            return
         while widget is not None and widget is not self.side_canvas:
             if isinstance(widget, (tk.Listbox, ttk.Treeview, tk.Text)):
                 return   # esos controles ya se desplazan solos
@@ -306,10 +315,22 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         steps = -1 if event.num == 4 or (event.num != 5 and event.delta > 0) else 1
         self.side_canvas.yview_scroll(steps * 3, 'units')
 
-    def responsive_layout(self, event):
-        if event.widget != self.root:
+    def tab_changed(self, event=None):
+        """The study information is irrelevant on «Resultados del grupo»: give that space to it."""
+        if self.view_tabs.index('current') == 2:
+            self.info_card.pack_forget()
+            self.compact_info.pack_forget()
+        else:
+            self.responsive_layout(height=self.root.winfo_height())
+        self.refresh_guide()
+
+    def responsive_layout(self, event=None, height=None):
+        if event is not None and event.widget != self.root:
             return
-        if event.height < 850:
+        if self.view_tabs.index('current') == 2:
+            return
+        height = event.height if event is not None else height
+        if height < 850:
             self.info_card.pack_forget()
             self.compact_info.pack(fill='x', pady=(0, 8), before=self.chart_card)
             self.compact_info.configure(wraplength=max(300, self.chart_card.winfo_width() - 20))
@@ -389,6 +410,8 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
             return 'Buscando participantes en la carpeta data…'
         if not self.inventory:
             return 'No hay participantes en la carpeta data. Copiá allí el dataset ds004902 y reiniciá.'
+        if self.view_tabs.index('current') == 2:
+            return self.results_instruction_text()
         if self.busy:
             return 'Trabajando… esperá a que termine la operación en curso.'
         if nxt == 0:
@@ -523,6 +546,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
                     self.clear_plot('No se pudo cargar la señal')
                     self.status.set(f'Error: {exc}')
             self.update_controls()
+        self.poll_pipeline()
         if not self.closed:
             self.poll_id = self.root.after(50, self.poll)
 
@@ -558,6 +582,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
                                          else s.label for s in self.studies],
                                  state='readonly' if self.studies else 'disabled')
         self.clear_info()
+        self.clear_batch_card()
         self.reset_time()
         self.clear_plot('Elegí un estudio' if self.studies else 'Este paciente no tiene estudios EEG')
         self.status.set('Elegí un estudio.' if self.studies else 'No hay estudios EEG disponibles para este paciente.')
@@ -574,6 +599,8 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.worker_recording = open_recording(study)
         self.worker_recording.annotations = AnnotationStore(
             self.annotations_dir, self.worker_recording, self.data_dir)
+        # Batch outcome for this study, read here so the first lookup (~0.4 s) stays off the UI thread.
+        self.worker_recording.batch = self.results.study_summary(study.participant, study.session, study.task)
         return self.worker_recording
 
     def select_study(self, event=None):
@@ -588,6 +615,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.channel.set('')
         self.channel_box.configure(values=(), state='disabled')
         self.clear_info()
+        self.clear_batch_card('Cargando…')
         self.reset_time()
         self.clear_plot('Cargando el estudio…')
         index = self.study_box.current()
@@ -617,6 +645,8 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.channel_box.configure(values=recording.channels, state='readonly')
         self.clear_plot('Elegí un electrodo para ver su señal')
         self.status.set(recording.warning or 'Estudio cargado. Elegí un electrodo.')
+        self.study_batch = getattr(recording, 'batch', None)
+        self.update_batch_card()
         self.review_loaded(recording)
 
     def reset_time(self):
@@ -630,6 +660,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
             self.channel_list.selection_clear(0, 'end')
             self.channel_list.selection_set(self.recording.channels.index(self.channel.get()))
             self.last_multi = self.channel_list.curselection()
+        self.update_batch_card()
         self.show_window(self.start)
 
     def show_window(self, start):
@@ -644,7 +675,10 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
             self.update_controls()
             return
         recording, config = self.recording, self.config
-        self.clear_plot('Cargando señal…')
+        # Keep the current plot while the next window loads when the electrodes are the same:
+        # draw_segment then only updates the lines (faster ◀/▶, no blank flash).
+        if self.displayed is None or self.displayed.channels != tuple(channels):
+            self.clear_plot('Cargando señal…')
         self.status.set(f'Leyendo {", ".join(channels)} desde {start:g} s…')
         self.submit(lambda: recording.read_channels(channels, start, config), self.segment_loaded)
 
@@ -659,6 +693,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
     def clear_plot(self, message):
         self.displayed = None
         self.epoch_artists = []
+        self.segment_lines = []
         self.figure.clear()
         self.ax = self.figure.add_subplot(111)
         self.resize_plot()
@@ -720,6 +755,12 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
     def close(self):
         if self.closed:
             return
+        if self.runner.running:
+            if not messagebox.askyesno('Proceso en curso',
+                                       'Hay un paso de «Resultados del grupo» en ejecución. ¿Cancelarlo y salir? '
+                                       'Lo ya calculado por el lote se conserva.', parent=self.root):
+                return
+            self.runner.cancel()
         if not self.may_leave():
             return
         self.closed = True
@@ -737,11 +778,15 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.root.destroy()
 
 
-def main(data_dir):
-    if sys.platform == 'win32':
-        import ctypes   # identidad propia en la barra de tareas, separada de python.exe
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('psib.eeg.explorer')
-    root = tk.Tk()
+def main(data_dir, root=None):
+    """Run the app; gui.py passes a root that already shows a loading message."""
+    if root is None:
+        if sys.platform == 'win32':
+            import ctypes   # identidad propia en la barra de tareas, separada de python.exe
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('psib.eeg.explorer')
+        root = tk.Tk()
+    for child in root.winfo_children():   # remove the loading screen
+        child.destroy()
     app = App(root, data_dir)
     try:
         root.mainloop()

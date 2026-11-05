@@ -80,15 +80,22 @@ class Recording:
             raise ValueError('El registro no contiene muestras o canales EEG.')
 
     def read_window(self, channel, start, seconds=10):
-        if channel not in self.channels:
+        """One channel name gives 1-D µV values; a list/tuple gives one row per name."""
+        names = [channel] if isinstance(channel, str) else list(channel)
+        if not names or any(name not in self.channels for name in names):
             raise ValueError('El electrodo no pertenece al registro seleccionado.')
         if not math.isfinite(start) or not 0 <= start < self.duration:
             raise ValueError(f'El inicio debe estar entre 0 y {self.duration:g} s (sin incluir el final).')
         first = min(int(round(start * self.sfreq)), self.raw.n_times - 1)
         last = min(first + int(round(seconds * self.sfreq)), self.raw.n_times)
-        values = self.raw.get_data(picks=[channel], start=first, stop=last)[0]
+        unique = list(dict.fromkeys(names))  # one read, even with repeated names
+        rows = dict(zip(unique, self.raw.get_data(picks=unique, start=first, stop=last)))
+        values = np.stack([rows[name] for name in names])
+        if isinstance(channel, str):
+            values = values[0]
         return Segment(np.arange(first, last) / self.sfreq, values * 1e6,
-                       first / self.sfreq, last / self.sfreq)
+                       first / self.sfreq, last / self.sfreq,
+                       () if isinstance(channel, str) else tuple(names))
 
     def close(self):
         self.filter.channels.clear()
@@ -98,10 +105,7 @@ class Recording:
         if not channels or len(channels) > 8 or any(c not in self.channels for c in channels):
             raise ValueError('Seleccioná entre 1 y 8 electrodos del registro.')
         if not config.enabled:
-            segments = [self.read_window(c, start, seconds) for c in channels]
-            first = segments[0]
-            return Segment(first.times, np.stack([s.values_uv for s in segments]),
-                           first.start, first.stop, tuple(channels))
+            return self.read_window(tuple(channels), start, seconds)
         if not math.isfinite(start) or not 0 <= start < self.duration:
             raise ValueError('Inicio fuera del registro.')
         self.filter.prepare(config)

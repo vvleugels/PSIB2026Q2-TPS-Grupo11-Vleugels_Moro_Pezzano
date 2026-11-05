@@ -146,16 +146,20 @@ class ScreeningUI:
         return next(iter(kinds)) if len(kinds) == 1 else ('Varios' if kinds else '')
 
     def update_screening_detail(self):
+        batch = self.batch_rejection(self.selected_epoch) if (
+            hasattr(self, 'batch_rejection') and self.selected_epoch is not None) else ''
+        batch = f'Rechazada por el lote: {batch}' if batch else ''
         if not self.screening_result or self.selected_epoch is None:
-            self.screening_detail.set('')
+            self.screening_detail.set(batch)
             return
         issues = self.screening_issues(self.selected_epoch)
         details = [f"{issue['channel']}: {issue['kind'].lower()}"
                    + (f" ({issue['peak_to_peak_uv']:.2f} µV pico a pico)"
                       if issue['peak_to_peak_uv'] is not None else '') for issue in issues]
         signal = self.screening_result['filter'].label
-        self.screening_detail.set(f'{signal}: ' + '; '.join(details) if details else
-                                 f'{signal}: sin avisos con estos umbrales y electrodos; requiere revisión visual.')
+        text = (f'{signal}: ' + '; '.join(details) if details else
+                f'{signal}: sin avisos con estos umbrales y electrodos; requiere revisión visual.')
+        self.screening_detail.set(text + (f'\n{batch}' if batch else ''))
 
     def next_suspect(self, direction):
         if self.busy or not self.screening_result:

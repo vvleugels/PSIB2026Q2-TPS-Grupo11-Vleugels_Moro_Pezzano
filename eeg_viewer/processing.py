@@ -2,6 +2,7 @@
 from dataclasses import asdict, dataclass
 import math
 
+import numpy as np
 from mne.filter import create_filter, filter_data
 
 
@@ -71,3 +72,31 @@ class ContinuousFilter:
                 original, self.raw.info['sfreq'], config.low, config.high,
                 **FILTER_OPTIONS, pad='reflect_limited', copy=True, verbose=False)[0]
         return self.channels[name]
+
+    def prefetch(self, names, config, block=16):
+        """Filter and cache several channels, reading and filtering them in blocks.
+
+        Each row is filtered independently, exactly as `channel()` would, but one
+        read and one FIR call per block avoid repeated whole-file reads. Raises on
+        the first channel (in `names` order) with non-finite samples.
+        """
+        self.prepare(config)
+        names = list(dict.fromkeys(names))
+        block = max(1, int(block))
+        for offset in range(0, len(names), block):
+            group = names[offset:offset + block]
+            # The source is read even for cached channels, as scanning always did:
+            # a NaN would spread through FIR convolution beyond its source epoch.
+            original = self.raw.get_data(picks=group)
+            for name, row in zip(group, original):
+                if not np.all(np.isfinite(row)):
+                    raise ValueError(f'{name}: hay muestras no finitas. '
+                                     'Usá el barrido original para localizarlas antes de filtrar.')
+            missing = [index for index, name in enumerate(group) if name not in self.channels]
+            if missing:
+                filtered = filter_data(
+                    original[missing], self.raw.info['sfreq'], config.low, config.high,
+                    **FILTER_OPTIONS, pad='reflect_limited', copy=True, verbose=False)
+                for index, row in zip(missing, filtered):
+                    self.channels[group[index]] = row
+        return {name: self.channels[name] for name in names}
