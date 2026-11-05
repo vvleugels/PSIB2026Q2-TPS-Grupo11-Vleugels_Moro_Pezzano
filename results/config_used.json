@@ -1,0 +1,66 @@
+{
+  "config_hash": "530b41c9a018",
+  "created_at": "2026-11-04T23:52:22.083107+00:00",
+  "command": "C:\\Users\\Amalia\\Documents\\ITBA (post formateo)\\PSIB\\PSIB2026Q2-TPS-Grupo11-Vleugels_Moro_Pezzano\\batch\\run_batch.py --jobs 6",
+  "filter": {
+    "enabled": true,
+    "low": 0.2,
+    "high": 45.0,
+    "method": "fir",
+    "phase": "zero",
+    "fir_window": "hamming",
+    "fir_design": "firwin",
+    "filter_length": "auto",
+    "l_trans_bandwidth": "auto",
+    "h_trans_bandwidth": "auto",
+    "pad": "reflect_limited",
+    "mne_version": "1.13.2"
+  },
+  "epoch_seconds": 5.0,
+  "complete_epochs_only": true,
+  "welch": {
+    "seconds": 2.0,
+    "overlap_percent": 50.0,
+    "window": "hann (periodic)",
+    "scaling": "density",
+    "average": "mean"
+  },
+  "bands": {
+    "delta": [
+      0.5,
+      4.0
+    ],
+    "theta": [
+      4.0,
+      8.0
+    ],
+    "alpha": [
+      8.0,
+      13.0
+    ],
+    "beta": [
+      13.0,
+      30.0
+    ]
+  },
+  "relative_power_reference_hz": [
+    0.5,
+    30.0
+  ],
+  "screening": {
+    "high_uv": 150.0,
+    "flat_uv": 1.0,
+    "measure": "peak-to-peak per channel and epoch, on the filtered signal",
+    "validated": false
+  },
+  "bad_channel_max_fraction": 0.3,
+  "min_clean_epochs": 12,
+  "sessions": {
+    "ses-1": "NS",
+    "ses-2": "SD"
+  },
+  "eyes": {
+    "eyesopen": "open",
+    "eyesclosed": "closed"
+  }
+}

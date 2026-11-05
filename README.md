@@ -10,6 +10,10 @@ El [piloto de limpieza EEG y validación](VALIDATION.md) se ejecuta por separado
 humana previa a la integración; todavía no modifica el flujo de esta GUI ni habilita
 aceptación automática definitiva.
 
+La [extracción por lotes](batch/README.md) (`python -m batch.run_batch`) calcula la potencia por bandas de todos los participantes, sesiones, condiciones de ojos y electrodos sin abrir la GUI; la configuración compartida está en `config.py`.
+
+Las [estadísticas SD vs NS](analysis/README.md) (`python -m analysis.stats`, notebook `notebooks/03_stats.ipynb`) agregan las potencias por región y comparan las sesiones de forma pareada; requieren `pip install -r requirements-analysis.txt`.
+
 ## Instalación y ejecución
 
 Requiere Python 3.10 o superior y una sesión gráfica. Desde la carpeta del proyecto:
@@ -255,6 +259,53 @@ la referencia proviene del JSON. Los campos ausentes se indican como no disponib
 - `eeg_viewer/screening.py`, `eeg_viewer/screening_ui.py`: barrido de amplitud y avisos de revisión.
 - `eeg_viewer/app.py`, `eeg_viewer/review_ui.py` y `eeg_viewer/spectral_ui.py`:
   interfaz y coordinación asíncrona.
+
+## Análisis por lotes, estadística y figuras (sin GUI)
+
+Flujo completo, desde la carpeta del proyecto (en Windows, `.venv\Scripts\python.exe` en lugar de `python`):
+
+```bash
+pip install -r requirements-analysis.txt   # pandas y Jupyter; la GUI no los necesita
+python -m batch.run_batch --jobs 6         # 1. potencia por bandas de cada registro (~16 min)
+python -m analysis.stats                   # 2. regiones y comparaciones SD vs NS (~20 s)
+python -m analysis.figures                 # 3. figuras, tabla de hipótesis y leyendas
+```
+
+Cada paso lee lo que produce el anterior en `results/`. El lote es reanudable: vuelve
+a calcular solo los registros nuevos o los afectados por un cambio de `config.py`.
+Opciones del lote: `--eyes open|closed`, `--subjects 01 02`, `--force`. Ojos abiertos
+es el análisis principal y ojos cerrados el secundario; nunca se combinan. Los
+resultados describen diferencias espectrales a nivel de grupo, sin interpretación clínica.
+«Aceptada» en el barrido automático significa «dentro de los límites de amplitud», no
+inspección visual.
+
+Archivos nuevos:
+
+- `config.py`: configuración compartida (filtro, epochs, Welch, bandas, umbrales, mínimos).
+- `batch/run_batch.py`, `batch/README.md`: extracción por lotes y su documentación.
+- `analysis/regions.py`: canales por región (construido desde `channels.tsv`) y promedios regionales.
+- `analysis/stats.py`, `analysis/README.md`: pruebas pareadas, FDR, orden de sesión y clusters.
+- `analysis/hypotheses.py`, `analysis/hypotheses.md`: hipótesis H1–H4 (referencias pendientes, TODO).
+- `analysis/figures.py`: topomapas, PSD por región, gráficos pareados, theta/beta, tabla resumen.
+- `notebooks/03_stats.ipynb`, `notebooks/04_results_figures.ipynb`: muestran tablas y figuras
+  importando los módulos (no contienen cálculos propios).
+- `report/methods_draft.md`: borrador de Materiales y Métodos con los parámetros exactos.
+- `requirements-analysis.txt`: dependencias adicionales de análisis y notebooks.
+- `tests/test_batch.py`, `tests/test_stats.py`, `tests/test_figures.py`,
+  `tests/synthetic_features.py`: pruebas con señales y tablas sintéticas.
+
+Salidas en `results/`:
+
+| Archivo | Contenido |
+|---|---|
+| `features_long.csv`, `theta_beta.csv` | potencia absoluta y relativa por canal y banda; cociente theta/beta |
+| `psd_channels.csv` | PSD media por registro y canal, 0–45 Hz (µV²/Hz) |
+| `exclusions.csv`, `recordings_summary.csv` | registros, canales y epochs excluidos, con el motivo |
+| `session_order.csv`, `config_used.json` | orden NS/SD de cada participante; configuración usada |
+| `features_region.csv` | log10 de la potencia y potencia relativa por región |
+| `stats_*.csv`, `cluster_results.csv` | resultados estadísticos (ver `analysis/README.md`) |
+| `figures/*.png`, `figures/captions.md` | figuras y sus leyendas |
+| `figures/hypothesis_summary.csv/.md` | hipótesis, dirección esperada y observada, p corregido, tamaño del efecto |
 
 ## Verificación
 

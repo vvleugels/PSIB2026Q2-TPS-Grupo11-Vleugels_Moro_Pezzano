@@ -7,3 +7,7 @@ __pycache__/
 *.py[cod]
 /annotations/*
 !/annotations/.gitkeep
+
+# Batch pipeline: per-recording cache and run log (regenerable)
+/results/per_recording/
+/results/batch.log
