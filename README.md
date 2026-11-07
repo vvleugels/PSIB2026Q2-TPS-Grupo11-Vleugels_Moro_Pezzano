@@ -250,6 +250,7 @@ python scripts/analyze_group.py
 python scripts/analyze_group.py --max-participants 3
 python scripts/analyze_group.py --participants sub-11 sub-12 sub-13 --max-participants 3
 python scripts/analyze_group.py --participants sub-12 sub-13 sub-14 --eyes open --channels Fp1 Cz Oz --rejection-mode channel --high-uv 150 --output results/example-channel
+python scripts/analyze_group.py --participants-file participants_group20_seed2026.txt --rejection-mode channel --high-uv 150 --min-channel-epochs 10 --checkpoint-each-record --output results/group20-channel-2026
 ```
 
 Lee `SessionOrder` de `data/participants.tsv`; recorre `ses-1` (sueño normal) y
@@ -265,6 +266,11 @@ En ambos modos se excluye un canal del registro si le quedan menos de 10 epochs
 limpias; se puede indicar otro mínimo con `--min-channel-epochs`. Las exclusiones
 por canal aparecen en `exclusions.csv`. `features.csv` registra `epochs_used` en
 cada fila de canal/sesión/condición, además del modo y del umbral alto efectivo.
+En modo canal también incluye `epochs_used_global`, el número de epochs que habrían
+quedado con el rechazo global, obtenido del mismo barrido. `--participants-file`
+lee IDs de un archivo de texto, uno por línea (ignora comentarios `#`).
+`--checkpoint-each-record` muestra el avance y vacía las tablas después de cada
+registro para conservar resultados parciales ante una interrupción.
 `--eyes open` permite limitar el flujo a ojos abiertos; `--channels` permite elegir
 electrodos para una comparación puntual. El límite alto es configurable, por ejemplo
 `--high-uv 180` (µV pico a pico).

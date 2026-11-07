@@ -1,0 +1,22 @@
+# seed: 2026
+# criterion: all four expected recordings (ses-1/ses-2 x eyesopen/eyesclosed) are complete in the local inventory
+sub-12
+sub-13
+sub-15
+sub-16
+sub-19
+sub-21
+sub-22
+sub-23
+sub-25
+sub-26
+sub-27
+sub-29
+sub-30
+sub-31
+sub-32
+sub-33
+sub-34
+sub-36
+sub-37
+sub-38

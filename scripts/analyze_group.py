@@ -19,6 +19,8 @@ def main(argv=None):
     parser.add_argument('--output', type=Path, help='Carpeta nueva de salida; por defecto results/group-analysis-<UTC>.')
     parser.add_argument('--max-participants', type=int, help='Limita el número de participantes de la lista ordenada.')
     parser.add_argument('--participants', nargs='+', help='IDs a procesar, p. ej. sub-11 sub-12 sub-13.')
+    parser.add_argument('--participants-file', type=Path,
+                        help='Archivo de IDs, uno por línea; acepta comentarios iniciados con #.')
     parser.add_argument('--high-uv', type=float, default=150.0, help='Umbral pico a pico alto en µV (estricto >).')
     parser.add_argument('--flat-uv', type=float, default=1.0, help='Umbral pico a pico plano en µV (estricto <).')
     parser.add_argument('--rejection-mode', choices=('epoch', 'channel'), default='epoch',
@@ -28,11 +30,29 @@ def main(argv=None):
     parser.add_argument('--channels', nargs='+', help='Canales EEG a procesar; por defecto todos.')
     parser.add_argument('--min-channel-epochs', type=int, default=10,
                         help='Mínimo de epochs limpias requeridas por canal y registro.')
+    parser.add_argument('--checkpoint-each-record', action='store_true',
+                        help='Escribe y vacía las tablas al terminar cada registro.')
     args = parser.parse_args(argv)
+    if args.participants and args.participants_file:
+        parser.error('Usá --participants o --participants-file, no ambos.')
+    participants = args.participants
+    if args.participants_file:
+        try:
+            with args.participants_file.open(encoding='utf-8-sig') as stream:
+                participants = [line.strip() for line in stream
+                                if line.strip() and not line.lstrip().startswith('#')]
+        except OSError as exc:
+            parser.error(f'No se pudo leer {args.participants_file}: {exc}')
+        if not participants:
+            parser.error(f'El archivo no contiene IDs: {args.participants_file}')
+
+    def show_progress(done, total, participant, session, task, status):
+        print(f'[{done}/{total}] {participant} {session} {task}: {status}', flush=True)
+
     try:
         result = run_group_analysis(
             data_dir=args.data, output_dir=args.output,
-            max_participants=args.max_participants, participants=args.participants,
+            max_participants=args.max_participants, participants=participants,
             screening_config=ScreeningConfig(high_uv=args.high_uv, flat_uv=args.flat_uv),
             filter_config=FilterConfig(enabled=True, low=0.2, high=45.0),
             spectral_config=SpectralConfig(),
@@ -40,6 +60,8 @@ def main(argv=None):
             min_channel_epochs=args.min_channel_epochs,
             eyes=args.eyes,
             channels=args.channels,
+            checkpoint_each_record=args.checkpoint_each_record,
+            progress_callback=show_progress,
         )
     except (OSError, ValueError, RuntimeError, KeyError) as exc:
         parser.exit(1, f'Error: {exc}\n')

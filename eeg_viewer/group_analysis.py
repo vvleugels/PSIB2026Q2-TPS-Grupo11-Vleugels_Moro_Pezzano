@@ -26,7 +26,7 @@ FEATURE_COLUMNS = (
     'high_threshold_uv', 'epochs_total',
     'epochs_partial', 'epochs_rejected_by_screening', 'epochs_rejected_high',
     'epochs_rejected_flat', 'epochs_rejected_nonfinite',
-    'epochs_rejected_channel', 'epochs_used',
+    'epochs_rejected_channel', 'epochs_used_global', 'epochs_used',
 )
 SUMMARY_COLUMNS = (
     'participant', 'session', 'session_condition', 'eyes', 'SessionOrder',
@@ -36,7 +36,7 @@ SUMMARY_COLUMNS = (
 )
 EXCLUSION_COLUMNS = (
     'participant', 'session', 'session_condition', 'eyes', 'SessionOrder',
-    'recording', 'channel', 'reason',
+    'recording', 'channel', 'rejection_mode', 'reason',
 )
 
 
@@ -171,6 +171,7 @@ def extract_recording_features(recording, session_order: str,
                 epochs_rejected_flat=len(flat),
                 epochs_rejected_nonfinite=len(nonfinite),
                 epochs_rejected_channel=len(channel_rejected),
+                epochs_used_global=len(record_kept),
                 epochs_used=len(kept),
             ))
     summary['channels_excluded_min_epochs'] = len(channel_exclusions)
@@ -186,11 +187,20 @@ def _write_csv(path: Path, columns, rows):
         writer.writerows(rows)
 
 
+def _append_csv(path: Path, columns, rows):
+    if not rows:
+        return
+    with path.open('a', newline='', encoding='utf-8') as stream:
+        writer = csv.DictWriter(stream, fieldnames=columns, extrasaction='ignore')
+        writer.writerows(rows)
+
+
 def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
                        participants=None, screening_config=ScreeningConfig(),
                        filter_config=DEFAULT_FILTER, spectral_config=SpectralConfig(),
                        rejection_mode='epoch', min_channel_epochs=10,
-                       eyes='both', channels=None):
+                       eyes='both', channels=None, checkpoint_each_record=False,
+                       progress_callback=None):
     """Process requested BIDS recordings and write fresh CSV outputs."""
     data_dir = Path(data_dir).resolve()
     orders = read_session_order(data_dir)
@@ -215,15 +225,40 @@ def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
     if min_channel_epochs < 1:
         raise ValueError('min_channel_epochs debe ser mayor que cero.')
 
+    if output_dir is None:
+        stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+        output_dir = data_dir.parent / 'results' / f'group-analysis-{stamp}'
+    output_dir = Path(output_dir).resolve()
+    output_dir.mkdir(parents=True, exist_ok=False)
+    if checkpoint_each_record:
+        _write_csv(output_dir / 'features.csv', FEATURE_COLUMNS, [])
+        _write_csv(output_dir / 'record_summary.csv', SUMMARY_COLUMNS, [])
+        _write_csv(output_dir / 'exclusions.csv', EXCLUSION_COLUMNS, [])
+
     features, summaries, exclusions = [], [], []
+    tasks_by_participant = {
+        participant: (('eyesopen',) if eyes == 'open' else
+                      (('eyesclosed',) if 'eyesclosed' in expected_tasks(participant) else ()) if eyes == 'closed' else
+                      expected_tasks(participant))
+        for participant in selected
+    }
+    total_records = 2 * sum(len(tasks) for tasks in tasks_by_participant.values())
+    completed_records = 0
+
+    def finish_record(start_counts, participant, session, task, status):
+        nonlocal completed_records
+        if checkpoint_each_record:
+            _append_csv(output_dir / 'features.csv', FEATURE_COLUMNS, features[start_counts[0]:])
+            _append_csv(output_dir / 'record_summary.csv', SUMMARY_COLUMNS, summaries[start_counts[1]:])
+            _append_csv(output_dir / 'exclusions.csv', EXCLUSION_COLUMNS, exclusions[start_counts[2]:])
+        completed_records += 1
+        if progress_callback is not None:
+            progress_callback(completed_records, total_records, participant, session, task, status)
+
     for participant in selected:
         for session in ('ses-1', 'ses-2'):
-            tasks = expected_tasks(participant)
-            if eyes == 'open':
-                tasks = ('eyesopen',)
-            elif eyes == 'closed':
-                tasks = ('eyesclosed',) if 'eyesclosed' in tasks else ()
-            for task in tasks:
+            for task in tasks_by_participant[participant]:
+                start_counts = (len(features), len(summaries), len(exclusions))
                 matches = [study for study in inventory.get(participant, [])
                            if study.session == session and study.task == task]
                 context = Study(Path(), participant, session, task)
@@ -231,12 +266,15 @@ def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
                               session_condition=context.condition, eyes=context.eyes,
                               SessionOrder=orders[participant],
                               channel='',
+                              rejection_mode=rejection_mode,
                               recording=f'{participant}_{session}_task-{task}_eeg.set')
                 if not matches:
                     exclusions.append({**common, 'reason': 'No se encontró el archivo .set esperado.'})
+                    finish_record(start_counts, participant, session, task, 'missing')
                     continue
                 if len(matches) > 1:
                     exclusions.append({**common, 'reason': f'Se encontraron {len(matches)} registros para la misma sesión y tarea.'})
+                    finish_record(start_counts, participant, session, task, 'duplicate')
                     continue
                 study = matches[0]
                 try:
@@ -265,18 +303,16 @@ def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
                                       'rejection_mode': rejection_mode, 'status': 'excluded'})
                     exclusions.append({**common, 'recording': study.path.name,
                                        'reason': f'{type(exc).__name__}: {exc}'})
+                status = summaries[-1].get('status', 'excluded') if summaries else 'excluded'
+                finish_record(start_counts, participant, session, task, status)
 
     features.sort(key=lambda row: (_participant_key(row['participant']), row['session'], row['eyes'], row['channel'], BANDS.index(row['band'])))
     summaries.sort(key=lambda row: (_participant_key(row['participant']), row['session'], row['eyes']))
     exclusions.sort(key=lambda row: (_participant_key(row['participant']), row['session'], row['eyes']))
-    if output_dir is None:
-        stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
-        output_dir = data_dir.parent / 'results' / f'group-analysis-{stamp}'
-    output_dir = Path(output_dir).resolve()
-    output_dir.mkdir(parents=True, exist_ok=False)
-    _write_csv(output_dir / 'features.csv', FEATURE_COLUMNS, features)
-    _write_csv(output_dir / 'record_summary.csv', SUMMARY_COLUMNS, summaries)
-    _write_csv(output_dir / 'exclusions.csv', EXCLUSION_COLUMNS, exclusions)
+    if not checkpoint_each_record:
+        _write_csv(output_dir / 'features.csv', FEATURE_COLUMNS, features)
+        _write_csv(output_dir / 'record_summary.csv', SUMMARY_COLUMNS, summaries)
+        _write_csv(output_dir / 'exclusions.csv', EXCLUSION_COLUMNS, exclusions)
     metadata = dict(
         created_at=datetime.now(timezone.utc).isoformat(), data_dir=str(data_dir),
         participants=selected, filter=filter_config.context(),

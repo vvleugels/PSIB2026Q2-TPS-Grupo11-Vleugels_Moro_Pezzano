@@ -41,6 +41,11 @@ Para las epochs retenidas se calcula Welch y potencia absoluta/relativa con
 `SpectralConfig` y `band_powers` de `spectral.py`. `features.csv` conserva el número
 de epochs usadas en `epochs_used` en cada fila identificada por participante,
 sesión, condición, canal y banda, así como `rejection_mode` y `high_threshold_uv`.
+En modo canal también incluye `epochs_used_global`, el número que habría quedado
+con el rechazo global, calculado en el mismo screening. `--participants-file` lee
+un ID por línea e ignora comentarios que comienzan con `#`;
+`--checkpoint-each-record` muestra progreso y escribe las tablas al terminar cada
+registro.
 `--eyes open` o `--eyes closed` limita la condición ocular, y `--channels Fp1 Cz Oz`
 restringe el análisis a canales seleccionados. No se usan anotaciones manuales. Las
 salidas son `features.csv`, `record_summary.csv`, `exclusions.csv` y `analysis.json`.
