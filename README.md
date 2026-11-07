@@ -286,11 +286,53 @@ descartadas por registro),
 con sello UTC bajo `results/`; `--output` permite elegir otra ruta nueva. La opción
 `--participants` permite elegir IDs concretos para pruebas o corridas parciales.
 
+### Análisis regional del lote
+
+Para resumir `results/group20-channel-2026/features.csv` sin volver a leer señales:
+
+```bash
+python scripts/analyze_regions.py
+```
+
+Se transforma la potencia absoluta a `log10(µV²)` por canal y se promedia dentro
+de cada participante, sesión, condición ocular, región y banda. La asignación es:
+frontal `F` (excluye `Fp` y `AF`), central `FC/C`, parietal `CP/P`, occipital `PO/O`
+y temporal `FT/T/TP`. Los electrodos `Fp` y `AF` no entran en regiones; sí aparecen
+en los topomaps. Para los mapas se usa el montaje `standard_1020` de MNE; las etiquetas
+que solo difieren en mayúsculas, como `Cpz` y `CPz`, se combinan en la posición común.
+
+`stats_table.csv` contiene tests de Wilcoxon pareados SD−NS por banda y región,
+separados por condición ocular, con FDR de Benjamini–Hochberg aplicada a las 20
+comparaciones de cada condición. El tamaño de efecto es la correlación biserial por
+rangos pareada. `SessionOrder` se evalúa comparando las diferencias SD−NS entre los
+dos órdenes con Mann–Whitney; esos p-valores también tienen FDR por condición ocular.
+La carpeta `analysis/` guarda además `regional_features.csv`, `channel_region_map.csv`,
+los ocho gráficos `pairs_{open|closed}_{delta|theta|alpha|beta}.png` y los ocho
+topomaps correspondientes de la diferencia media SD−NS por canal.
+
 Prueba sintética del cálculo grupal:
 
 ```bash
 python -m unittest tests.test_group_analysis -v
 ```
+
+### Resumen regional y comparación pareada
+
+`python scripts/analyze_regions.py` analiza el `features.csv` existente; no vuelve
+a cargar registros EEG. Convierte `absolute_uv2` a `log10(µV²)` por canal y luego
+promedia esos valores por participante, sesión, condición ocular, región y banda.
+La asignación de canales es frontal `F` (excluye los polares `Fp` y `AF`), central
+`FC/C`, parietal `CP/P`, occipital `PO/O` y temporal `FT/T/TP`. Fp/AF no se usan en
+las medias regionales, pero sí en topomaps.
+
+`results/group20-channel-2026/analysis/stats_table.csv` contiene Wilcoxon pareados
+SD−NS por región/banda, para ojos abiertos y cerrados por separado. Informa pares,
+mediana de la diferencia log10 y correlación rank-biserial pareada; BH-FDR se aplica
+a las 20 pruebas de cada condición ocular. El orden de sesión se evalúa con
+Mann–Whitney sobre las diferencias SD−NS entre los grupos `NS->SD` y `SD->NS`, con
+FDR independiente por condición ocular. También se generan `regional_features.csv`,
+`channel_region_map.csv`, ocho gráficos `pairs_{open|closed}_{delta|theta|alpha|beta}.png`
+y ocho mapas de la diferencia media topográfica SD−NS usando `standard_1020` de MNE.
 
 En la corrida de verificación del 7 de noviembre de 2026, la senoide sintética de
 10 Hz quedó en alfa y la ejecución con `sub-11` a `sub-13` produjo 1.952 filas de

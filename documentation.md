@@ -57,6 +57,30 @@ python scripts/analyze_group.py --participants sub-12 sub-13 sub-14 --eyes open 
 python scripts/analyze_group.py --participants sub-12 sub-13 sub-14 --eyes open --channels Fp1 Cz Oz --rejection-mode channel --output results/three-channel
 ```
 
+## Análisis regional desde `features.csv`
+
+`scripts/analyze_regions.py` consume solo el CSV grupal ya generado. Aplica `log10`
+a la potencia absoluta de cada canal y promedia esos logaritmos por participante,
+sesión, condición ocular, banda y región. La asignación de canales es frontal `F`
+(sin `Fp` ni `AF`), central `FC/C`, parietal `CP/P`, occipital `PO/O` y temporal
+`FT/T/TP`. Los canales `Fp` y `AF` se excluyen de las medias regionales, pero se
+conservan en los mapas. El mapa usa el montaje estándar 10-20 de MNE; dos etiquetas
+que solo difieren en mayúsculas (por ejemplo `Cpz`/`CPz`) se promedian en una misma
+posición para el mapa.
+
+La tabla `analysis/stats_table.csv` compara NS (`ses-1`) y SD (`ses-2`) con Wilcoxon
+pareado sobre las features regionales de log-potencia. Informa los pares completos,
+la mediana de SD−NS y el tamaño de efecto rank-biserial pareado. Benjamini–Hochberg
+se aplica por separado a las 20 pruebas región-banda de cada condición ocular.
+Como chequeo exploratorio del orden, compara las diferencias pareadas de los grupos
+`NS->SD` y `SD->NS` con Mann–Whitney y corrige esos 20 valores p por condición ocular.
+La salida incluye `regional_features.csv`, `channel_region_map.csv`, `stats_table.csv`,
+y los ocho `pairs_{open|closed}_{delta|theta|alpha|beta}.png` y ocho topomaps SD−NS.
+
+```bash
+python scripts/analyze_regions.py
+```
+
 Se agregó una prueba con una senoide de 10 Hz que comprueba que la banda alfa tiene
 la mayor potencia. También se corrió el pipeline con tres participantes. En la
 copia local auditada hay 71 participantes en `participants.tsv`, 61 carpetas y
@@ -65,9 +89,9 @@ El pipeline conserva estos casos como exclusiones y deja intacto `data/`.
 
 En la suite final corrieron 75 pruebas: 74 pasaron y una no pudo crear un symlink
 por falta de privilegio en Windows (`WinError 1314`). El test de caracteres
-acentuados pasa al ejecutar con UTF-8 explícito. El análisis grupal actual produce
-features descriptivas por canal y banda; la estadística pareada, los topomaps, la
-agregación por regiones y la comparación entre filtros siguen pendientes.
+acentuados pasa al ejecutar con UTF-8 explícito. El análisis regional descrito
+arriba ya incorpora la estadística pareada, los mapas y el resumen por regiones;
+la comparación entre filtros sigue pendiente.
 
 ## Design decisions
 
