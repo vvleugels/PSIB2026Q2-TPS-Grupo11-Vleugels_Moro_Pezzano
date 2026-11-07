@@ -15,6 +15,7 @@ from .annotations import AnnotationStore, STATES
 from .review_ui import ReviewUI
 from .spectral_ui import SpectralUI
 from .screening_ui import ScreeningUI
+from .group_ui import GroupUI
 from .theme import (INK, INK_MUTED, INK_SOFT, IRIS, IRIS_DARK, AMBER, BG, CARD, MUTED, Stepper,
                     Tooltip, apply_theme, autowrap, callout, card, mark_image, style_dialog)
 
@@ -213,6 +214,10 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         spectral = ttk.Frame(self.view_tabs, style='Card.TFrame', padding=10)
         self.view_tabs.add(temporal, text='Señal temporal')
         self.view_tabs.add(spectral, text='Análisis espectral')
+        self.group_results = GroupUI(
+            self.view_tabs,
+            PROJECT / 'results' / 'group20-channel-2026' / 'analysis',
+        )
         self.view_tabs.bind('<<NotebookTabChanged>>', lambda e: self.refresh_guide())
         self.chart_card = self.view_tabs
         chart = temporal
