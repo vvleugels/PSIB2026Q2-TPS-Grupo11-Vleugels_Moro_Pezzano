@@ -28,10 +28,29 @@ participantes se lee de `participants.tsv` y cada fila incorpora `SessionOrder`.
 
 Cada registro usa el FIR continuo de 0,2–45 Hz de `processing.py`. Las epochs de
 5 segundos se filtran automáticamente con los límites de `screening.py` (pico a
-pico alto >150 µV y plano <1 µV); las parciales se excluyen. Para las epochs
-retenidas se calcula Welch y potencia absoluta/relativa con `SpectralConfig` y
-`band_powers` de `spectral.py`. No se usan anotaciones manuales. Las salidas son
-`features.csv`, `record_summary.csv`, `exclusions.csv` y `analysis.json`.
+pico alto >150 µV y plano <1 µV); las parciales se excluyen. El modo predeterminado
+`--rejection-mode epoch` rechaza una epoch para todos los canales si cualquiera la
+marca. La alternativa `--rejection-mode channel` construye la máscara de limpieza
+por separado para cada canal: una marca en otro electrodo no elimina esa epoch para
+el canal actual. `--high-uv` permite cambiar el límite alto y `--flat-uv` el límite
+plano. En ambos modos se excluye del registro cada canal con menos de 10 epochs
+limpias (`--min-channel-epochs` permite ajustar el mínimo), con participante,
+sesión, canal y motivo en `exclusions.csv`.
+
+Para las epochs retenidas se calcula Welch y potencia absoluta/relativa con
+`SpectralConfig` y `band_powers` de `spectral.py`. `features.csv` conserva el número
+de epochs usadas en `epochs_used` en cada fila identificada por participante,
+sesión, condición, canal y banda, así como `rejection_mode` y `high_threshold_uv`.
+`--eyes open` o `--eyes closed` limita la condición ocular, y `--channels Fp1 Cz Oz`
+restringe el análisis a canales seleccionados. No se usan anotaciones manuales. Las
+salidas son `features.csv`, `record_summary.csv`, `exclusions.csv` y `analysis.json`.
+
+Ejemplo acotado para comparar modos con tres participantes y ojos abiertos:
+
+```powershell
+python scripts/analyze_group.py --participants sub-12 sub-13 sub-14 --eyes open --channels Fp1 Cz Oz --rejection-mode epoch --output results/three-epoch
+python scripts/analyze_group.py --participants sub-12 sub-13 sub-14 --eyes open --channels Fp1 Cz Oz --rejection-mode channel --output results/three-channel
+```
 
 Se agregó una prueba con una senoide de 10 Hz que comprueba que la banda alfa tiene
 la mayor potencia. También se corrió el pipeline con tres participantes. En la

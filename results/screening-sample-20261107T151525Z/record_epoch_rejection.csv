@@ -1,0 +1,61 @@
+﻿participant,session,condition,eyes,SessionOrder,epochs_total,epochs_partial,epochs_rejected,rejection_percent,epochs_used,status
+sub-14,ses-1,NS,eyesopen,SD->NS,60,0,28,46.667,32,ok
+sub-14,ses-1,NS,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-14,ses-2,SD,eyesopen,SD->NS,60,0,39,65.0,21,ok
+sub-14,ses-2,SD,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-16,ses-1,NS,eyesopen,SD->NS,60,0,35,58.333,25,ok
+sub-16,ses-1,NS,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-16,ses-2,SD,eyesopen,SD->NS,60,0,48,80.0,12,ok
+sub-16,ses-2,SD,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-21,ses-1,NS,eyesopen,SD->NS,60,0,46,76.667,14,ok
+sub-21,ses-1,NS,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-21,ses-2,SD,eyesopen,SD->NS,60,0,53,88.333,7,ok
+sub-21,ses-2,SD,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-25,ses-1,NS,eyesopen,SD->NS,60,0,43,71.667,17,ok
+sub-25,ses-1,NS,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-25,ses-2,SD,eyesopen,SD->NS,60,0,58,96.667,2,ok
+sub-25,ses-2,SD,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-27,ses-1,NS,eyesopen,SD->NS,60,0,48,80.0,12,ok
+sub-27,ses-1,NS,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-27,ses-2,SD,eyesopen,SD->NS,60,0,47,78.333,13,ok
+sub-27,ses-2,SD,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-32,ses-1,NS,eyesopen,NS->SD,60,0,39,65.0,21,ok
+sub-32,ses-1,NS,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-32,ses-2,SD,eyesopen,NS->SD,60,0,60,100.0,0,ok
+sub-32,ses-2,SD,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-37,ses-1,NS,eyesopen,NS->SD,60,0,39,65.0,21,ok
+sub-37,ses-1,NS,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-37,ses-2,SD,eyesopen,NS->SD,60,0,46,76.667,14,ok
+sub-37,ses-2,SD,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-41,ses-1,NS,eyesopen,NS->SD,60,0,42,70.0,18,ok
+sub-41,ses-1,NS,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-41,ses-2,SD,eyesopen,NS->SD,60,0,45,75.0,15,ok
+sub-41,ses-2,SD,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-49,ses-1,NS,eyesopen,NS->SD,60,0,60,100.0,0,ok
+sub-49,ses-1,NS,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-49,ses-2,SD,eyesopen,NS->SD,60,0,60,100.0,0,ok
+sub-49,ses-2,SD,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-50,ses-1,NS,eyesopen,SD->NS,60,0,60,100.0,0,ok
+sub-50,ses-1,NS,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-50,ses-2,SD,eyesopen,SD->NS,60,0,60,100.0,0,ok
+sub-50,ses-2,SD,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-52,ses-1,NS,eyesopen,NS->SD,60,0,41,68.333,19,ok
+sub-52,ses-1,NS,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-52,ses-2,SD,eyesopen,NS->SD,73,1,72,98.63,0,ok
+sub-52,ses-2,SD,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-56,ses-1,NS,eyesopen,NS->SD,60,0,21,35.0,39,ok
+sub-56,ses-1,NS,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-56,ses-2,SD,eyesopen,NS->SD,60,0,53,88.333,7,ok
+sub-56,ses-2,SD,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-58,ses-1,NS,eyesopen,NS->SD,60,0,60,100.0,0,ok
+sub-58,ses-1,NS,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-58,ses-2,SD,eyesopen,NS->SD,53,1,53,100.0,-1,ok
+sub-58,ses-2,SD,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-60,ses-1,NS,eyesopen,NS->SD,50,1,49,98.0,0,ok
+sub-60,ses-1,NS,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-60,ses-2,SD,eyesopen,NS->SD,60,0,59,98.333,1,ok
+sub-60,ses-2,SD,eyesopen,NS->SD,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-65,ses-1,NS,eyesopen,SD->NS,60,0,33,55.0,27,ok
+sub-65,ses-1,NS,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"
+sub-65,ses-2,SD,eyesopen,SD->NS,48,1,24,50.0,23,ok
+sub-65,ses-2,SD,eyesopen,SD->NS,,,,,0,"ValueError: dict contains fields not in fieldnames: 'eyes', 'SessionOrder'"

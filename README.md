@@ -249,6 +249,7 @@ El flujo grupal se ejecuta por separado de la GUI y no usa anotaciones manuales:
 python scripts/analyze_group.py
 python scripts/analyze_group.py --max-participants 3
 python scripts/analyze_group.py --participants sub-11 sub-12 sub-13 --max-participants 3
+python scripts/analyze_group.py --participants sub-12 sub-13 sub-14 --eyes open --channels Fp1 Cz Oz --rejection-mode channel --high-uv 150 --output results/example-channel
 ```
 
 Lee `SessionOrder` de `data/participants.tsv`; recorre `ses-1` (sueño normal) y
@@ -257,12 +258,22 @@ para `sub-01` a `sub-38`. Filtra cada canal continuo con el FIR existente de
 0,2–45 Hz. El barrido de `screening.py` marca la epoch completa si cualquier canal
 supera 150 µV pico a pico o queda por debajo de 1 µV pico a pico; también descarta
 epochs parciales. Los umbrales se pueden ajustar con `--high-uv` y `--flat-uv`.
+`--rejection-mode epoch` conserva el comportamiento por defecto: si un canal marca
+una epoch, se descarta para todos los canales. Con `--rejection-mode channel`, cada
+canal usa sus propias epochs limpias y no pierde épocas marcadas solo en otro canal.
+En ambos modos se excluye un canal del registro si le quedan menos de 10 epochs
+limpias; se puede indicar otro mínimo con `--min-channel-epochs`. Las exclusiones
+por canal aparecen en `exclusions.csv`. `features.csv` registra `epochs_used` en
+cada fila de canal/sesión/condición, además del modo y del umbral alto efectivo.
+`--eyes open` permite limitar el flujo a ojos abiertos; `--channels` permite elegir
+electrodos para una comparación puntual. El límite alto es configurable, por ejemplo
+`--high-uv 180` (µV pico a pico).
 
 Welch y las bandas usan los parámetros iniciales de `spectral.py`: ventanas de 2 s,
 50 % de solapamiento, Hann periódica y bandas delta 0,5–4, theta 4–8, alfa 8–13 y
 beta 13–30 Hz. La carpeta nueva de salida contiene `features.csv` (una fila por
-participante, sesión, condición ocular, canal y banda, con `SessionOrder` y conteos
-de epochs rechazadas por el barrido), `record_summary.csv` (epochs usadas y
+participante, sesión, condición ocular, canal y banda, con `SessionOrder`, modo,
+umbral y cantidad de epochs usadas por canal), `record_summary.csv` (epochs usadas y
 descartadas por registro),
 `exclusions.csv` (registros faltantes, incompletos o sin epochs utilizables) y
 `analysis.json` con la configuración y versiones. Por defecto se crea una carpeta

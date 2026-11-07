@@ -22,20 +22,21 @@ from .spectral import BANDS, SpectralConfig, band_powers
 DEFAULT_FILTER = FilterConfig(enabled=True, low=0.2, high=45.0)
 FEATURE_COLUMNS = (
     'participant', 'session', 'session_condition', 'eyes', 'SessionOrder',
-    'channel', 'band', 'absolute_uv2', 'relative_percent', 'epochs_total',
+    'channel', 'band', 'absolute_uv2', 'relative_percent', 'rejection_mode',
+    'high_threshold_uv', 'epochs_total',
     'epochs_partial', 'epochs_rejected_by_screening', 'epochs_rejected_high',
-    'epochs_rejected_flat',
-    'epochs_rejected_nonfinite', 'epochs_used',
+    'epochs_rejected_flat', 'epochs_rejected_nonfinite',
+    'epochs_rejected_channel', 'epochs_used',
 )
 SUMMARY_COLUMNS = (
     'participant', 'session', 'session_condition', 'eyes', 'SessionOrder',
     'recording', 'epochs_total', 'epochs_partial', 'epochs_rejected_by_screening',
     'epochs_rejected_high', 'epochs_rejected_flat', 'epochs_rejected_nonfinite',
-    'epochs_used', 'status',
+    'epochs_used', 'channels_excluded_min_epochs', 'rejection_mode', 'status',
 )
 EXCLUSION_COLUMNS = (
     'participant', 'session', 'session_condition', 'eyes', 'SessionOrder',
-    'recording', 'reason',
+    'recording', 'channel', 'reason',
 )
 
 
@@ -72,15 +73,25 @@ def expected_tasks(participant: str) -> tuple[str, ...]:
 def extract_recording_features(recording, session_order: str,
                                screening_config: ScreeningConfig = ScreeningConfig(),
                                filter_config: FilterConfig = DEFAULT_FILTER,
-                               spectral_config: SpectralConfig = SpectralConfig()):
-    """Screen globally by epoch, then average Welch PSDs over retained epochs."""
+                               spectral_config: SpectralConfig = SpectralConfig(),
+                               rejection_mode: str = 'epoch', min_channel_epochs: int = 10,
+                               channels=None):
+    """Compute Welch band powers with epoch-wide or channel-wise rejection."""
+    if rejection_mode not in {'epoch', 'channel'}:
+        raise ValueError("rejection_mode debe ser 'epoch' o 'channel'.")
+    if min_channel_epochs < 1:
+        raise ValueError('min_channel_epochs debe ser mayor que cero.')
     spectral = spectral_config.effective(recording.sfreq)
     epochs = make_epochs(recording.raw.n_times, recording.sfreq)
-    screening = scan_recording(recording, recording.channels, screening_config, filter_config)
+    selected_channels = tuple(recording.channels if channels is None else channels)
+    if not selected_channels or len(set(selected_channels)) != len(selected_channels) or any(
+            name not in recording.channels for name in selected_channels):
+        raise ValueError('Seleccioná canales EEG válidos, sin duplicados.')
+    screening = scan_recording(recording, selected_channels, screening_config, filter_config)
     findings = screening['findings']
     partial = {epoch.index for epoch in epochs if epoch.partial}
     rejected = set(findings)
-    kept = [epoch for epoch in epochs if not epoch.partial and epoch.index not in rejected]
+    record_kept = [epoch for epoch in epochs if not epoch.partial and epoch.index not in rejected]
 
     high = {index for index, issues in findings.items() if any(issue['kind'] == 'Alta' for issue in issues)}
     flat = {index for index, issues in findings.items() if any(issue['kind'] == 'Plana' for issue in issues)}
@@ -98,15 +109,32 @@ def extract_recording_features(recording, session_order: str,
         epochs_rejected_high=len(high),
         epochs_rejected_flat=len(flat),
         epochs_rejected_nonfinite=len(nonfinite),
-        epochs_used=len(kept),
+        epochs_used=len(record_kept),
+        channels_excluded_min_epochs=0,
+        rejection_mode=rejection_mode,
     )
-    if not kept:
-        summary['status'] = 'excluded_no_usable_epochs'
-        return [], summary
 
     window = get_window('hann', spectral['nperseg'], fftbins=True)
     features = []
-    for channel in recording.channels:
+    channel_exclusions = []
+    for channel in selected_channels:
+        if rejection_mode == 'epoch':
+            kept = record_kept
+            channel_rejected = rejected
+        else:
+            channel_rejected = {
+                index for index, issues in findings.items()
+                if any(issue['channel'] == channel for issue in issues)
+            }
+            kept = [epoch for epoch in epochs
+                    if not epoch.partial and epoch.index not in channel_rejected]
+        if len(kept) < min_channel_epochs:
+            channel_exclusions.append(dict(
+                channel=channel,
+                reason=(f'{len(kept)} epochs limpias; mínimo requerido: '
+                        f'{min_channel_epochs} (modo {rejection_mode}).'),
+            ))
+            continue
         samples_continuous = recording.filter.channel(channel, filter_config)
         psd_sum = None
         for epoch in kept:
@@ -134,14 +162,20 @@ def extract_recording_features(recording, session_order: str,
                 band=band['band'],
                 absolute_uv2=band['absolute_uv2'],
                 relative_percent=band['relative_percent'],
+                rejection_mode=rejection_mode,
+                high_threshold_uv=screening_config.high_uv,
                 epochs_total=len(epochs),
                 epochs_partial=len(partial),
-                epochs_rejected_amplitude=len(rejected),
+                epochs_rejected_by_screening=len(rejected),
+                epochs_rejected_high=len(high),
                 epochs_rejected_flat=len(flat),
                 epochs_rejected_nonfinite=len(nonfinite),
+                epochs_rejected_channel=len(channel_rejected),
                 epochs_used=len(kept),
             ))
-    summary['status'] = 'ok'
+    summary['channels_excluded_min_epochs'] = len(channel_exclusions)
+    summary['channel_exclusions'] = channel_exclusions
+    summary['status'] = 'ok' if features else 'excluded_no_channel_with_min_epochs'
     return features, summary
 
 
@@ -154,7 +188,9 @@ def _write_csv(path: Path, columns, rows):
 
 def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
                        participants=None, screening_config=ScreeningConfig(),
-                       filter_config=DEFAULT_FILTER, spectral_config=SpectralConfig()):
+                       filter_config=DEFAULT_FILTER, spectral_config=SpectralConfig(),
+                       rejection_mode='epoch', min_channel_epochs=10,
+                       eyes='both', channels=None):
     """Process requested BIDS recordings and write fresh CSV outputs."""
     data_dir = Path(data_dir).resolve()
     orders = read_session_order(data_dir)
@@ -172,17 +208,29 @@ def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
             raise ValueError('--max-participants debe ser mayor que cero.')
         selected = selected[:max_participants]
     screening_config.validate()
+    if eyes not in {'both', 'open', 'closed'}:
+        raise ValueError("eyes debe ser 'both', 'open' o 'closed'.")
+    if rejection_mode not in {'epoch', 'channel'}:
+        raise ValueError("rejection_mode debe ser 'epoch' o 'channel'.")
+    if min_channel_epochs < 1:
+        raise ValueError('min_channel_epochs debe ser mayor que cero.')
 
     features, summaries, exclusions = [], [], []
     for participant in selected:
         for session in ('ses-1', 'ses-2'):
-            for task in expected_tasks(participant):
+            tasks = expected_tasks(participant)
+            if eyes == 'open':
+                tasks = ('eyesopen',)
+            elif eyes == 'closed':
+                tasks = ('eyesclosed',) if 'eyesclosed' in tasks else ()
+            for task in tasks:
                 matches = [study for study in inventory.get(participant, [])
                            if study.session == session and study.task == task]
                 context = Study(Path(), participant, session, task)
                 common = dict(participant=participant, session=session,
                               session_condition=context.condition, eyes=context.eyes,
                               SessionOrder=orders[participant],
+                              channel='',
                               recording=f'{participant}_{session}_task-{task}_eeg.set')
                 if not matches:
                     exclusions.append({**common, 'reason': 'No se encontró el archivo .set esperado.'})
@@ -196,20 +244,25 @@ def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
                     try:
                         rows, record_summary = extract_recording_features(
                             recording, orders[participant], screening_config,
-                            filter_config, spectral_config)
+                            filter_config, spectral_config, rejection_mode,
+                            min_channel_epochs, channels)
                     finally:
                         recording.close()
                     summaries.append(record_summary)
+                    for channel_exclusion in record_summary.pop('channel_exclusions', []):
+                        exclusions.append({**common, 'recording': study.path.name,
+                                           **channel_exclusion})
                     if rows:
                         features.extend(rows)
                     else:
                         exclusions.append({**common, 'recording': study.path.name,
-                                           'reason': 'No quedaron epochs completas utilizables.'})
+                                           'reason': 'Ningún canal alcanzó el mínimo de epochs limpias.'})
                 except (OSError, ValueError, RuntimeError, KeyError) as exc:
                     summaries.append({**common, 'epochs_total': '', 'epochs_partial': '',
                                       'epochs_rejected_by_screening': '', 'epochs_rejected_high': '',
                                       'epochs_rejected_flat': '', 'epochs_rejected_nonfinite': '',
-                                      'epochs_used': 0, 'status': 'excluded'})
+                                      'epochs_used': 0, 'channels_excluded_min_epochs': 0,
+                                      'rejection_mode': rejection_mode, 'status': 'excluded'})
                     exclusions.append({**common, 'recording': study.path.name,
                                        'reason': f'{type(exc).__name__}: {exc}'})
 
@@ -228,6 +281,8 @@ def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
         created_at=datetime.now(timezone.utc).isoformat(), data_dir=str(data_dir),
         participants=selected, filter=filter_config.context(),
         screening=asdict(screening_config), spectral=asdict(spectral_config),
+        rejection_mode=rejection_mode, min_channel_epochs=min_channel_epochs,
+        eyes=eyes, channels=channels,
         versions=dict(mne=mne.__version__, numpy=np.__version__),
         output=dict(feature_rows=len(features), record_rows=len(summaries), exclusions=len(exclusions)),
     )
