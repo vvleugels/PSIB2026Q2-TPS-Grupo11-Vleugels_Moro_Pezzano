@@ -1,0 +1,81 @@
+﻿participant,session,session_condition,eyes,SessionOrder,recording,epochs_total,epochs_partial,epochs_rejected_by_screening,epochs_rejected_high,epochs_rejected_flat,epochs_rejected_nonfinite,epochs_used,channels_excluded_min_epochs,rejection_mode,status
+sub-12,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-12_ses-1_task-eyesopen_eeg.set,60,0,15,15,0,0,45,0,channel,ok
+sub-12,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-12_ses-1_task-eyesclosed_eeg.set,60,0,12,12,0,0,48,0,channel,ok
+sub-12,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-12_ses-2_task-eyesopen_eeg.set,60,0,51,51,0,0,9,0,channel,ok
+sub-12,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-12_ses-2_task-eyesclosed_eeg.set,60,0,25,25,0,0,35,0,channel,ok
+sub-13,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-13_ses-1_task-eyesopen_eeg.set,60,0,14,14,0,0,46,0,channel,ok
+sub-13,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-13_ses-1_task-eyesclosed_eeg.set,60,0,23,23,0,0,37,0,channel,ok
+sub-13,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-13_ses-2_task-eyesopen_eeg.set,60,0,60,60,0,0,0,5,channel,ok
+sub-13,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-13_ses-2_task-eyesclosed_eeg.set,60,0,49,49,0,0,11,0,channel,ok
+sub-15,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-15_ses-1_task-eyesopen_eeg.set,60,0,48,48,0,0,12,0,channel,ok
+sub-15,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-15_ses-1_task-eyesclosed_eeg.set,60,0,22,22,0,0,38,0,channel,ok
+sub-15,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-15_ses-2_task-eyesopen_eeg.set,60,0,42,42,0,0,18,0,channel,ok
+sub-15,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-15_ses-2_task-eyesclosed_eeg.set,60,0,16,16,0,0,44,0,channel,ok
+sub-16,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-16_ses-1_task-eyesopen_eeg.set,60,0,35,35,0,0,25,0,channel,ok
+sub-16,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-16_ses-1_task-eyesclosed_eeg.set,60,0,15,15,0,0,45,0,channel,ok
+sub-16,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-16_ses-2_task-eyesopen_eeg.set,60,0,48,48,0,0,12,0,channel,ok
+sub-16,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-16_ses-2_task-eyesclosed_eeg.set,60,0,15,15,0,0,45,0,channel,ok
+sub-19,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-19_ses-1_task-eyesopen_eeg.set,60,0,5,5,0,0,55,0,channel,ok
+sub-19,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-19_ses-1_task-eyesclosed_eeg.set,60,0,54,54,0,0,6,1,channel,ok
+sub-19,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-19_ses-2_task-eyesopen_eeg.set,60,0,55,55,0,0,5,0,channel,ok
+sub-19,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-19_ses-2_task-eyesclosed_eeg.set,60,0,54,54,0,0,6,0,channel,ok
+sub-21,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-21_ses-1_task-eyesopen_eeg.set,60,0,46,46,0,0,14,0,channel,ok
+sub-21,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-21_ses-1_task-eyesclosed_eeg.set,60,0,28,28,0,0,32,0,channel,ok
+sub-21,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-21_ses-2_task-eyesopen_eeg.set,60,0,53,53,0,0,7,1,channel,ok
+sub-21,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-21_ses-2_task-eyesclosed_eeg.set,60,0,44,44,0,0,16,0,channel,ok
+sub-22,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-22_ses-1_task-eyesopen_eeg.set,60,0,37,37,0,0,23,0,channel,ok
+sub-22,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-22_ses-1_task-eyesclosed_eeg.set,60,0,22,22,0,0,38,0,channel,ok
+sub-22,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-22_ses-2_task-eyesopen_eeg.set,60,0,28,28,0,0,32,0,channel,ok
+sub-22,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-22_ses-2_task-eyesclosed_eeg.set,60,0,3,3,0,0,57,0,channel,ok
+sub-23,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-23_ses-1_task-eyesopen_eeg.set,60,0,36,36,0,0,24,0,channel,ok
+sub-23,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-23_ses-1_task-eyesclosed_eeg.set,60,0,31,31,0,0,29,0,channel,ok
+sub-23,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-23_ses-2_task-eyesopen_eeg.set,60,0,55,55,0,0,5,7,channel,ok
+sub-23,ses-2,Privación del sueño,Ojos cerrados,NS->SD,sub-23_ses-2_task-eyesclosed_eeg.set,60,0,13,13,0,0,47,0,channel,ok
+sub-25,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-25_ses-1_task-eyesopen_eeg.set,60,0,43,43,0,0,17,0,channel,ok
+sub-25,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-25_ses-1_task-eyesclosed_eeg.set,60,0,10,10,0,0,50,0,channel,ok
+sub-25,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-25_ses-2_task-eyesopen_eeg.set,60,0,58,58,0,0,2,3,channel,ok
+sub-25,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-25_ses-2_task-eyesclosed_eeg.set,60,0,16,16,0,0,44,0,channel,ok
+sub-26,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-26_ses-1_task-eyesopen_eeg.set,60,0,16,16,0,0,44,0,channel,ok
+sub-26,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-26_ses-1_task-eyesclosed_eeg.set,60,0,2,2,0,0,58,0,channel,ok
+sub-26,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-26_ses-2_task-eyesopen_eeg.set,60,0,13,13,0,0,47,0,channel,ok
+sub-26,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-26_ses-2_task-eyesclosed_eeg.set,60,0,16,16,0,0,44,0,channel,ok
+sub-27,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-27_ses-1_task-eyesopen_eeg.set,60,0,48,48,0,0,12,0,channel,ok
+sub-27,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-27_ses-1_task-eyesclosed_eeg.set,60,0,8,8,0,0,52,0,channel,ok
+sub-27,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-27_ses-2_task-eyesopen_eeg.set,60,0,47,47,0,0,13,0,channel,ok
+sub-27,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-27_ses-2_task-eyesclosed_eeg.set,60,0,12,12,0,0,48,0,channel,ok
+sub-29,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-29_ses-1_task-eyesopen_eeg.set,60,0,60,60,0,0,0,4,channel,ok
+sub-29,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-29_ses-1_task-eyesclosed_eeg.set,60,0,58,58,0,0,2,2,channel,ok
+sub-29,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-29_ses-2_task-eyesopen_eeg.set,60,0,57,57,0,0,3,1,channel,ok
+sub-29,ses-2,Privación del sueño,Ojos cerrados,NS->SD,sub-29_ses-2_task-eyesclosed_eeg.set,60,0,23,23,0,0,37,0,channel,ok
+sub-30,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-30_ses-1_task-eyesopen_eeg.set,60,0,46,46,0,0,14,0,channel,ok
+sub-30,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-30_ses-1_task-eyesclosed_eeg.set,60,0,56,56,0,0,4,1,channel,ok
+sub-30,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-30_ses-2_task-eyesopen_eeg.set,60,0,56,56,0,0,4,4,channel,ok
+sub-30,ses-2,Privación del sueño,Ojos cerrados,NS->SD,sub-30_ses-2_task-eyesclosed_eeg.set,60,0,33,33,0,0,27,0,channel,ok
+sub-31,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-31_ses-1_task-eyesopen_eeg.set,60,0,24,24,0,0,36,0,channel,ok
+sub-31,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-31_ses-1_task-eyesclosed_eeg.set,60,0,0,0,0,0,60,0,channel,ok
+sub-31,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-31_ses-2_task-eyesopen_eeg.set,60,0,50,50,0,0,10,0,channel,ok
+sub-31,ses-2,Privación del sueño,Ojos cerrados,NS->SD,sub-31_ses-2_task-eyesclosed_eeg.set,60,0,1,1,0,0,59,0,channel,ok
+sub-32,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-32_ses-1_task-eyesopen_eeg.set,60,0,39,39,0,0,21,0,channel,ok
+sub-32,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-32_ses-1_task-eyesclosed_eeg.set,60,0,49,49,0,0,11,0,channel,ok
+sub-32,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-32_ses-2_task-eyesopen_eeg.set,60,0,60,60,0,0,0,5,channel,ok
+sub-32,ses-2,Privación del sueño,Ojos cerrados,NS->SD,sub-32_ses-2_task-eyesclosed_eeg.set,60,0,39,39,0,0,21,0,channel,ok
+sub-33,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-33_ses-1_task-eyesopen_eeg.set,60,0,60,60,0,0,0,3,channel,ok
+sub-33,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-33_ses-1_task-eyesclosed_eeg.set,60,0,8,8,0,0,52,0,channel,ok
+sub-33,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-33_ses-2_task-eyesopen_eeg.set,60,0,37,37,0,0,23,0,channel,ok
+sub-33,ses-2,Privación del sueño,Ojos cerrados,NS->SD,sub-33_ses-2_task-eyesclosed_eeg.set,60,0,2,2,0,0,58,0,channel,ok
+sub-34,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-34_ses-1_task-eyesopen_eeg.set,60,0,35,35,0,0,25,0,channel,ok
+sub-34,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-34_ses-1_task-eyesclosed_eeg.set,60,0,60,60,0,0,0,1,channel,ok
+sub-34,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-34_ses-2_task-eyesopen_eeg.set,60,0,41,41,0,0,19,0,channel,ok
+sub-34,ses-2,Privación del sueño,Ojos cerrados,NS->SD,sub-34_ses-2_task-eyesclosed_eeg.set,60,0,28,28,0,0,32,0,channel,ok
+sub-36,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-36_ses-1_task-eyesopen_eeg.set,60,0,49,49,0,0,11,0,channel,ok
+sub-36,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-36_ses-1_task-eyesclosed_eeg.set,60,0,39,39,0,0,21,0,channel,ok
+sub-36,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-36_ses-2_task-eyesopen_eeg.set,60,0,34,34,0,0,26,0,channel,ok
+sub-36,ses-2,Privación del sueño,Ojos cerrados,NS->SD,sub-36_ses-2_task-eyesclosed_eeg.set,60,0,29,29,0,0,31,0,channel,ok
+sub-37,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-37_ses-1_task-eyesopen_eeg.set,60,0,39,39,0,0,21,0,channel,ok
+sub-37,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-37_ses-1_task-eyesclosed_eeg.set,60,0,48,48,0,0,12,0,channel,ok
+sub-37,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-37_ses-2_task-eyesopen_eeg.set,60,0,46,46,0,0,14,0,channel,ok
+sub-37,ses-2,Privación del sueño,Ojos cerrados,NS->SD,sub-37_ses-2_task-eyesclosed_eeg.set,60,0,37,37,0,0,23,0,channel,ok
+sub-38,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-38_ses-1_task-eyesopen_eeg.set,60,0,38,38,0,0,22,0,channel,ok
+sub-38,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-38_ses-1_task-eyesclosed_eeg.set,60,0,27,27,0,0,33,0,channel,ok
+sub-38,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-38_ses-2_task-eyesopen_eeg.set,60,0,58,58,0,0,2,4,channel,ok
+sub-38,ses-2,Privación del sueño,Ojos cerrados,NS->SD,sub-38_ses-2_task-eyesclosed_eeg.set,60,0,27,27,0,0,33,0,channel,ok

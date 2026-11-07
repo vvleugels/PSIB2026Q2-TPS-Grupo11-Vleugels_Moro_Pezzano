@@ -1,0 +1,43 @@
+﻿participant,session,session_condition,eyes,SessionOrder,recording,channel,rejection_mode,reason
+sub-13,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-13_ses-2_task-eyesopen_eeg.set,Fp1,channel,0 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-13,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-13_ses-2_task-eyesopen_eeg.set,AF7,channel,0 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-13,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-13_ses-2_task-eyesopen_eeg.set,Fpz,channel,0 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-13,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-13_ses-2_task-eyesopen_eeg.set,Fp2,channel,3 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-13,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-13_ses-2_task-eyesopen_eeg.set,AF8,channel,0 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-19,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-19_ses-1_task-eyesclosed_eeg.set,FC1,channel,9 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-21,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-21_ses-2_task-eyesopen_eeg.set,Fp1,channel,9 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-23,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-23_ses-2_task-eyesopen_eeg.set,Fp1,channel,8 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-23,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-23_ses-2_task-eyesopen_eeg.set,AF3,channel,9 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-23,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-23_ses-2_task-eyesopen_eeg.set,AF7,channel,7 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-23,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-23_ses-2_task-eyesopen_eeg.set,Fpz,channel,9 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-23,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-23_ses-2_task-eyesopen_eeg.set,Fp2,channel,8 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-23,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-23_ses-2_task-eyesopen_eeg.set,AF4,channel,9 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-23,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-23_ses-2_task-eyesopen_eeg.set,AF8,channel,7 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-25,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-25_ses-2_task-eyesopen_eeg.set,AF3,channel,9 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-25,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-25_ses-2_task-eyesopen_eeg.set,F6,channel,8 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-25,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-25_ses-2_task-eyesopen_eeg.set,PO8,channel,8 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-29,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-29_ses-1_task-eyesopen_eeg.set,Fp1,channel,0 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-29,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-29_ses-1_task-eyesopen_eeg.set,AF7,channel,5 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-29,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-29_ses-1_task-eyesopen_eeg.set,Fpz,channel,2 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-29,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-29_ses-1_task-eyesopen_eeg.set,Fp2,channel,0 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-29,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-29_ses-1_task-eyesclosed_eeg.set,Fp1,channel,7 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-29,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-29_ses-1_task-eyesclosed_eeg.set,Fp2,channel,6 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-29,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-29_ses-2_task-eyesopen_eeg.set,CP5,channel,3 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-30,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-30_ses-1_task-eyesclosed_eeg.set,FC1,channel,7 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-30,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-30_ses-2_task-eyesopen_eeg.set,Fp1,channel,5 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-30,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-30_ses-2_task-eyesopen_eeg.set,AF7,channel,5 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-30,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-30_ses-2_task-eyesopen_eeg.set,Fpz,channel,8 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-30,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-30_ses-2_task-eyesopen_eeg.set,Fp2,channel,8 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-32,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-32_ses-2_task-eyesopen_eeg.set,Fp1,channel,6 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-32,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-32_ses-2_task-eyesopen_eeg.set,AF7,channel,1 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-32,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-32_ses-2_task-eyesopen_eeg.set,Fpz,channel,5 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-32,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-32_ses-2_task-eyesopen_eeg.set,Fp2,channel,5 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-32,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-32_ses-2_task-eyesopen_eeg.set,AF8,channel,9 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-33,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-33_ses-1_task-eyesopen_eeg.set,Fp1,channel,1 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-33,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-33_ses-1_task-eyesopen_eeg.set,PO7,channel,0 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-33,ses-1,Sueño normal,Ojos abiertos,NS->SD,sub-33_ses-1_task-eyesopen_eeg.set,Fp2,channel,0 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-34,ses-1,Sueño normal,Ojos cerrados,NS->SD,sub-34_ses-1_task-eyesclosed_eeg.set,O1,channel,7 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-38,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-38_ses-2_task-eyesopen_eeg.set,Fp1,channel,3 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-38,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-38_ses-2_task-eyesopen_eeg.set,AF7,channel,4 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-38,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-38_ses-2_task-eyesopen_eeg.set,Fpz,channel,2 epochs limpias; mínimo requerido: 10 (modo channel).
+sub-38,ses-2,Privación del sueño,Ojos abiertos,NS->SD,sub-38_ses-2_task-eyesopen_eeg.set,Fp2,channel,3 epochs limpias; mínimo requerido: 10 (modo channel).
