@@ -310,6 +310,16 @@ La carpeta `analysis/` guarda además `regional_features.csv`, `channel_region_m
 los ocho gráficos `pairs_{open|closed}_{delta|theta|alpha|beta}.png` y los ocho
 topomaps correspondientes de la diferencia media SD−NS por canal.
 
+Para comparar potencia relativa y analizar retención de epochs, ejecutar
+`python scripts/compare_relative_epochs.py`. Usa `relative_percent` si está presente
+(en este lote las cuatro bandas suman 100% por canal-registro); si falta, deriva cada
+proporción de las cuatro potencias absolutas. Compara las pruebas relativas con las
+absolutas con FDR por condición ocular, resume epochs globales y por canal y repite
+las pruebas absolutas usando solo canales con al menos 20 epochs en ambas sesiones.
+Los tres CSV se guardan con nombres nuevos en `analysis/`, sin sobrescribir los
+resultados regionales previos. Los canales excluidos se infieren por su ausencia
+respecto del conjunto de canales del propio `features.csv`.
+
 Prueba sintética del cálculo grupal:
 
 ```bash

@@ -1,0 +1,5 @@
+﻿session,condition,eyes,n_records,expected_channels_casefold,median_epochs_used_per_record,min_record_median_channel_epochs,max_record_median_channel_epochs,min_channel_epochs_any_record,max_channel_epochs_any_record,median_global_epochs_per_record,min_global_epochs_per_record,max_global_epochs_per_record,channels_included_median_per_record,channels_excluded_total_inferred,channels_excluded_median_per_record,channels_excluded_min_per_record,channels_excluded_max_per_record
+ses-1,NS,Ojos abiertos,20,61,60.0,51.0,60.0,13,60,21.5,0,55,61.0,7,0.0,0,4
+ses-1,NS,Ojos cerrados,20,61,60.0,52.0,60.0,10,60,35.0,0,60,61.0,5,0.0,0,2
+ses-2,SD,Ojos abiertos,20,61,60.0,55.5,60.0,10,60,9.5,0,47,61.0,30,0.0,0,7
+ses-2,SD,Ojos cerrados,20,61,60.0,53.0,60.0,20,60,36.0,6,59,61.0,0,0.0,0,0

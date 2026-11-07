@@ -81,6 +81,18 @@ y los ocho `pairs_{open|closed}_{delta|theta|alpha|beta}.png` y ocho topomaps SD
 python scripts/analyze_regions.py
 ```
 
+`python scripts/compare_relative_epochs.py` amplía la comparación usando solo
+`features.csv`, sin volver a procesar señales. Repite Wilcoxon/FDR con la potencia
+relativa de `relative_percent` (o la calcula como potencia de banda dividida por la
+suma de las cuatro bandas si esa columna falta), genera una comparación lado a lado
+con la estadística absoluta, resume epochs globales y por canal por sesión/condición,
+y repite la estadística absoluta restringiendo cada canal pareado a ≥20 epochs en
+ambas sesiones. Guarda `stats_relative_vs_absolute.csv`,
+`epochs_and_exclusions_by_session_condition.csv` y `stats_absolute_min20.csv` en
+`analysis/`, con nombres nuevos. Como el archivo de features no lista exclusiones,
+el número de canales excluidos se infiere de los canales ausentes respecto del
+conjunto observado en el propio CSV.
+
 Se agregó una prueba con una senoide de 10 Hz que comprueba que la banda alfa tiene
 la mayor potencia. También se corrió el pipeline con tres participantes. En la
 copia local auditada hay 71 participantes en `participants.tsv`, 61 carpetas y
