@@ -344,6 +344,15 @@ FDR independiente por condición ocular. También se generan `regional_features.
 `channel_region_map.csv`, ocho gráficos `pairs_{open|closed}_{delta|theta|alpha|beta}.png`
 y ocho mapas de la diferencia media topográfica SD−NS usando `standard_1020` de MNE.
 
+Las figuras absolutas se corrigen con `python scripts/regenerate_group_figures.py`;
+los topomaps usan una esfera MNE de 11 cm y extrapolación hasta el contorno para
+contener los sensores. El mismo comando produce pares y topomaps relativos con
+nombres `pairs_relative_...` y `topomap_relative_...`, además de `group_summary.csv`.
+`eeg_viewer/group_ui.py` implementa la pestaña de solo lectura “Resultados de grupo”:
+permite elegir ojos, banda, tipo de figura y potencia; muestra la figura con barra
+de zoom y la tabla regional n/mediana/efecto/q. Lee solo archivos precomputados en
+`analysis/` y avisa claramente cuando falta alguno.
+
 En la corrida de verificación del 7 de noviembre de 2026, la senoide sintética de
 10 Hz quedó en alfa y la ejecución con `sub-11` a `sub-13` produjo 1.952 filas de
 features, 9 resúmenes de registro y 4 exclusiones. El archivo `record_summary.csv`

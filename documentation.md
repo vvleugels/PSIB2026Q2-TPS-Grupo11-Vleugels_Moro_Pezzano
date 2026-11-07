@@ -81,6 +81,15 @@ y los ocho `pairs_{open|closed}_{delta|theta|alpha|beta}.png` y ocho topomaps SD
 python scripts/analyze_regions.py
 ```
 
+Las figuras absolutas se regeneran con `python scripts/regenerate_group_figures.py`.
+El mapa usa esfera MNE de 11 cm y extrapolación hasta el contorno para contener los
+electrodos. El mismo comando crea gráficos de pares y topomaps de potencia relativa
+con el prefijo `relative_`, y `group_summary.csv` para la interfaz.
+`eeg_viewer/group_ui.py` es la pestaña de solo lectura “Resultados de grupo”: ofrece
+selectores de ojos, banda, tipo de figura y potencia; una barra Matplotlib permite
+zoom; y una tabla muestra pares, mediana, efecto y q. Lee solo archivos de `analysis/`
+y presenta un mensaje con la lista si falta alguno.
+
 `python scripts/compare_relative_epochs.py` amplía la comparación usando solo
 `features.csv`, sin volver a procesar señales. Repite Wilcoxon/FDR con la potencia
 relativa de `relative_percent` (o la calcula como potencia de banda dividida por la
