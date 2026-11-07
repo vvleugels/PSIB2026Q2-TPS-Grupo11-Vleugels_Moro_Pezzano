@@ -1,0 +1,10 @@
+﻿participant,session,session_condition,eyes,SessionOrder,recording,epochs_total,epochs_partial,epochs_rejected_by_screening,epochs_rejected_high,epochs_rejected_flat,epochs_rejected_nonfinite,epochs_used,status
+sub-11,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-11_ses-2_task-eyesclosed_eeg.set,60,0,37,37,0,0,23,ok
+sub-12,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-12_ses-1_task-eyesopen_eeg.set,60,0,15,15,0,0,45,ok
+sub-12,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-12_ses-1_task-eyesclosed_eeg.set,60,0,12,12,0,0,48,ok
+sub-12,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-12_ses-2_task-eyesopen_eeg.set,60,0,51,51,0,0,9,ok
+sub-12,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-12_ses-2_task-eyesclosed_eeg.set,60,0,25,25,0,0,35,ok
+sub-13,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-13_ses-1_task-eyesopen_eeg.set,60,0,14,14,0,0,46,ok
+sub-13,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-13_ses-1_task-eyesclosed_eeg.set,60,0,23,23,0,0,37,ok
+sub-13,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-13_ses-2_task-eyesopen_eeg.set,60,0,60,60,0,0,0,excluded_no_usable_epochs
+sub-13,ses-2,Privación del sueño,Ojos cerrados,SD->NS,sub-13_ses-2_task-eyesclosed_eeg.set,60,0,49,49,0,0,11,ok

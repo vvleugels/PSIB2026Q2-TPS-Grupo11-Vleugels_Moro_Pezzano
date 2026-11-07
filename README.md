@@ -241,6 +241,53 @@ La figura exportada usa la escala elegida y este mismo rango inicial,
 con leyenda y etiqueta exploratoria cuando corresponde. Los CSV siempre conservan
 valores lineales. La exportación es manual y no modifica anotaciones ni datos originales.
 
+## Análisis de grupo
+
+El flujo grupal se ejecuta por separado de la GUI y no usa anotaciones manuales:
+
+```bash
+python scripts/analyze_group.py
+python scripts/analyze_group.py --max-participants 3
+python scripts/analyze_group.py --participants sub-11 sub-12 sub-13 --max-participants 3
+```
+
+Lee `SessionOrder` de `data/participants.tsv`; recorre `ses-1` (sueño normal) y
+`ses-2` (privación), con ojos abiertos para todos los participantes y ojos cerrados
+para `sub-01` a `sub-38`. Filtra cada canal continuo con el FIR existente de
+0,2–45 Hz. El barrido de `screening.py` marca la epoch completa si cualquier canal
+supera 150 µV pico a pico o queda por debajo de 1 µV pico a pico; también descarta
+epochs parciales. Los umbrales se pueden ajustar con `--high-uv` y `--flat-uv`.
+
+Welch y las bandas usan los parámetros iniciales de `spectral.py`: ventanas de 2 s,
+50 % de solapamiento, Hann periódica y bandas delta 0,5–4, theta 4–8, alfa 8–13 y
+beta 13–30 Hz. La carpeta nueva de salida contiene `features.csv` (una fila por
+participante, sesión, condición ocular, canal y banda, con `SessionOrder` y conteos
+de epochs rechazadas por el barrido), `record_summary.csv` (epochs usadas y
+descartadas por registro),
+`exclusions.csv` (registros faltantes, incompletos o sin epochs utilizables) y
+`analysis.json` con la configuración y versiones. Por defecto se crea una carpeta
+con sello UTC bajo `results/`; `--output` permite elegir otra ruta nueva. La opción
+`--participants` permite elegir IDs concretos para pruebas o corridas parciales.
+
+Prueba sintética del cálculo grupal:
+
+```bash
+python -m unittest tests.test_group_analysis -v
+```
+
+En la corrida de verificación del 7 de noviembre de 2026, la senoide sintética de
+10 Hz quedó en alfa y la ejecución con `sub-11` a `sub-13` produjo 1.952 filas de
+features, 9 resúmenes de registro y 4 exclusiones. El archivo `record_summary.csv`
+permite revisar cuántas epochs sobrevivieron por registro.
+
+La auditoría de esta copia local encontró 71 filas en `participants.tsv`, pero solo
+61 carpetas de participantes y 175 de los 218 `.set` esperados. Faltan todos los
+registros de `sub-01` a `sub-10` y tres registros de `sub-11`; además, hay tres
+archivos `.fdt` truncados en `sub-28` y `sub-44`. El flujo registra ausencias y
+errores de lectura en `exclusions.csv`; no completa ni modifica los datos fuente.
+La suite completa terminó con 74 de 75 pruebas aprobadas: la única excepción fue
+la creación de un symlink en Windows (`WinError 1314`, privilegio no disponible).
+
 ## Datos y organización
 
 Se espera BIDS: `data/sub-*/ses-*/eeg/*_eeg.set`, sus `.fdt` y metadatos JSON.

@@ -19,6 +19,32 @@ La muestra inicial está verificada, pero faltan etiquetas humanas y geometría
 documentada: los `.set` contienen posiciones NaN y los TSV no incluyen un archivo
 de sistema de coordenadas. La validación de mapas/interpolación permanece pendiente.
 
+## Análisis grupal implementado
+
+Como flujo aparte de ese piloto, se agregó `eeg_viewer/group_analysis.py` y el
+comando `scripts/analyze_group.py`. Procesa las sesiones `ses-1` y `ses-2` para
+ojos abiertos y, para `sub-01` a `sub-38`, también ojos cerrados. La selección de
+participantes se lee de `participants.tsv` y cada fila incorpora `SessionOrder`.
+
+Cada registro usa el FIR continuo de 0,2–45 Hz de `processing.py`. Las epochs de
+5 segundos se filtran automáticamente con los límites de `screening.py` (pico a
+pico alto >150 µV y plano <1 µV); las parciales se excluyen. Para las epochs
+retenidas se calcula Welch y potencia absoluta/relativa con `SpectralConfig` y
+`band_powers` de `spectral.py`. No se usan anotaciones manuales. Las salidas son
+`features.csv`, `record_summary.csv`, `exclusions.csv` y `analysis.json`.
+
+Se agregó una prueba con una senoide de 10 Hz que comprueba que la banda alfa tiene
+la mayor potencia. También se corrió el pipeline con tres participantes. En la
+copia local auditada hay 71 participantes en `participants.tsv`, 61 carpetas y
+175 de 218 archivos `.set` esperados; además se detectaron tres `.fdt` truncados.
+El pipeline conserva estos casos como exclusiones y deja intacto `data/`.
+
+En la suite final corrieron 75 pruebas: 74 pasaron y una no pudo crear un symlink
+por falta de privilegio en Windows (`WinError 1314`). El test de caracteres
+acentuados pasa al ejecutar con UTF-8 explícito. El análisis grupal actual produce
+features descriptivas por canal y banda; la estadística pareada, los topomaps, la
+agregación por regiones y la comparación entre filtros siguen pendientes.
+
 ## Design decisions
 
 1. **Métodos permitidos.** Se utilizarán ICA clásica y reglas estadísticas

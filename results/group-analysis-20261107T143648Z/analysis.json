@@ -1,0 +1,47 @@
+{
+  "created_at": "2026-11-07T14:36:48.857135+00:00",
+  "data_dir": "C:\\Users\\tomas\\OneDrive\\Documentos\\Facultad\\4to año\\PSIB\\PSB\\PSIB2026Q2-TPS-Grupo11-Vleugels_Moro_Pezzano-main\\data",
+  "participants": [
+    "sub-11",
+    "sub-12",
+    "sub-13"
+  ],
+  "filter": {
+    "enabled": true,
+    "low": 0.2,
+    "high": 45.0,
+    "method": "fir",
+    "phase": "zero",
+    "fir_window": "hamming",
+    "fir_design": "firwin",
+    "filter_length": "auto",
+    "l_trans_bandwidth": "auto",
+    "h_trans_bandwidth": "auto",
+    "pad": "reflect_limited",
+    "mne_version": "1.13.2"
+  },
+  "screening": {
+    "high_uv": 150.0,
+    "flat_uv": 1.0
+  },
+  "spectral": {
+    "seconds": 2.0,
+    "overlap": 50.0,
+    "edges": [
+      0.5,
+      4.0,
+      8.0,
+      13.0,
+      30.0
+    ]
+  },
+  "versions": {
+    "mne": "1.13.2",
+    "numpy": "2.5.4"
+  },
+  "output": {
+    "feature_rows": 1952,
+    "record_rows": 9,
+    "exclusions": 4
+  }
+}
