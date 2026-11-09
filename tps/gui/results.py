@@ -68,6 +68,20 @@ def open_path(path: Path) -> None:
         subprocess.Popen(['xdg-open', str(path)])
 
 
+# Group-analysis signal: always the explorer's filter, optionally after the confirmed ICA.
+SIGNAL_FILTERED = 'Filtrado activo'
+SIGNAL_ICA = 'Filtrado activo + ICA confirmada'
+
+
+def filter_text(value) -> str:
+    """Readable filter description from a FilterConfig or its label ('Original' = no filter)."""
+    label = value.label if hasattr(value, 'label') else str(value)
+    if label == 'Original':
+        return 'sin filtrar'
+    text = label.removeprefix('Filtrada · ')
+    return f'pasabanda {text}' if text[:1].isdigit() else text
+
+
 class ResultsUI:
     # ------------------------------------------------------------------- state
     def init_results(self, results_dir: Path, project: Path):
@@ -76,7 +90,9 @@ class ResultsUI:
         self.results = Results(self.results_dir, self.project_dir)
         self.runner = Runner(self.project_dir, self.results_dir)
         self.study_batch = None
-        self.run_ica = tk.StringVar(value='Original')
+        self.run_ica = tk.StringVar(value=SIGNAL_FILTERED)
+        self.run_signal_text = tk.StringVar(value='')
+        self.signal_label.trace_add('write', self.refresh_run_signal)   # explorer filter changed
         self.run_eyes = tk.StringVar(value='Ambos')
         self.run_jobs = tk.StringVar(value=str(Options().jobs))
         self.run_force = tk.BooleanVar(value=False)
@@ -120,6 +136,7 @@ class ResultsUI:
         self.build_table_page(pages['tables'])
         self.build_figure_page(pages['figures'])
         self.refresh_results()
+        self.refresh_run_signal()
 
     def build_process_page(self, page):
         cards = ttk.Frame(page, style='Card.TFrame')
@@ -138,8 +155,17 @@ class ResultsUI:
             options = ttk.Frame(inner, style='Card.TFrame')
             options.pack(fill='x', pady=8)
             if step == 'batch':
-                self.option_row(options, 'Señal de entrada', ttk.Combobox(options, textvariable=self.run_ica, width=18,
-                    values=('Original', 'ICA confirmada'), state='readonly'))
+                signal_box = ttk.Combobox(options, textvariable=self.run_ica, width=30,
+                                          values=(SIGNAL_FILTERED, SIGNAL_ICA), state='readonly')
+                ttk.Label(options, text='Señal de entrada', style='Card.TLabel').pack(anchor='w')
+                signal_box.pack(fill='x', pady=(2, 0))
+                signal_box.bind('<<ComboboxSelected>>', lambda e: self.refresh_run_signal())
+                Tooltip(signal_box, 'El lote usa el mismo filtrado que el explorador (panel «Filtrado»). '
+                                    'Con ICA confirmada, primero aplica la ICA confirmada de cada registro; '
+                                    'los registros sin ICA confirmada quedan excluidos.')
+                signal_note = ttk.Label(options, textvariable=self.run_signal_text, style='CardMuted.TLabel')
+                signal_note.pack(fill='x', pady=(2, 6))
+                autowrap(signal_note)
                 self.option_row(options, 'Ojos', ttk.Combobox(options, textvariable=self.run_eyes, width=10,
                                                               values=list(EYES_OPTIONS), state='readonly'))
                 self.jobs_box = ttk.Spinbox(options, from_=1, to=max(1, os.cpu_count() or 1),
@@ -390,14 +416,40 @@ class ResultsUI:
         try:
             import json
             coverage = json.loads((self.results_dir / 'ica_coverage.json').read_text(encoding='utf-8'))
-            instruction += (f" Señal: {', '.join(coverage['processing_modes'])}. "
-                            f"ICA confirmada: {coverage['confirmed']}/{coverage['recordings']} registros; "
-                            f"excluidos: {coverage['excluded']}.")
+            instruction += ' ' + self.batch_signal_text(coverage)
         except (OSError, ValueError, KeyError):
             pass
         self.results_instruction.set(instruction)
         if hasattr(self, 'stepper'):
             self.refresh_guide()   # the main amber callout shows this text on the results tab
+
+    # ------------------------------------------------------------- input signal
+    def confirmed_ica_count(self) -> int:
+        """Recordings with a confirmed ICA in the annotations folder."""
+        return sum(1 for _ in (Path(self.annotations_dir) / 'ica').glob('*/latest.json'))
+
+    def refresh_run_signal(self, *args):
+        """Text under «Señal de entrada»: the explorer's filter and, with ICA, how many recordings have one."""
+        if not hasattr(self, 'run_signal_text') or not hasattr(self, 'config'):
+            return
+        text = f'Filtrado del explorador: {filter_text(self.config)}.'
+        if self.run_ica.get() == SIGNAL_ICA:
+            count = self.confirmed_ica_count()
+            text += (f' {count} registro{"s" if count != 1 else ""} con ICA confirmada; '
+                     'los demás quedan excluidos.')
+        self.run_signal_text.set(text)
+
+    def batch_signal_text(self, coverage: dict) -> str:
+        """Signal of the current results, and a warning when the explorer's filter no longer matches."""
+        ica = 'confirmed' in coverage.get('processing_modes', [])
+        used = coverage.get('filter')
+        text = (f"Señal del lote: {filter_text(used) if used else 'sin dato de filtrado'}"
+                + (f" + ICA confirmada ({coverage['confirmed']}/{coverage['recordings']} registros)" if ica else '')
+                + f"; excluidos: {coverage['excluded']}.")
+        if used and used != self.config.label:
+            text += (f' ⚠ El explorador usa otro filtrado ({filter_text(self.config)}): '
+                     'volvé a ejecutar el paso 1 para que coincidan.')
+        return text
 
     def results_instruction_text(self, status=None) -> str:
         status = status or self.results.status()
@@ -607,12 +659,25 @@ class ResultsUI:
         except ValueError:
             raise ValueError('Procesos en paralelo y permutaciones deben ser números enteros.')
         return Options(eyes=EYES_OPTIONS.get(self.run_eyes.get()), jobs=jobs, force=self.run_force.get(),
-                       permutations=permutations, ica_mode='confirmed' if self.run_ica.get() == 'ICA confirmada' else 'original',
+                       permutations=permutations, ica_mode='confirmed' if self.run_ica.get() == SIGNAL_ICA else 'original',
+                       filtering=self.config,
                        data_dir=self.data_dir, annotations_dir=self.annotations_dir)
 
     def run_pipeline(self, steps):
         if self.runner.running:
             return
+        if 'batch' in steps and self.run_ica.get() == SIGNAL_ICA:
+            count = self.confirmed_ica_count()
+            if count == 0:
+                messagebox.showerror('Sin ICA confirmada',
+                                     'Ningún registro tiene una ICA confirmada. Ajustala y confirmala en el '
+                                     'panel «ICA», o elegí «Filtrado activo».', parent=self.root)
+                return
+            if not messagebox.askyesno('ICA confirmada',
+                                       f'{count} registro{"s" if count != 1 else ""} con ICA confirmada. '
+                                       'Los registros sin ICA confirmada quedarán excluidos del análisis.\n\n'
+                                       '¿Continuar?', parent=self.root):
+                return
         missing = sorted({name for step in steps for name in missing_dependencies(step)})
         if missing:
             messagebox.showerror('Faltan dependencias',

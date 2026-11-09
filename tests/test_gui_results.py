@@ -147,6 +147,13 @@ class PipelineTests(unittest.TestCase):
         stats = command('stats', Options(permutations=200), out)
         self.assertEqual(stats[stats.index('--permutations') + 1], '200')
         self.assertIn('tps.analysis.figures', command('figures', Options(), out))
+        from tps.core.processing import FilterConfig
+        # The explorer's filter goes to the batch explicitly.
+        argv = command('batch', Options(filtering=FilterConfig(True, 1, 40, 50), ica_mode='confirmed'), out)
+        self.assertEqual(argv[argv.index('--bandpass') + 1:argv.index('--bandpass') + 3], ['1', '40'])
+        self.assertEqual(argv[argv.index('--notch') + 1], '50')
+        self.assertEqual(argv[argv.index('--ica-mode') + 1], 'confirmed')
+        self.assertIn('--no-bandpass', command('batch', Options(filtering=FilterConfig()), out))
         self.assertEqual(parse_progress('2026 INFO [25/100] sub-01 (12s) ...'), 25.0)
         self.assertIsNone(parse_progress('Session order: written'))
         self.assertEqual(missing_dependencies('batch'), [])

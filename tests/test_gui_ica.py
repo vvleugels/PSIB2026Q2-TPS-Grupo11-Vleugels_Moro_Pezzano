@@ -79,6 +79,15 @@ class ICAGuiTests(unittest.TestCase):
 
     def test_fit_preserves_annex_symlink_directory(self):
         # EEGLAB headers refer to a sibling .fdt; annex stores targets separately.
+        # Windows needs Developer Mode or admin rights for symlinks (WinError 1314): check
+        # first, before moving the fixture files. The Windows annex form (text pointers) is
+        # covered by the placeholder tests in test_core_data.
+        probe = Path(self.temp.name) / 'symlink-probe'
+        try:
+            probe.symlink_to(Path(self.temp.name), target_is_directory=True)
+        except OSError as exc:
+            self.skipTest(f'No se pueden crear symlinks en este sistema: {exc}')
+        probe.unlink()
         a = self.app
         path = a.recording.study.path
         for extension in ('.set', '.fdt'):

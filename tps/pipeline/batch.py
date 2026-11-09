@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import csv
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -27,6 +27,7 @@ import numpy as np
 from tps import config
 from tps.core.annotations import make_epochs
 from tps.core.data import Recording, Study, annex_placeholder, discover, open_recording
+from tps.core.processing import FilterConfig
 from tps.core.screening import scan_recording
 from tps.core.spectral import band_powers, welch_epoch
 
@@ -184,11 +185,11 @@ def decide_epochs_per_channel(recording: Recording, scan: dict) -> tuple[dict, d
     return kept, excluded, [e for e in epochs if e.partial]
 
 
-def channel_psd(recording: Recording, channel: str, epochs: list, effective: dict
-                ) -> tuple[np.ndarray, np.ndarray]:
+def channel_psd(recording: Recording, channel: str, epochs: list, effective: dict,
+                filtering: FilterConfig | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Mean Welch PSD (µV²/Hz) over the given epochs of the filtered continuous channel."""
     # The cache was filled by scan_recording, so the channel is filtered only once.
-    continuous = recording.filter.channel(channel, config.FILTER)
+    continuous = recording.filter.channel(channel, filtering or config.FILTER)
     lengths = {e.last - e.first for e in epochs}
     if len(lengths) == 1:   # usual case: equal epochs -> one vectorised Welch call
         stacked = np.stack([continuous[e.first:e.last] for e in epochs])
@@ -201,18 +202,22 @@ def channel_psd(recording: Recording, channel: str, epochs: list, effective: dic
     return frequencies, mean * 1e12
 
 
-def process_recording(recording: Recording, rejection_mode: str | None = None) -> dict:
+def process_recording(recording: Recording, rejection_mode: str | None = None,
+                      filtering: FilterConfig | None = None) -> dict:
     """Screen, epoch and compute band powers for every good channel of one open recording.
 
     Returns a JSON-serialisable dict with feature rows, theta/beta rows, exclusions and a summary.
     rejection_mode: 'global' or 'per_channel' (default: config.REJECTION_MODE).
+    filtering: the signal's filter (default: config.FILTER); the GUI passes the explorer's filter,
+    so the group results use the same signal the user sees.
     """
     study = recording.study
+    filtering = filtering or config.FILTER
     effective = config.SPECTRAL.effective(recording.sfreq)
     # Screening runs on the filtered signal over ALL EEG channels.
-    scan = scan_recording(recording, recording.channels, config.SCREENING, config.FILTER)
+    scan = scan_recording(recording, recording.channels, config.SCREENING, filtering)
     if (rejection_mode or config.REJECTION_MODE) == 'per_channel':
-        return process_per_channel(recording, scan, effective)
+        return process_per_channel(recording, scan, effective, filtering)
     decision = decide_epochs(recording, scan)
     exclusions = [exclusion(study, 'epoch', 'incomplete final epoch (only complete 5 s epochs are used)',
                             epoch=str(e.index + 1)) for e in decision.partial]
@@ -239,7 +244,7 @@ def process_recording(recording: Recording, rejection_mode: str | None = None) -
     kept_frequencies = None
     good = [c for c in recording.channels if c not in decision.bad_channels]
     for channel in good:
-        frequencies, psd = channel_psd(recording, channel, decision.used, effective)
+        frequencies, psd = channel_psd(recording, channel, decision.used, effective, filtering)
         keep = frequencies <= PSD_MAX_HZ
         kept_frequencies = frequencies[keep].tolist()
         spectra[channel] = psd[keep].tolist()
@@ -259,10 +264,11 @@ def process_recording(recording: Recording, rejection_mode: str | None = None) -
 
 
 def channel_features(recording: Recording, channel: str, epochs: list, effective: dict,
-                     n_used: int, n_rejected: int) -> tuple[list[dict], dict, list, list]:
+                     n_used: int, n_rejected: int, filtering: FilterConfig | None = None
+                     ) -> tuple[list[dict], dict, list, list]:
     """Feature rows, theta/beta row and PSD of one channel over the given clean epochs."""
     study = recording.study
-    frequencies, psd = channel_psd(recording, channel, epochs, effective)
+    frequencies, psd = channel_psd(recording, channel, epochs, effective, filtering)
     keep = frequencies <= PSD_MAX_HZ
     rows, powers = [], {}
     for name, band in zip(config.BANDS, band_powers(frequencies, psd, config.SPECTRAL.edges)):
@@ -276,7 +282,8 @@ def channel_features(recording: Recording, channel: str, epochs: list, effective
     return rows, {**labels(study), 'channel': channel, 'ratio': ratio}, frequencies[keep].tolist(), psd[keep].tolist()
 
 
-def process_per_channel(recording: Recording, scan: dict, effective: dict) -> dict:
+def process_per_channel(recording: Recording, scan: dict, effective: dict,
+                        filtering: FilterConfig | None = None) -> dict:
     """Per-channel rejection: n_epochs_used / n_epochs_rejected are per channel in the outputs."""
     study = recording.study
     kept, excluded, partial = decide_epochs_per_channel(recording, scan)
@@ -299,7 +306,8 @@ def process_per_channel(recording: Recording, scan: dict, effective: dict) -> di
         if channel not in kept:
             continue
         rows, ratio, frequencies, psd = channel_features(
-            recording, channel, kept[channel], effective, len(kept[channel]), complete - len(kept[channel]))
+            recording, channel, kept[channel], effective, len(kept[channel]), complete - len(kept[channel]),
+            filtering)
         features += rows
         ratios.append(ratio)
         spectra[channel] = psd
@@ -312,7 +320,7 @@ def cache_path(cache_dir: Path, study: Study) -> Path:
 
 
 def run_one(study: Study, cache_dir: Path, digest: str, selection=None, data_dir=None, annotations_dir=None,
-            rejection_mode: str | None = None) -> dict:
+            rejection_mode: str | None = None, filtering: FilterConfig | None = None) -> dict:
     """Process one recording in a worker and write its cache file; never raises."""
     started = time.monotonic()
     problem = file_problem(study)
@@ -331,7 +339,7 @@ def run_one(study: Study, cache_dir: Path, digest: str, selection=None, data_dir
                 if selection is not None:
                     from tps.core.ica import apply_snapshot
                     apply_snapshot(recording, data_dir, annotations_dir, selection)
-                result = process_recording(recording, rejection_mode)
+                result = process_recording(recording, rejection_mode, filtering)
                 from tps.core.ica import context
                 result['ica'] = context(recording)
             except Exception as exc:   # non-finite samples, filter too long, ...
@@ -343,6 +351,7 @@ def run_one(study: Study, cache_dir: Path, digest: str, selection=None, data_dir
     result['config_hash'] = digest
     result['input_selection'] = selection
     result['summary']['processing_mode'] = selection['mode'] if selection else 'original'
+    result['summary']['filter'] = (filtering or config.FILTER).label
     result['summary']['ica_revision'] = (result.get('ica') or {}).get('revision', '')
     result['seconds'] = round(time.monotonic() - started, 1)
     path = cache_path(cache_dir, study)
@@ -412,7 +421,8 @@ def write_psd(path: Path, results: list[dict]) -> None:
                                  *[f'{v:.6g}' for v in values]])
 
 
-def aggregate(cache_dir: Path, out_dir: Path, digest: str, pair_notes: list[dict], selections=None) -> dict:
+def aggregate(cache_dir: Path, out_dir: Path, digest: str, pair_notes: list[dict], selections=None,
+              filtering: FilterConfig | None = None) -> dict:
     """Merge every up-to-date cached recording into the final CSV files."""
     results = []
     for path in sorted(cache_dir.glob('*.json')):
@@ -436,14 +446,17 @@ def aggregate(cache_dir: Path, out_dir: Path, digest: str, pair_notes: list[dict
     write_csv(out_dir / 'exclusions.csv', EXCLUSION_COLUMNS, exclusions)
     summaries = [r['summary'] for r in results]
     modes = sorted({r.get('processing_mode', 'original') for r in summaries})
-    write = dict(processing_modes=modes, recordings=len(results),
+    filtering = filtering or config.FILTER
+    write = dict(processing_modes=modes, filter=filtering.label, filter_settings=asdict(filtering),
+                 recordings=len(results),
                  confirmed=sum(bool(r.get('ica')) for r in results),
                  excluded=sum(bool(r['excluded']) for r in summaries),
                  corrections=[r['ica'] for r in results if r.get('ica')])
     (out_dir / 'ica_coverage.json').write_text(json.dumps(write, indent=2), encoding='utf-8')
     write_csv(out_dir / 'recordings_summary.csv',
               ['sub', 'ses', 'condition', 'eyes', 'file', 'excluded', 'n_channels', 'n_bad_channels',
-               'n_epochs_complete', 'n_epochs_used', 'n_epochs_rejected', 'processing_mode', 'ica_revision'],
+               'n_epochs_complete', 'n_epochs_used', 'n_epochs_rejected', 'processing_mode', 'ica_revision',
+               'filter'],
               sorted(summaries, key=order))
     return dict(recordings=len(results), excluded=sum(s['excluded'] for s in summaries),
                 feature_rows=len(features), exclusion_rows=len(exclusions))
@@ -454,6 +467,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('--ica-mode', choices=('original', 'confirmed'), default='original')
     parser.add_argument('--annotations-dir', type=Path, default=config.PROJECT_DIR / 'annotations')
+    parser.add_argument('--bandpass', nargs=2, type=float, metavar=('LOW', 'HIGH'),
+                        help=f'FIR band-pass cutoffs in Hz (default from config.py: '
+                             f'{config.FILTER.low:g} {config.FILTER.high:g})')
+    parser.add_argument('--no-bandpass', action='store_true', help='do not band-pass filter')
+    parser.add_argument('--notch', type=float, choices=(50.0, 60.0), help='also apply a 50 or 60 Hz notch')
     parser.add_argument('--eyes', choices=('open', 'closed'), help='only this eye condition (default: both)')
     parser.add_argument('--subjects', nargs='+', metavar='SUB', help='e.g. 01 02 or sub-01 (default: all)')
     parser.add_argument('--subjects-file', type=Path, metavar='FILE',
@@ -487,8 +505,20 @@ def main(argv: list[str] | None = None) -> int:
             handler.close()
 
 
+def filter_from_args(args: argparse.Namespace) -> FilterConfig:
+    """The signal's filter: config.FILTER unless the command line (or the GUI) overrides it."""
+    low, high = getattr(args, 'bandpass', None) or (config.FILTER.low, config.FILTER.high)
+    enabled = not getattr(args, 'no_bandpass', False) and config.FILTER.enabled
+    if getattr(args, 'bandpass', None):
+        enabled = True
+    notch = getattr(args, 'notch', None)
+    return FilterConfig(enabled=enabled, low=low, high=high,
+                        notch=config.FILTER.notch if notch is None else notch)
+
+
 def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
     mode = getattr(args, 'ica_mode', 'original')
+    filtering = filter_from_args(args)
     annotations_dir = getattr(args, 'annotations_dir', Path(args.data_dir).parent / 'annotations')
     from tps.core.ica import snapshot
     all_studies = [s for group in discover(args.data_dir).values() for s in group]
@@ -496,13 +526,17 @@ def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
     rejection = getattr(args, 'rejection_mode', None) or config.REJECTION_MODE
     # The default (global) rejection leaves the fingerprint unchanged, so existing caches stay valid.
     extra = '' if rejection == 'global' else f'per_channel:{config.MIN_CHANNEL_EPOCHS}'
+    # A filter other than config.FILTER selects other caches (the default keeps existing ones valid).
+    if filtering != config.FILTER:
+        extra += f'filter:{filtering.enabled}:{filtering.low:g}:{filtering.high:g}:{filtering.notch}'
     digest = hashlib.sha256((config_hash() + mode + str(Path(annotations_dir).resolve()) + extra).encode()).hexdigest()[:12]
     (out_dir / 'config_used.json').write_text(json.dumps(
         # settings_hash: config.py alone (the GUI uses it to tell whether outputs are outdated);
         # config_hash: also mode and folders, which select the per-recording caches.
         {'config_hash': digest, 'settings_hash': config_hash(), 'created_at': datetime.now(timezone.utc).isoformat(),
          'command': ' '.join(sys.argv), 'ica_mode': mode, 'ica_inputs': selections,
-         **config.as_dict(), 'rejection_mode': rejection, 'min_channel_epochs': config.MIN_CHANNEL_EPOCHS},
+         **config.as_dict(), 'filter': filtering.context(), 'filter_label': filtering.label,
+         'rejection_mode': rejection, 'min_channel_epochs': config.MIN_CHANNEL_EPOCHS},
         indent=2, ensure_ascii=False), encoding='utf-8')
 
     subjects = list(args.subjects or [])
@@ -514,6 +548,7 @@ def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
     todo = [s for s in studies if args.force or not finished(cache_path(cache_dir, s), digest, selections[str(s.path)])]
     log.info('%d recordings selected, %d already finished, %d to process (config %s)',
              len(studies), len(studies) - len(todo), len(todo), digest)
+    log.info('Signal: %s%s', filtering.label, ' + confirmed ICA' if mode == 'confirmed' else '')
     started = time.monotonic()
 
     def report(done: int, study: Study, result: dict) -> None:
@@ -527,17 +562,18 @@ def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
     if args.jobs > 1 and len(todo) > 1:
         with ProcessPoolExecutor(max_workers=args.jobs) as pool:
             futures = {pool.submit(run_one, s, cache_dir, digest, selections[str(s.path)], args.data_dir,
-                                   annotations_dir, rejection): s for s in todo}
+                                   annotations_dir, rejection, filtering): s for s in todo}
             for done, future in enumerate(as_completed(futures), 1):
                 report(done, futures[future], future.result())
     else:
         for done, study in enumerate(todo, 1):
             report(done, study, run_one(study, cache_dir, digest, selections[str(study.path)], args.data_dir,
-                                        annotations_dir, rejection))
+                                        annotations_dir, rejection, filtering))
 
     # Aggregation covers every finished recording, not just this run's selection, so
     # running --eyes open and later --eyes closed builds one combined table.
-    totals = aggregate(cache_dir, out_dir, digest, pair_notes, {Path(k).stem: v for k, v in selections.items()})
+    totals = aggregate(cache_dir, out_dir, digest, pair_notes, {Path(k).stem: v for k, v in selections.items()},
+                       filtering)
     order = write_session_order(args.data_dir, out_dir)
     log.info('Session order: %s', order)
     log.info('Done: %(recordings)d recordings in the tables (%(excluded)d excluded), '

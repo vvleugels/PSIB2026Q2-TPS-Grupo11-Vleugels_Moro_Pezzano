@@ -164,9 +164,18 @@ Se restaura la última corrección si estaba activada. Fuente o entorno incompat
 impiden reutilizarla. Respaldá esta carpeta junto con las anotaciones.
 Las revisiones del piloto de 4 s siguen siendo independientes.
 
-En **Resultados del grupo**, **Señal de entrada** permite elegir **Original** (por
-defecto) o **ICA confirmada**. El lote nunca ajusta modelos ni elige componentes:
-excluye e informa registros sin corrección válida. Las estadísticas pareadas usan
+En **Resultados del grupo**, **Señal de entrada** tiene dos opciones, y las dos usan
+el **mismo filtrado que el explorador** (panel «Filtrado»; debajo del selector se
+indica cuál es):
+
+- **Filtrado activo**: la señal con ese filtrado.
+- **Filtrado activo + ICA confirmada**: primero la ICA confirmada de cada registro y
+  después el mismo filtrado.
+
+El lote nunca ajusta modelos ni elige componentes: excluye e informa registros sin
+corrección válida (antes de ejecutarlo se avisa cuántos registros tienen ICA
+confirmada). El aviso ámbar indica con qué señal se calcularon los resultados y
+advierte si el filtrado del explorador cambió desde entonces. Las estadísticas pareadas usan
 solo pares NS/SD completos. Se registra cobertura en `ica_coverage.json`, contexto
 por registro y revisiones en `config_used.json`; las cachés distinguen las fuentes
 y revisiones. Una revisión nueva no cambia los insumos de un lote ya iniciado.
@@ -368,6 +377,8 @@ Opciones del lote:
   cualquier canal se descarta para todos; con `per_channel` cada canal usa sus propias
   épocas limpias y se excluye si le quedan menos de `MIN_CHANNEL_EPOCHS` (10).
 - `--ica-mode original|confirmed`, `--annotations-dir`: usar la ICA confirmada de cada registro.
+- `--bandpass LOW HIGH`, `--no-bandpass`, `--notch 50|60`: filtrado de la señal (por
+  defecto el de `tps/config.py`, pasabanda 0,2–45 Hz). La interfaz pasa el filtrado del explorador.
 
 Ojos abiertos es el análisis principal y ojos cerrados el secundario; nunca se combinan.
 Los resultados describen diferencias espectrales a nivel de grupo, sin interpretación

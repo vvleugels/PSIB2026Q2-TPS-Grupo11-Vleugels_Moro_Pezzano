@@ -77,6 +77,26 @@ class SpectralFeatureTests(unittest.TestCase):
                          ('sub-99', 'ses-1', 'NS', 'open'))
 
 
+class FilterChoiceTests(unittest.TestCase):
+    """The batch uses the filter it is given (the GUI passes the explorer's), never a hidden one."""
+
+    def test_filter_from_args(self):
+        from tps.core.processing import FilterConfig
+        self.assertEqual(run_batch.filter_from_args(run_batch.parse_args([])), config.FILTER)
+        self.assertFalse(run_batch.filter_from_args(run_batch.parse_args(['--no-bandpass'])).enabled)
+        custom = run_batch.filter_from_args(run_batch.parse_args(['--bandpass', '1', '40', '--notch', '50']))
+        self.assertEqual(custom, FilterConfig(True, 1.0, 40.0, 50.0))
+
+    def test_explicit_filter_changes_the_signal(self):
+        from tps.core.processing import FilterConfig
+        # A 0.1 Hz drift: the 0.2-45 Hz band-pass removes it, no filter keeps it in delta.
+        signals = {'Cz': sine(0.1, 30) + sine(10, 20) + noise()}
+        filtered = run_batch.process_recording(synthetic(signals))
+        raw = run_batch.process_recording(synthetic(signals), filtering=FilterConfig(enabled=False))
+        delta = lambda result: band(result['features'], 'Cz', 'delta')['abs_power_uV2']
+        self.assertGreater(delta(raw), delta(filtered) * 2)
+
+
 class ScreeningTests(unittest.TestCase):
     def test_spike_rejects_only_its_epoch_and_partial_is_dropped(self):
         spiky = sine(10, 20) + noise()

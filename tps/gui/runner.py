@@ -28,7 +28,8 @@ class Options:
     jobs: int = max(1, (os.cpu_count() or 2) // 2)
     force: bool = False
     permutations: int = 5000
-    ica_mode: str = 'original'
+    ica_mode: str = 'original'      # 'confirmed': apply each recording's confirmed ICA first
+    filtering: object = None        # FilterConfig of the explorer; None = config.FILTER
     data_dir: Path | None = None
     annotations_dir: Path | None = None
 
@@ -39,6 +40,11 @@ def command(step: str, options: Options, results_dir: Path) -> list[str]:
         argv = [sys.executable, '-m', 'tps.pipeline.batch', '--out-dir', str(results_dir),
                 '--jobs', str(max(1, options.jobs))]
         argv += ['--ica-mode', options.ica_mode]
+        if options.filtering is not None:
+            f = options.filtering
+            argv += ['--bandpass', f'{f.low:g}', f'{f.high:g}'] if f.enabled else ['--no-bandpass']
+            if f.notch is not None:
+                argv += ['--notch', f'{f.notch:g}']
         if options.data_dir is not None:
             argv += ['--data-dir', str(options.data_dir)]
         if options.annotations_dir is not None:
