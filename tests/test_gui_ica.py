@@ -76,3 +76,44 @@ class ICAGuiTests(unittest.TestCase):
         self.assertIsNotNone(process.poll())
         self.assertIsNone(a.ica_dialog)
         self.assertFalse(list((Path(self.temp.name)/'annotations').glob('ica/**/latest.json')))
+
+    def test_fit_preserves_annex_symlink_directory(self):
+        # EEGLAB headers refer to a sibling .fdt; annex stores targets separately.
+        a = self.app
+        path = a.recording.study.path
+        for extension in ('.set', '.fdt'):
+            link = path.with_suffix(extension)
+            target = self.data / '.git' / 'annex' / 'objects' / extension[1:] / ('object' + extension)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            link.rename(target)
+            link.symlink_to(target)
+        a.select_study(); self.wait()
+        a.open_ica(); a.start_ica()
+        request = json.loads((Path(a.ica_temp.name) / 'request.json').read_text())
+        self.wait(fit=True)
+        self.assertIsNotNone(a.ica_model, a.ica_message.get())
+        self.assertEqual(Path(request['path']), path.absolute())
+        self.assertNotEqual(Path(request['path']), path.resolve())
+
+    def test_component_map_grid_selection_and_inspection(self):
+        from types import SimpleNamespace
+        import numpy as np
+        a = self.app
+        a.open_ica(); a.start_ica(); self.wait(fit=True)
+        original = np.array([ch['loc'].copy() for ch in a.ica_model.info['chs']])
+        a.open_ica_maps(); self.root.update()
+        grid = a.ica_maps
+        self.assertEqual(len(grid.axes), a.ica_model.n_components_)
+        ax = next(iter(grid.axes))
+        grid.click(SimpleNamespace(inaxes=ax, button=1)); self.root.update()
+        self.assertEqual(a.exclusions_text.get(), '1')
+        self.assertIn('EXCLUIR', ax.get_title())
+        a.exclusions_text.set('2'); self.root.update()
+        self.assertIn('Conservar', ax.get_title())
+        grid.click(SimpleNamespace(inaxes=ax, button=3)); self.wait()
+        self.assertEqual(a.component_number.get(), '1')
+        self.assertFalse(grid.winfo_exists())
+        self.assertIsNone(a.recording.ica_context)
+        np.testing.assert_array_equal(original, np.array([ch['loc'] for ch in a.ica_model.info['chs']]))
+        a.open_ica_maps(); self.root.update()
+        a.cancel_ica(close=True); self.root.update()

@@ -22,6 +22,7 @@ class ICAUI:
         self.ica_job = None
         self.ica_temp = None
         self.ica_dialog = None
+        self.ica_maps = None
         self.ica_after = None
         self.ica_model = None
         self.ica_metadata = None
@@ -67,6 +68,9 @@ class ICAUI:
             self.ica_temp.cleanup()
             self.ica_temp = None
         if close:
+            if getattr(self, 'ica_maps', None) is not None and self.ica_maps.winfo_exists():
+                self.ica_maps.destroy()
+            self.ica_maps = None
             if getattr(self, 'ica_dialog', None):
                 self.ica_dialog.destroy()
                 self.ica_dialog = None
@@ -100,6 +104,7 @@ class ICAUI:
         row = ttk.Frame(body); row.pack(fill='x', pady=6)
         self.fit_button = ttk.Button(row, text='Ajustar ICA', command=self.start_ica)
         self.fit_button.pack(side='left')
+        ttk.Button(row, text='Mapas de componentes', command=self.open_ica_maps).pack(side='left', padx=5)
         ttk.Button(row, text='Cancelar ajuste', command=self.cancel_ica).pack(side='left', padx=5)
         self.ica_message = tk.StringVar(value='Ningún componente se elimina automáticamente.')
         ttk.Label(body, textvariable=self.ica_message, wraplength=990).pack(fill='x')
@@ -149,7 +154,9 @@ class ICAUI:
             study = self.recording.study
             self.ica_temp = tempfile.TemporaryDirectory(prefix='tps-ica-')
             folder = Path(self.ica_temp.name)
-            ica.write_json(folder / 'request.json', dict(path=str(study.path.resolve()),
+            # Preserve the BIDS symlink: EEGLAB resolves its .fdt beside the .set.
+            # resolve() moves the header into annex's separate object directory.
+            ica.write_json(folder / 'request.json', dict(path=str(study.path.absolute()),
                            participant=study.participant, session=study.session, task=study.task,
                            data_dir=str(self.data_dir.resolve()), channels=channels, epochs=epochs))
             self.ica_job = subprocess.Popen([sys.executable, '-m', 'tps.pipeline.ica_worker', str(folder)],
@@ -201,6 +208,22 @@ class ICAUI:
             raise ValueError('Número de componente fuera de rango.')
         return excluded
 
+    def open_ica_maps(self):
+        if self.busy:
+            return
+        try:
+            self.checked_ica()
+            if self.ica_maps is not None and self.ica_maps.winfo_exists():
+                self.ica_maps.lift()
+                return
+            from .ica_maps import ICAMapGrid
+            def inspect(index):
+                self.component_number.set(str(index+1))
+                self.inspect_ica()
+            self.ica_maps = ICAMapGrid(self.ica_dialog, self.ica_model, self.exclusions_text, inspect)
+        except ValueError as exc:
+            self.ica_message.set(str(exc))
+
     def inspect_ica(self):
         if self.busy:
             return
@@ -226,8 +249,15 @@ class ICAUI:
                 f, p = welch(source, recording.sfreq, nperseg=min(len(source), round(2*recording.sfreq)))
                 axes[1].semilogy(f, np.maximum(p, np.finfo(float).tiny)); axes[1].set(xlim=(0, 60), title='PSD del componente')
                 try:
-                    model.plot_components(picks=[k], axes=axes[2], show=False, colorbar=False)
+                    from .ica_maps import map_info
+                    info, geometry = map_info(model)
+                    values = model.get_components()[:, k]
+                    maximum = np.max(np.abs(values))
+                    mne.viz.plot_topomap(values / maximum if maximum else values, info, axes=axes[2],
+                                         show=False, cmap='RdBu_r', vlim=(-1, 1), contours=6)
                     axes[2].set_title(f'Componente {k+1}')
+                    axes[2].text(.5, -.1, '10–20 aproximado' if 'APROXIMADAS' in geometry else 'Geometría del modelo',
+                                 transform=axes[2].transAxes, ha='center', fontsize=8)
                 except (ValueError, RuntimeError):
                     axes[2].clear(); axes[2].text(.5, .5, 'Mapa no disponible\nFalta geometría', ha='center')
                     axes[2].axis('off')

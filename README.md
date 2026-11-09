@@ -133,7 +133,13 @@ Conservá ejemplos representativos de parpadeos para que ICA pueda separarlos.
 2. Pulsá **Ajustar ICA**. Corre en otro proceso y admite **Cancelar ajuste**.
    Cancelar, cambiar de estudio o cerrar conserva la corrección confirmada anterior.
 3. Elegí un componente y pulsá **Inspeccionar** para ver señal, espectro e indicadores.
-   El mapa solo se muestra si hay geometría disponible. Las sugerencias y la
+   **Mapas de componentes** abre una grilla desplazable: clic para marcar/conservar,
+   clic derecho para inspeccionar. Los rótulos verdes/rojos indican la selección
+   pendiente, sincronizada con la lista de exclusiones; aún requiere confirmar.
+   Si el modelo no tiene geometría, se usan posiciones estándar 10–20 por nombre,
+   rotuladas como **aproximadas**, sin modificar el modelo ni la señal. Canales
+   desconocidos impiden dibujar el mapa. Cada mapa normaliza sus pesos a ±1;
+   sus colores no representan µV ni una clasificación de artefactos. Las sugerencias y la
    correlación frontal no identifican automáticamente artefactos ni sustituyen EOG.
 4. Escribí los componentes que querés excluir. **Antes / después** compara la misma
    ventana y filtros, con ambas señales superpuestas sobre la misma escala.
