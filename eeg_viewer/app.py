@@ -55,6 +55,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         self.busy = False
         self.inventory_ready = False
         self.sidebar_visible = True
+        self.info_expanded = None  # Sigue el tamaño de ventana hasta una elección manual.
         self.sidebar_width = 350
         self.patient = tk.StringVar()
         self.study = tk.StringVar()
@@ -126,12 +127,6 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
                  background=INK).pack(side='left')
         tk.Label(bar, text='Explorador EEG · sueño normal y privación de sueño', font=self.fonts.base,
                  foreground=INK_MUTED, background=INK).pack(side='left', padx=14, pady=(5, 0))
-        button = dict(font=self.fonts.base, relief='flat', borderwidth=0, padx=12, pady=5,
-                      cursor='hand2', background=INK_SOFT, foreground='white',
-                      activebackground=IRIS, activeforeground='white',
-                      disabledforeground='#5f7f86')
-        self.sidebar_button = tk.Button(bar, text='◀ Ocultar panel', command=self.toggle_sidebar, **button)
-        self.sidebar_button.pack(side='right', padx=(8, 16))
         tk.Label(bar, textvariable=self.signal_label, background=INK, foreground=INK_MUTED,
                  font=self.fonts.base).pack(side='right', padx=8)
         tk.Label(bar, text='Señal:', background=INK, foreground=INK_MUTED,
@@ -153,7 +148,16 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         body.bind('<Configure>',
                   lambda e: self.side_canvas.configure(scrollregion=self.side_canvas.bbox('all')))
 
+        self.sidebar_rail = ttk.Frame(self.panes, width=38)
+        self.sidebar_restore = ttk.Button(self.sidebar_rail, text='▶', width=3,
+                                          command=self.toggle_sidebar)
+        self.sidebar_restore.pack(anchor='n', pady=4)
+        Tooltip(self.sidebar_restore, 'Mostrar panel lateral.')
+
         selection = self.card(body, 'Registro')
+        self.sidebar_button = ttk.Button(selection, text='◀', width=3,
+                                         command=self.toggle_sidebar)
+        self.sidebar_button.place(relx=1, x=-8, y=0, anchor='ne')
         self.patient_box = self.selector(selection, 'Paciente', self.patient, self.select_patient)
         self.study_box = self.selector(selection, 'Estudio  (ses-1 normal · ses-2 privación)',
                                        self.study, self.select_study)
@@ -188,8 +192,14 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         outer, info = card(main, 'Información del estudio')
         self.info_card = outer
         self.compact_text = tk.StringVar(value='Seleccioná un estudio para ver su información.')
-        self.compact_info = ttk.Label(main, textvariable=self.compact_text, padding=8,
-                                      style='Card.TLabel', wraplength=550)
+        self.compact_info = ttk.Frame(main, style='Card.TFrame', padding=8)
+        self.info_restore = ttk.Button(self.compact_info, text='▼', width=3,
+                                       command=self.toggle_info)
+        self.info_restore.pack(side='right', padx=(8, 0))
+        self.compact_label = ttk.Label(self.compact_info, textvariable=self.compact_text,
+                                       style='Card.TLabel', wraplength=550)
+        self.compact_label.pack(side='left', fill='x', expand=True)
+        Tooltip(self.info_restore, 'Expandir información del estudio.')
         self.info_fields = {}
         grid = ttk.Frame(info, style='Card.TFrame')
         grid.pack(fill='x', pady=(6, 4))
@@ -204,8 +214,13 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
             ttk.Label(cell, textvariable=var, style='CardBold.TLabel', wraplength=180).pack(anchor='w')
             self.info_fields[label] = var
         self.file_text = tk.StringVar(value='Seleccioná un estudio para ver su información.')
-        file_label = ttk.Label(info, textvariable=self.file_text, style='CardMuted.TLabel')
-        file_label.pack(fill='x')
+        footer = ttk.Frame(info, style='Card.TFrame')
+        footer.pack(fill='x')
+        self.info_button = ttk.Button(footer, text='▲', width=3, command=self.toggle_info)
+        self.info_button.pack(side='right', padx=(8, 0))
+        Tooltip(self.info_button, 'Plegar información del estudio.')
+        file_label = ttk.Label(footer, textvariable=self.file_text, style='CardMuted.TLabel')
+        file_label.pack(side='left', fill='x', expand=True)
         autowrap(file_label)
 
         self.view_tabs = ttk.Notebook(main)
@@ -289,11 +304,11 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         if self.sidebar_visible:
             self.sidebar_width = self.sidebar.winfo_width()
             self.panes.forget(self.sidebar)
-            self.sidebar_button.configure(text='▶ Mostrar panel')
+            self.panes.add(self.sidebar_rail, before=self.main, minsize=38, width=38, stretch='never')
         else:
+            self.panes.forget(self.sidebar_rail)
             self.panes.add(self.sidebar, before=self.main, minsize=300,
                            width=self.sidebar_width, stretch='never')
-            self.sidebar_button.configure(text='◀ Ocultar panel')
         self.sidebar_visible = not self.sidebar_visible
 
     def on_wheel(self, event):
@@ -311,13 +326,22 @@ class App(ReviewUI, SpectralUI, ScreeningUI):
         steps = -1 if event.num == 4 or (event.num != 5 and event.delta > 0) else 1
         self.side_canvas.yview_scroll(steps * 3, 'units')
 
+    def toggle_info(self):
+        self.info_expanded = not bool(self.info_card.winfo_manager())
+        self.layout_info()
+
     def responsive_layout(self, event):
         if event.widget != self.root:
             return
-        if event.height < 850:
+        self.layout_info()
+
+    def layout_info(self):
+        expanded = (self.root.winfo_height() >= 850 if self.info_expanded is None
+                    else self.info_expanded)
+        if not expanded:
             self.info_card.pack_forget()
             self.compact_info.pack(fill='x', pady=(0, 8), before=self.chart_card)
-            self.compact_info.configure(wraplength=max(300, self.chart_card.winfo_width() - 20))
+            self.compact_label.configure(wraplength=max(300, self.chart_card.winfo_width() - 20))
         else:
             self.compact_info.pack_forget()
             self.info_card.pack(fill='x', pady=(0, 8), before=self.chart_card)

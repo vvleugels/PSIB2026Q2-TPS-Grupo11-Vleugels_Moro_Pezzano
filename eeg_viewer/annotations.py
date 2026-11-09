@@ -102,7 +102,7 @@ class AnnotationStore:
                     if not isinstance(context, dict) or type(context['enabled']) is not bool:
                         raise ValueError('Contexto de filtrado inválido.')
                     from .processing import FilterConfig
-                    FilterConfig(context['enabled'], context['low'], context['high']).validate(
+                    FilterConfig(context['enabled'], context['low'], context['high'], context.get('notch')).validate(
                         self.recording.sfreq)
                 elif actual['state'] != STATES[0] or actual['filter'] is not None:
                     raise ValueError('Falta el contexto de revisión.')

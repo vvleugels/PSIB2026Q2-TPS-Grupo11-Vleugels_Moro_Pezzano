@@ -33,7 +33,7 @@ def scan_recording(recording, channels, config, filter_config=FilterConfig()):
             name not in recording.channels for name in channels):
         raise ValueError('Seleccioná al menos un electrodo EEG válido, sin duplicados.')
     continuous = None
-    if filter_config.enabled:
+    if filter_config.active:
         filter_config.validate(recording.sfreq)
         continuous = {}
         for channel in channels:

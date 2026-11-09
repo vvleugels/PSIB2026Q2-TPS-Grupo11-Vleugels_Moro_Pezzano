@@ -120,11 +120,23 @@ class ReviewUI:
         enabled = tk.BooleanVar(value=self.config.enabled)
         low = tk.StringVar(value=f'{self.config.low:g}')
         high = tk.StringVar(value=f'{self.config.high:g}')
-        ttk.Checkbutton(body, text='Aplicar filtrado', variable=enabled).pack(anchor='w', pady=6)
+        ttk.Checkbutton(body, text='Aplicar pasabanda', variable=enabled).pack(anchor='w', pady=6)
         for label, variable in (('Corte inferior (Hz)', low), ('Corte superior (Hz)', high)):
             ttk.Label(body, text=label).pack(anchor='w')
             ttk.Entry(body, textvariable=variable).pack(fill='x', pady=(0, 8))
-        ttk.Label(body, text='FIR · Fase cero · Ventana Hamming\nSe aplica sobre el canal continuo completo.',
+        notch_enabled = tk.BooleanVar(value=self.config.notch is not None)
+        notch_frequency = tk.StringVar(value=f'{self.config.notch or 50:g}')
+        notch_row = ttk.Frame(body)
+        notch_row.pack(fill='x', pady=8)
+        notch_box = ttk.Combobox(notch_row, textvariable=notch_frequency,
+                                 values=('50', '60'), width=5,
+                                 state='readonly' if notch_enabled.get() else 'disabled')
+        ttk.Checkbutton(notch_row, text='Aplicar notch', variable=notch_enabled,
+                        command=lambda: notch_box.configure(
+                            state='readonly' if notch_enabled.get() else 'disabled')).pack(side='left')
+        notch_box.pack(side='left', padx=8)
+        ttk.Label(notch_row, text='Hz').pack(side='left')
+        ttk.Label(body, text='Pasabanda FIR · Fase cero · Ventana Hamming\nNotch IIR · Fase cero · Q = 30\nAmbos se aplican al canal continuo completo.',
                   style='Muted.TLabel').pack(anchor='w', pady=5)
         error = tk.StringVar()
         ttk.Label(body, textvariable=error, foreground='#a12b25', wraplength=420).pack(fill='x')
@@ -135,7 +147,8 @@ class ReviewUI:
         def apply():
             try:
                 candidate = FilterConfig(enabled.get(), float(low.get().replace(',', '.')),
-                                         float(high.get().replace(',', '.')))
+                                         float(high.get().replace(',', '.')),
+                                         float(notch_frequency.get()) if notch_enabled.get() else None)
                 candidate.validate(self.recording.sfreq)
             except (ValueError, AttributeError) as exc:
                 error.set(str(exc))
@@ -315,7 +328,7 @@ class ReviewUI:
         record = self.store.records[self.selected_epoch]
         context = record['filter']
         if context:
-            config = FilterConfig(context['enabled'], context['low'], context['high'])
+            config = FilterConfig(context['enabled'], context['low'], context['high'], context.get('notch'))
             screening = record.get('screening')
             label = ('Aceptación automática' if record['state'] == STATES[1] else 'Barrido automático') if screening else 'Última evaluación'
             limits = (f" · Pico a pico {screening['flat_uv']:g}–{screening['high_uv']:g} µV"

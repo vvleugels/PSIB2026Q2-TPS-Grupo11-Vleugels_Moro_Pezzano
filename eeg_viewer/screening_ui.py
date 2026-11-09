@@ -79,7 +79,7 @@ class ScreeningUI:
 
     def update_screening_signal(self):
         filtering = self.config if self.screening_use_filter.get() else FilterConfig()
-        self.screening_signal.set(filtering.label if filtering.enabled else
+        self.screening_signal.set(filtering.label if filtering.active else
                                   ('Original · Filtrado desactivado' if self.screening_use_filter.get()
                                    else 'Original · Sin filtrar'))
 

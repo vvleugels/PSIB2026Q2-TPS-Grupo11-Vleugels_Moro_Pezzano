@@ -97,7 +97,7 @@ class Recording:
     def read_channels(self, channels, start, config=FilterConfig(), seconds=10):
         if not channels or len(channels) > 8 or any(c not in self.channels for c in channels):
             raise ValueError('Seleccioná entre 1 y 8 electrodos del registro.')
-        if not config.enabled:
+        if not config.active:
             segments = [self.read_window(c, start, seconds) for c in channels]
             first = segments[0]
             return Segment(first.times, np.stack([s.values_uv for s in segments]),

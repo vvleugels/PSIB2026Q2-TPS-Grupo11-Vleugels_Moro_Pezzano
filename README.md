@@ -22,6 +22,9 @@ python gui.py
 ```
 
 En Ubuntu/Debian, si faltan Tkinter o venv: `sudo apt install python3-tk python3-venv`.
+En Linux también podés ejecutar `./TPS.sh`: crea `.venv` e instala las dependencias
+en el primer inicio (requiere internet). Si la instalación falla, la reintenta al
+volver a ejecutarlo. Acepta su ruta absoluta desde cualquier carpeta.
 En Windows, hace doble clic en `TPS.bat`. En el primer inicio crea `.venv` e instala
 las dependencias; hace falta una conexión a internet. Si falla la instalación,
 corregí el problema y volvé a ejecutar el lanzador: reintentará la instalación.
@@ -35,7 +38,10 @@ izquierdo lista el flujo (paciente, estudio, electrodo,
 filtrado opcional, búsqueda opcional de artefactos, revisión de epochs y espectro): el paso pendiente se resalta en ámbar
 y **Ir al siguiente paso ▶** abre su herramienta. La franja ámbar sobre el gráfico
 indica qué hacer ahora, y al dejar el mouse sobre un control aparece una ayuda.
-**◀ Ocultar panel** en la barra superior deja más espacio al gráfico.
+**◀** en la esquina superior derecha de **Registro** pliega el panel lateral;
+**▶** vuelve a mostrarlo. **▲** en la esquina inferior derecha de **Información
+del estudio** la reduce a un resumen; **▼** la expande. La elección se conserva
+al redimensionar la ventana.
 
 ## Explorar y filtrar
 
@@ -68,7 +74,14 @@ se conservan en una caché en memoria para el estudio y los cortes activos.
 El pasabanda se basa en el paper; su diseño concreto no está especificado allí,
 por lo que esta implementación no pretende reproducir exactamente su filtro.
 Los bordes del registro pueden tener transitorios de filtrado: el padding no
-los elimina por completo. No se aplica notch, remuestreo, ICA, interpolación,
+los elimina por completo. El notch opcional se activa en **Configurar filtrado**, con un selector de **50 o 60 Hz**,
+independiente del pasabanda y apagado por defecto. Se aplica después del pasabanda
+sobre el canal continuo: IIR de segundo orden, Q = 30, ida y vuelta (fase cero,
+padding impar de 9 muestras). La frecuencia debe ser menor que Nyquist.
+La vista, el barrido con filtro activo y el espectro utilizan la misma configuración;
+las anotaciones y exportaciones registran el notch. Cambiarlo invalida los avisos
+del barrido filtrado. Las anotaciones antiguas se interpretan sin notch.
+No se aplica remuestreo, ICA, interpolación,
 cambio de referencia ni normalización. Se dibujan todas las muestras del tramo.
 
 ## Revisar epochs

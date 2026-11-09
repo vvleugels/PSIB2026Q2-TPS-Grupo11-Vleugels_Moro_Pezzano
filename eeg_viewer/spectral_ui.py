@@ -6,6 +6,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 from .theme import BG, CARD, IRIS, IRIS_LIGHT, TEXT, style_dialog
+from .processing import FilterConfig
 from .spectral import SpectralConfig, select_studies, run_analysis, plot_result, export_result
 
 
@@ -284,8 +285,9 @@ class SpectralUI:
         lines.append(f"Welch: {effective['seconds']:g} s · {effective['overlap_percent']:g}% · "
                      f"Δf={effective['frequency_step']:g} Hz · Hann · Referencia original. "
                      f"Relativa respecto de {result['spectral']['edges'][0]:g}–{result['spectral']['edges'][-1]:g} Hz.")
-        lines.append('Filtrado: ' + (f"{result['filter']['low']:g}–{result['filter']['high']:g} Hz"
-                                     if result['filter']['enabled'] else 'desactivado'))
+        filtering = result['filter']
+        lines.append('Filtrado: ' + FilterConfig(
+            filtering['enabled'], filtering['low'], filtering['high'], filtering.get('notch')).label)
         self.set_spectral_summary('\n'.join(lines))
         self.draw_spectrum()
 

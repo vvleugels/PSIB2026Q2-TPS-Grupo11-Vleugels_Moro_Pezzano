@@ -129,7 +129,7 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
             counts['accepted'] += 1
         eligible.append(epoch)
         prior = record['filter']
-        if prior and (prior['enabled'] != filter_config.enabled or
+        if prior and (prior.get('notch') != filter_config.notch or prior['enabled'] != filter_config.enabled or
                       (filter_config.enabled and (prior['low'], prior['high']) !=
                        (filter_config.low, filter_config.high))):
             mismatches.append(epoch.index + 1)
@@ -138,7 +138,7 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
                          'Revisá y guardá epochs o activá la inclusión exploratoria.')
     if any(e.last - e.first < effective['nperseg'] for e in eligible):
         raise ValueError('El segmento Welch supera las muestras de una epoch completa.')
-    if filter_config.enabled:
+    if filter_config.active:
         continuous = recording.filter.channel(channel, filter_config)
     else:
         continuous = None
