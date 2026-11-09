@@ -184,6 +184,7 @@ class ReviewUI:
                 self.clear_screening()
             self.update_screening_signal()
             self.signal_label.set(candidate.label)
+            self.refresh_ica()
             if segment is not None:
                 self.segment_loaded(segment)
             else:
@@ -330,6 +331,8 @@ class ReviewUI:
     def update_review_context(self):
         record = self.store.records[self.selected_epoch]
         context = record['filter']
+        from .ica import context as ica_context
+        mismatch = record.get('ica') != ica_context(self.recording)
         if context:
             config = FilterConfig(context['enabled'], context['low'], context['high'], context.get('notch'))
             screening = record.get('screening')
@@ -340,6 +343,10 @@ class ReviewUI:
                                    f" · {record['reviewed_at'][:19]} UTC")
         else:
             self.context_label.set('Sin evaluación previa')
+        if record.get('ica'):
+            self.context_label.set(self.context_label.get() + ' · ICA ' + record['ica']['revision'][:8])
+        if mismatch and context:
+            self.context_label.set(self.context_label.get() + ' · ATENCIÓN: revisión con otra configuración ICA')
 
     def update_reason(self):
         can_mark = self.store is not None and not self.store.blocked and not self.busy

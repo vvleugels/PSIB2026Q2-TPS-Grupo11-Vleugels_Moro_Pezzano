@@ -69,6 +69,8 @@ class Recording:
     def __init__(self, study, raw, metadata, warning=''):
         self.study = study
         self.raw = raw
+        self.signal_raw = raw
+        self.ica_context = None
         self.metadata = metadata
         self.warning = warning
         self.filter = ContinuousFilter(raw)
@@ -89,7 +91,7 @@ class Recording:
         first = min(int(round(start * self.sfreq)), self.raw.n_times - 1)
         last = min(first + int(round(seconds * self.sfreq)), self.raw.n_times)
         unique = list(dict.fromkeys(names))  # one read, even with repeated names
-        rows = dict(zip(unique, self.raw.get_data(picks=unique, start=first, stop=last)))
+        rows = dict(zip(unique, self.signal_raw.get_data(picks=unique, start=first, stop=last)))
         values = np.stack([rows[name] for name in names])
         if isinstance(channel, str):
             values = values[0]
@@ -99,6 +101,8 @@ class Recording:
 
     def close(self):
         self.filter.channels.clear()
+        if self.signal_raw is not self.raw:
+            self.signal_raw.close()
         self.raw.close()
 
     def read_channels(self, channels, start, config=FilterConfig(), seconds=10):

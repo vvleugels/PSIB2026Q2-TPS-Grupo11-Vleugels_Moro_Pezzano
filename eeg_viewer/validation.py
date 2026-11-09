@@ -1,4 +1,4 @@
-"""Experimental, explicit EEG cleaning. Never used by the production viewer.
+"""Experimental EEG cleaning plus the shared Infomax fitting engine.
 
 All transformations work on copies. Findings are suggestions, not decisions.
 Units are volts internally and microvolts only for amplitude thresholds.
@@ -271,12 +271,16 @@ def fit_ica(prepared, excluded_epochs=(), manual=None, profile=RuleProfile()):
         raise ValueError('No hay epochs/canales suficientes sin problemas pendientes para ICA.')
     data = np.concatenate([prepared.training.get_data(picks=channels, start=e.first, stop=e.last)
                            for e in chosen], axis=1)
-    # Covariance whitening in MNE needs an explicit rank after interpolation.
+    info = mne.pick_info(prepared.training.info, [prepared.training.ch_names.index(c) for c in channels])
+    return fit_infomax(data, info, channels, [e.index for e in chosen], profile)
+
+
+def fit_infomax(data, info, channels, fit_epochs, profile=RuleProfile()):
+    """Shared fitting/convergence engine; callers select and continuously filter training data."""
     singular = np.linalg.svd(data - data.mean(axis=1, keepdims=True), compute_uv=False)
     rank = int(np.sum(singular > singular[0] * 1e-6)) if singular[0] > 0 else 0
     if rank < 2 or data.shape[1] <= rank:
         raise ValueError('Rango o cantidad de muestras insuficiente para ICA.')
-    info = mne.pick_info(prepared.training.info, [prepared.training.ch_names.index(c) for c in channels])
     fit_raw = mne.io.RawArray(data, info, verbose=False)
     # No baseline, decimation, or refiltering across the concatenated fit intervals.
     config = ProcessingConfig()
@@ -315,7 +319,7 @@ def fit_ica(prepared, excluded_epochs=(), manual=None, profile=RuleProfile()):
             reasons.append('correlacion_frontal_no_EOG')
         components.append(dict(index=k, kurtosis=kurt, fast_ratio=ratio,
                                frontal_correlations=correlations, suggestions=reasons))
-    return ICAResult(ica, channels, rank, [e.index for e in chosen], data.shape[1], components,
+    return ICAResult(ica, channels, rank, list(fit_epochs), data.shape[1], components,
                      dict(actual_steps=trace.step, reported_iterations=int(ica.n_iter_),
                           final_weight_change=trace.change,
                           stop_reason='weight_change' if trace.change < config.weight_change else 'small_angle'))

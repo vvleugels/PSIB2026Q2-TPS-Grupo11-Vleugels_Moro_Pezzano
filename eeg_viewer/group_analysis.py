@@ -200,7 +200,7 @@ def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
                        filter_config=DEFAULT_FILTER, spectral_config=SpectralConfig(),
                        rejection_mode='epoch', min_channel_epochs=10,
                        eyes='both', channels=None, checkpoint_each_record=False,
-                       progress_callback=None):
+                       progress_callback=None, ica_mode='original', annotations_dir=None):
     """Process requested BIDS recordings and write fresh CSV outputs."""
     data_dir = Path(data_dir).resolve()
     orders = read_session_order(data_dir)
@@ -235,6 +235,11 @@ def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
         _write_csv(output_dir / 'record_summary.csv', SUMMARY_COLUMNS, [])
         _write_csv(output_dir / 'exclusions.csv', EXCLUSION_COLUMNS, [])
 
+    annotations_dir = Path(annotations_dir) if annotations_dir else data_dir.parent / 'annotations'
+    from .ica import snapshot, apply_snapshot, context as ica_context
+    input_studies = [s for p in selected for s in inventory.get(p, [])]
+    selections = snapshot(input_studies, data_dir, annotations_dir, ica_mode)
+    correction_contexts = {}
     features, summaries, exclusions = [], [], []
     tasks_by_participant = {
         participant: (('eyesopen',) if eyes == 'open' else
@@ -280,6 +285,8 @@ def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
                 try:
                     recording = open_recording(study)
                     try:
+                        apply_snapshot(recording, data_dir, annotations_dir, selections[str(study.path)])
+                        correction_contexts[study.path.name] = ica_context(recording)
                         rows, record_summary = extract_recording_features(
                             recording, orders[participant], screening_config,
                             filter_config, spectral_config, rejection_mode,
@@ -316,6 +323,7 @@ def run_group_analysis(data_dir='data', output_dir=None, max_participants=None,
     metadata = dict(
         created_at=datetime.now(timezone.utc).isoformat(), data_dir=str(data_dir),
         participants=selected, filter=filter_config.context(),
+        ica_mode=ica_mode, ica_inputs=selections, corrections=correction_contexts,
         screening=asdict(screening_config), spectral=asdict(spectral_config),
         rejection_mode=rejection_mode, min_channel_epochs=min_channel_epochs,
         eyes=eyes, channels=channels,

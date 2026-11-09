@@ -40,7 +40,7 @@ FEATURE_COLUMNS = ['sub', 'ses', 'condition', 'eyes', 'channel', 'band', 'abs_po
 THETA_BETA_COLUMNS = ['sub', 'ses', 'condition', 'eyes', 'channel', 'ratio']
 EXCLUSION_COLUMNS = ['sub', 'ses', 'condition', 'eyes', 'level', 'channel', 'epoch', 'reason']
 # Bumped whenever the per-recording output format changes, so old caches are recomputed.
-CACHE_FORMAT = 2   # 2: per-channel mean PSD added for the figures
+CACHE_FORMAT = 3   # ICA provenance and source-specific cache selections
 # PSD bins exported to psd_channels.csv: up to the filter's upper cutoff, where the spectrum
 # is still meaningful (0.5 Hz resolution with 2 s Welch segments).
 PSD_MAX_HZ = config.FILTER.high
@@ -243,7 +243,7 @@ def cache_path(cache_dir: Path, study: Study) -> Path:
     return cache_dir / f'{study.path.stem}.json'
 
 
-def run_one(study: Study, cache_dir: Path, digest: str) -> dict:
+def run_one(study: Study, cache_dir: Path, digest: str, selection=None, data_dir=None, annotations_dir=None) -> dict:
     """Process one recording in a worker and write its cache file; never raises."""
     started = time.monotonic()
     problem = file_problem(study)
@@ -259,7 +259,12 @@ def run_one(study: Study, cache_dir: Path, digest: str) -> dict:
                           summary={**labels(study), 'file': study.path.name, 'excluded': True})
         else:
             try:
+                if selection is not None:
+                    from eeg_viewer.ica import apply_snapshot
+                    apply_snapshot(recording, data_dir, annotations_dir, selection)
                 result = process_recording(recording)
+                from eeg_viewer.ica import context
+                result['ica'] = context(recording)
             except Exception as exc:   # non-finite samples, filter too long, ...
                 result = dict(features=[], theta_beta=[],
                               exclusions=[exclusion(study, 'recording', f'processing failed: {exc}')],
@@ -267,6 +272,9 @@ def run_one(study: Study, cache_dir: Path, digest: str) -> dict:
             finally:
                 recording.close()
     result['config_hash'] = digest
+    result['input_selection'] = selection
+    result['summary']['processing_mode'] = selection['mode'] if selection else 'original'
+    result['summary']['ica_revision'] = (result.get('ica') or {}).get('revision', '')
     result['seconds'] = round(time.monotonic() - started, 1)
     path = cache_path(cache_dir, study)
     temporary = path.with_suffix('.tmp')
@@ -276,9 +284,10 @@ def run_one(study: Study, cache_dir: Path, digest: str) -> dict:
     return result
 
 
-def finished(path: Path, digest: str) -> bool:
+def finished(path: Path, digest: str, selection=None) -> bool:
     try:
-        return json.loads(path.read_text(encoding='utf-8')).get('config_hash') == digest
+        saved = json.loads(path.read_text(encoding='utf-8'))
+        return saved.get('config_hash') == digest and (selection is None or saved.get('input_selection') == selection)
     except (OSError, ValueError):
         return False
 
@@ -334,7 +343,7 @@ def write_psd(path: Path, results: list[dict]) -> None:
                                  *[f'{v:.6g}' for v in values]])
 
 
-def aggregate(cache_dir: Path, out_dir: Path, digest: str, pair_notes: list[dict]) -> dict:
+def aggregate(cache_dir: Path, out_dir: Path, digest: str, pair_notes: list[dict], selections=None) -> dict:
     """Merge every up-to-date cached recording into the final CSV files."""
     results = []
     for path in sorted(cache_dir.glob('*.json')):
@@ -342,7 +351,8 @@ def aggregate(cache_dir: Path, out_dir: Path, digest: str, pair_notes: list[dict
             data = json.loads(path.read_text(encoding='utf-8'))
         except ValueError:
             continue
-        if data.get('config_hash') == digest:
+        if data.get('config_hash') == digest and (selections is None or
+                (path.stem in selections and data.get('input_selection') == selections[path.stem])):
             results.append(data)
     order = lambda r: (r['sub'], r['ses'], r['eyes'])
     features = [row for r in sorted(results, key=lambda r: order(r['summary'])) for row in r['features']]
@@ -356,9 +366,15 @@ def aggregate(cache_dir: Path, out_dir: Path, digest: str, pair_notes: list[dict
     write_psd(out_dir / 'psd_channels.csv', results)
     write_csv(out_dir / 'exclusions.csv', EXCLUSION_COLUMNS, exclusions)
     summaries = [r['summary'] for r in results]
+    modes = sorted({r.get('processing_mode', 'original') for r in summaries})
+    write = dict(processing_modes=modes, recordings=len(results),
+                 confirmed=sum(bool(r.get('ica')) for r in results),
+                 excluded=sum(bool(r['excluded']) for r in summaries),
+                 corrections=[r['ica'] for r in results if r.get('ica')])
+    (out_dir / 'ica_coverage.json').write_text(json.dumps(write, indent=2), encoding='utf-8')
     write_csv(out_dir / 'recordings_summary.csv',
               ['sub', 'ses', 'condition', 'eyes', 'file', 'excluded', 'n_channels', 'n_bad_channels',
-               'n_epochs_complete', 'n_epochs_used', 'n_epochs_rejected'],
+               'n_epochs_complete', 'n_epochs_used', 'n_epochs_rejected', 'processing_mode', 'ica_revision'],
               sorted(summaries, key=order))
     return dict(recordings=len(results), excluded=sum(s['excluded'] for s in summaries),
                 feature_rows=len(features), exclusion_rows=len(exclusions))
@@ -367,6 +383,8 @@ def aggregate(cache_dir: Path, out_dir: Path, digest: str, pair_notes: list[dict
 # ----------------------------------------------------------------------------------- main
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
+    parser.add_argument('--ica-mode', choices=('original', 'confirmed'), default='original')
+    parser.add_argument('--annotations-dir', type=Path, default=Path(__file__).resolve().parents[1] / 'annotations')
     parser.add_argument('--eyes', choices=('open', 'closed'), help='only this eye condition (default: both)')
     parser.add_argument('--subjects', nargs='+', metavar='SUB', help='e.g. 01 02 or sub-01 (default: all)')
     parser.add_argument('--data-dir', type=Path, default=config.DATA_DIR)
@@ -397,15 +415,20 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
-    digest = config_hash()
+    mode = getattr(args, 'ica_mode', 'original')
+    annotations_dir = getattr(args, 'annotations_dir', Path(args.data_dir).parent / 'annotations')
+    from eeg_viewer.ica import snapshot
+    all_studies = [s for group in discover(args.data_dir).values() for s in group]
+    selections = snapshot(all_studies, args.data_dir, annotations_dir, mode)
+    digest = hashlib.sha256((config_hash() + mode + str(Path(annotations_dir).resolve())).encode()).hexdigest()[:12]
     (out_dir / 'config_used.json').write_text(json.dumps(
         {'config_hash': digest, 'created_at': datetime.now(timezone.utc).isoformat(),
-         'command': ' '.join(sys.argv), **config.as_dict()}, indent=2, ensure_ascii=False), encoding='utf-8')
+         'command': ' '.join(sys.argv), 'ica_mode': mode, 'ica_inputs': selections, **config.as_dict()}, indent=2, ensure_ascii=False), encoding='utf-8')
 
     studies, _ = select_studies(args.data_dir, args.eyes, args.subjects)
     # Missing NS/SD counterparts are dataset facts, so list them for the whole dataset.
     _, pair_notes = select_studies(args.data_dir, None, None)
-    todo = [s for s in studies if args.force or not finished(cache_path(cache_dir, s), digest)]
+    todo = [s for s in studies if args.force or not finished(cache_path(cache_dir, s), digest, selections[str(s.path)])]
     log.info('%d recordings selected, %d already finished, %d to process (config %s)',
              len(studies), len(studies) - len(todo), len(todo), digest)
     started = time.monotonic()
@@ -420,16 +443,16 @@ def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
 
     if args.jobs > 1 and len(todo) > 1:
         with ProcessPoolExecutor(max_workers=args.jobs) as pool:
-            futures = {pool.submit(run_one, s, cache_dir, digest): s for s in todo}
+            futures = {pool.submit(run_one, s, cache_dir, digest, selections[str(s.path)], args.data_dir, annotations_dir): s for s in todo}
             for done, future in enumerate(as_completed(futures), 1):
                 report(done, futures[future], future.result())
     else:
         for done, study in enumerate(todo, 1):
-            report(done, study, run_one(study, cache_dir, digest))
+            report(done, study, run_one(study, cache_dir, digest, selections[str(study.path)], args.data_dir, annotations_dir))
 
     # Aggregation covers every finished recording, not just this run's selection, so
     # running --eyes open and later --eyes closed builds one combined table.
-    totals = aggregate(cache_dir, out_dir, digest, pair_notes)
+    totals = aggregate(cache_dir, out_dir, digest, pair_notes, {Path(k).stem: v for k, v in selections.items()})
     order = write_session_order(args.data_dir, out_dir)
     log.info('Session order: %s', order)
     log.info('Done: %(recordings)d recordings in the tables (%(excluded)d excluded), '

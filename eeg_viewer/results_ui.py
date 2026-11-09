@@ -86,6 +86,7 @@ class ResultsUI:
         self.results = Results(self.results_dir, self.project_dir)
         self.runner = Runner(self.project_dir, self.results_dir)
         self.study_batch = None
+        self.run_ica = tk.StringVar(value='Original')
         self.run_eyes = tk.StringVar(value='Ambos')
         self.run_jobs = tk.StringVar(value=str(Options().jobs))
         self.run_force = tk.BooleanVar(value=False)
@@ -147,6 +148,8 @@ class ResultsUI:
             options = ttk.Frame(inner, style='Card.TFrame')
             options.pack(fill='x', pady=8)
             if step == 'batch':
+                self.option_row(options, 'Señal de entrada', ttk.Combobox(options, textvariable=self.run_ica, width=18,
+                    values=('Original', 'ICA confirmada'), state='readonly'))
                 self.option_row(options, 'Ojos', ttk.Combobox(options, textvariable=self.run_eyes, width=10,
                                                               values=list(EYES_OPTIONS), state='readonly'))
                 self.jobs_box = ttk.Spinbox(options, from_=1, to=max(1, os.cpu_count() or 1),
@@ -388,7 +391,16 @@ class ResultsUI:
             extra = (f'\nFalta {", ".join(missing)}: pip install -r requirements-analysis.txt'
                      if missing else '')
             self.step_detail[step].set(f'{state.detail}' + (f' · {when}' if when else '') + extra)
-        self.results_instruction.set(self.results_instruction_text(status))
+        instruction = self.results_instruction_text(status)
+        try:
+            import json
+            coverage = json.loads((self.results_dir / 'ica_coverage.json').read_text(encoding='utf-8'))
+            instruction += (f" Señal: {', '.join(coverage['processing_modes'])}. "
+                            f"ICA confirmada: {coverage['confirmed']}/{coverage['recordings']} registros; "
+                            f"excluidos: {coverage['excluded']}.")
+        except (OSError, ValueError, KeyError):
+            pass
+        self.results_instruction.set(instruction)
         if hasattr(self, 'stepper'):
             self.refresh_guide()   # the main amber callout shows this text on the results tab
 
@@ -603,7 +615,8 @@ class ResultsUI:
         except ValueError:
             raise ValueError('Procesos en paralelo y permutaciones deben ser números enteros.')
         return Options(eyes=EYES_OPTIONS.get(self.run_eyes.get()), jobs=jobs, force=self.run_force.get(),
-                       permutations=permutations)
+                       permutations=permutations, ica_mode='confirmed' if self.run_ica.get() == 'ICA confirmada' else 'original',
+                       data_dir=self.data_dir, annotations_dir=self.annotations_dir)
 
     def run_pipeline(self, steps):
         if self.runner.running:

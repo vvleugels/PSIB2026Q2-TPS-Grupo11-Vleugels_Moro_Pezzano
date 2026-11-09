@@ -28,6 +28,9 @@ class Options:
     jobs: int = max(1, (os.cpu_count() or 2) // 2)
     force: bool = False
     permutations: int = 5000
+    ica_mode: str = 'original'
+    data_dir: Path | None = None
+    annotations_dir: Path | None = None
 
 
 def command(step: str, options: Options, results_dir: Path) -> list[str]:
@@ -35,6 +38,11 @@ def command(step: str, options: Options, results_dir: Path) -> list[str]:
     if step == 'batch':
         argv = [sys.executable, '-m', 'batch.run_batch', '--out-dir', str(results_dir),
                 '--jobs', str(max(1, options.jobs))]
+        argv += ['--ica-mode', options.ica_mode]
+        if options.data_dir is not None:
+            argv += ['--data-dir', str(options.data_dir)]
+        if options.annotations_dir is not None:
+            argv += ['--annotations-dir', str(options.annotations_dir)]
         if options.eyes:
             argv += ['--eyes', options.eyes]
         if options.force:

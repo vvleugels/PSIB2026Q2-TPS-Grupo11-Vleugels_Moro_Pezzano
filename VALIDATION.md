@@ -1,3 +1,8 @@
+> La aplicación principal ahora ofrece ICA con confirmación manual y epochs de 5 s
+> (ver README). Este documento describe el piloto independiente de 4 s y su protocolo
+> de validación; sus revisiones y aprobación automática no se transfieren a la GUI.
+> Ambos flujos comparten el motor de ajuste Infomax y sus controles de convergencia.
+
 # Validación de la limpieza EEG
 
 ## Estado y alcance

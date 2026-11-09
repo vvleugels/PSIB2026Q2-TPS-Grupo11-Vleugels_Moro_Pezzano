@@ -7,8 +7,8 @@ Tkinter, Matplotlib y MNE; los archivos EEG originales nunca se modifican.
 
 El [piloto de limpieza EEG y validación](VALIDATION.md) se ejecuta por separado con
 `validate_eeg.py`. Implementa el motor experimental de 4 segundos y la revisión
-humana previa a la integración; todavía no modifica el flujo de esta GUI ni habilita
-aceptación automática definitiva.
+humana para evaluar el protocolo de limpieza. Sus revisiones son independientes
+de la ICA manual de esta GUI; no habilita aceptación automática definitiva.
 
 La [extracción por lotes](batch/README.md) (`python -m batch.run_batch`) calcula la potencia por bandas de todos los participantes, sesiones, condiciones de ojos y electrodos sin abrir la GUI; la configuración compartida está en `config.py`.
 
@@ -116,8 +116,59 @@ padding impar de 9 muestras). La frecuencia debe ser menor que Nyquist.
 La vista, el barrido con filtro activo y el espectro utilizan la misma configuración;
 las anotaciones y exportaciones registran el notch. Cambiarlo invalida los avisos
 del barrido filtrado. Las anotaciones antiguas se interpretan sin notch.
-No se aplica remuestreo, ICA, interpolación,
+No se aplica remuestreo ni interpolación automática,
 cambio de referencia ni normalización. Se dibujan todas las muestras del tramo.
+
+## ICA: corrección manual de artefactos
+
+En el panel **ICA**, abrí **Ajustar / revisar ICA**. El ajuste utiliza todos los
+canales EEG salvo los que excluyas por nombre, una copia continua de entrenamiento
+**1–45 Hz**, epochs completas de **5 s**, Infomax extendida y semilla 42.
+Las exclusiones de entrenamiento son independientes de las marcas de revisión:
+los avisos de amplitud y las epochs rechazadas **no se excluyen automáticamente**.
+Conservá ejemplos representativos de parpadeos para que ICA pueda separarlos.
+
+1. Opcionalmente indicá canales y números de epochs que no deben entrar al ajuste.
+   Los números de epochs y componentes mostrados empiezan en **1**.
+2. Pulsá **Ajustar ICA**. Corre en otro proceso y admite **Cancelar ajuste**.
+   Cancelar, cambiar de estudio o cerrar conserva la corrección confirmada anterior.
+3. Elegí un componente y pulsá **Inspeccionar** para ver señal, espectro e indicadores.
+   El mapa solo se muestra si hay geometría disponible. Las sugerencias y la
+   correlación frontal no identifican automáticamente artefactos ni sustituyen EOG.
+4. Escribí los componentes que querés excluir. **Antes / después** compara la misma
+   ventana y filtros, con ambas señales superpuestas sobre la misma escala.
+5. **Confirmar y aplicar** guarda una revisión nueva. Podés confirmar cero exclusiones.
+   **Usar ICA confirmada** permite desactivar/reactivar la corrección.
+
+Los canales excluidos del ajuste quedan **sin corregir** y se identifican en el
+panel y los metadatos. No se aplica interpolación automática. Cambiar las exclusiones
+de entrenamiento requiere otro ajuste. El modelo se aplica a una copia de la señal
+original y después se aplican el pasabanda y notch elegidos; cambiar estos filtros
+no requiere volver a ajustar ICA.
+
+La vista, el barrido y Welch usan la misma señal seleccionada. Cambiar ICA invalida
+avisos y espectros anteriores; conserva las marcas de epochs y advierte cuando
+fueron hechas con otra corrección. Una epoch rechazada no pasa a aceptada solo por
+activar ICA. Para comparar NS/SD con ICA, ambas sesiones necesitan una revisión
+confirmada compatible; cada sesión usa su propio modelo.
+
+Las revisiones se guardan fuera de `data`, en `annotations/ica/<registro>/`, junto
+con el modelo, componentes excluidos, canales sin corregir, fuente y versiones.
+Se restaura la última corrección si estaba activada. Fuente o entorno incompatibles
+impiden reutilizarla. Respaldá esta carpeta junto con las anotaciones.
+Las revisiones del piloto de 4 s siguen siendo independientes.
+
+En **Resultados del grupo**, **Señal de entrada** permite elegir **Original** (por
+defecto) o **ICA confirmada**. El lote nunca ajusta modelos ni elige componentes:
+excluye e informa registros sin corrección válida. Las estadísticas pareadas usan
+solo pares NS/SD completos. Se registra cobertura en `ica_coverage.json`, contexto
+por registro y revisiones en `config_used.json`; las cachés distinguen las fuentes
+y revisiones. Una revisión nueva no cambia los insumos de un lote ya iniciado.
+
+```bash
+python -m batch.run_batch --ica-mode confirmed --annotations-dir annotations
+python scripts/analyze_group.py --ica-mode confirmed --annotations-dir annotations
+```
 
 ## Revisar epochs
 

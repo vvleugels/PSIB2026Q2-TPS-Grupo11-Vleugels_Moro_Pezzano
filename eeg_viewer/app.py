@@ -10,6 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 from PIL import Image, ImageTk
 
+from .ica_ui import ICAUI
 from .data import discover, open_recording
 from .annotations import AnnotationStore, STATES
 from .review_ui import ReviewUI
@@ -36,7 +37,7 @@ class Toolbar(NavigationToolbar2Tk):
     )
 
 
-class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI):
+class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
     def __init__(self, root, data_dir, annotations_dir=None, results_dir=None):
         self.root = root
         self.data_dir = Path(data_dir)
@@ -174,6 +175,8 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI):
         self.config_button = ttk.Button(filtering, text='⚙ Configurar filtrado',
                                         command=self.configuration_dialog)
         self.config_button.pack(fill='x', pady=(6, 0))
+
+        self.build_ica(body)
 
         steps = self.card(body, 'Pasos')
         self.stepper = Stepper(steps, self.fonts, len(STEP_TITLES), self.run_step)
@@ -594,6 +597,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI):
         if not self.may_leave():
             self.patient.set(self.active_patient)
             return
+        self.cancel_ica(close=True)
         self.active_patient = self.patient.get()
         self.active_study_index = -1
         self.reset_review()
@@ -624,6 +628,16 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI):
     def load(self, study):
         self.release_recording()
         self.worker_recording = open_recording(study)
+        from . import ica
+        import json
+        pointer = ica.revision_root(self.annotations_dir, study) / 'latest.json'
+        if pointer.exists():
+            try:
+                saved = json.loads(pointer.read_text())
+                if saved.get('enabled', False):
+                    ica.apply_revision(self.worker_recording, self.data_dir, self.annotations_dir, saved['revision'])
+            except (OSError, ValueError, KeyError) as exc:
+                self.worker_recording.warning += f' ICA no restaurada: {exc}'
         self.worker_recording.annotations = AnnotationStore(
             self.annotations_dir, self.worker_recording, self.data_dir)
         # Batch outcome for this study, read here so the first lookup (~0.4 s) stays off the UI thread.
@@ -635,6 +649,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI):
             if self.active_study_index >= 0:
                 self.study_box.current(self.active_study_index)
             return
+        self.cancel_ica(close=True)
         self.active_study_index = self.study_box.current()
         self.reset_review()
         self.invalidate()
@@ -747,6 +762,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI):
         self.status.set(self.recording.warning or f'{self.config.label} · Epochs de 5 s · Sin exclusión de muestras')
 
     def update_controls(self):
+        self.refresh_ica()
         enabled = self.recording is not None and bool(self.visible_channels()) and not self.busy
         self.previous.configure(state='normal' if enabled and self.start > 0 else 'disabled')
         self.next.configure(state='normal' if enabled and self.stop < self.recording.duration else 'disabled')
@@ -790,6 +806,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI):
             self.runner.cancel()
         if not self.may_leave():
             return
+        self.cancel_ica(close=True)
         self.closed = True
         self.invalidate()
         self.root.after_cancel(self.poll_id)

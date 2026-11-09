@@ -124,6 +124,8 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
     eligible = []
     counts = dict(used=0, seconds=0., artifacts=0, pending=0, partial=0, accepted=0)
     mismatches = []
+    ica_mismatches = []
+    from .ica import context as ica_context
     for epoch, record in zip(store.epochs, store.records):
         if epoch.partial:
             counts['partial'] += 1
@@ -138,6 +140,8 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
         else:
             counts['accepted'] += 1
         eligible.append(epoch)
+        if record.get('ica') != ica_context(recording):
+            ica_mismatches.append(epoch.index + 1)
         prior = record['filter']
         if prior and (prior.get('notch') != filter_config.notch or prior['enabled'] != filter_config.enabled or
                       (filter_config.enabled and (prior['low'], prior['high']) !=
@@ -155,7 +159,7 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
     total = None
     for epoch in eligible:
         samples = (continuous[epoch.first:epoch.last] if continuous is not None else
-                   recording.raw.get_data(picks=[channel], start=epoch.first, stop=epoch.last)[0])
+                   recording.signal_raw.get_data(picks=[channel], start=epoch.first, stop=epoch.last)[0])
         if not np.all(np.isfinite(samples)):
             raise ValueError(f'Epoch {epoch.index + 1}: hay muestras no finitas; no se omiten automáticamente.')
         frequencies, psd = welch_epoch(samples, recording.sfreq, effective)
@@ -166,6 +170,8 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
     counts['used'] = len(eligible)
     counts['seconds'] = sum((e.last - e.first) / recording.sfreq for e in eligible)
     warnings = []
+    if ica_mismatches:
+        warnings.append('Marcas realizadas con otra ICA: epochs ' + ', '.join(map(str, ica_mismatches)))
     if mismatches:
         warnings.append('Marcas realizadas con otro filtrado: epochs ' + ', '.join(map(str, mismatches)))
     if filter_config.enabled:
@@ -178,7 +184,7 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
                 condition=recording.study.condition, task=recording.study.task,
                 eyes=recording.study.eyes, channel=channel, sfreq=recording.sfreq,
                 reference=recording.metadata.get('EEGReference') or 'No disponible',
-                source=store.identity, annotations_sha256=store.digest,
+                source=store.identity, ica=ica_context(recording), annotations_sha256=store.digest,
                 annotation_file=store.path.name, frequencies=frequencies, psd_uv2_hz=averaged,
                 bands=band_powers(frequencies, averaged, config.edges), counts=counts,
                 epochs=[dict(number=e.index + 1, first=e.first, last=e.last,
@@ -187,7 +193,7 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
 
 
 def run_analysis(studies, channel, filter_config, config, data_dir, annotations_dir,
-                 include_unreviewed=False, expected=None):
+                 include_unreviewed=False, expected=None, ica_selections=None):
     """Own all auxiliary readers within the worker and return a complete comparison only."""
     if not studies or len({(s.participant, s.task) for s in studies}) != 1:
         raise ValueError('La comparación requiere el mismo participante y condición de ojos.')
@@ -196,6 +202,9 @@ def run_analysis(studies, channel, filter_config, config, data_dir, annotations_
         for study in studies:
             recording = open_recording(study)
             stack.callback(recording.close)
+            if ica_selections is not None:
+                from .ica import apply_snapshot
+                apply_snapshot(recording, data_dir, annotations_dir, ica_selections[str(study.path)])
             store = AnnotationStore(annotations_dir, recording, data_dir)
             verify_store(store)
             if expected and str(study.path) in expected:

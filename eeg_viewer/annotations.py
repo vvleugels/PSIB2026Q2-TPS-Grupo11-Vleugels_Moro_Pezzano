@@ -106,6 +106,19 @@ class AnnotationStore:
                         self.recording.sfreq)
                 elif actual['state'] != STATES[0] or actual['filter'] is not None:
                     raise ValueError('Falta el contexto de revisión.')
+                correction = actual.get('ica')
+                if correction is not None:
+                    if (not isinstance(correction, dict)
+                            or not isinstance(correction.get('revision'), str)
+                            or len(correction['revision']) != 32
+                            or any(c not in '0123456789abcdef' for c in correction['revision'])
+                            or not isinstance(correction.get('model_sha256'), str)
+                            or len(correction['model_sha256']) != 64
+                            or not isinstance(correction.get('excluded_components'), list)
+                            or any(type(i) is not int or i < 0 for i in correction['excluded_components'])
+                            or not isinstance(correction.get('excluded_channels'), list)
+                            or any(c not in self.recording.channels for c in correction['excluded_channels'])):
+                        raise ValueError('Contexto ICA inválido.')
                 if actual.get('screening') is not None:
                     from .screening import ScreeningConfig
                     screening = actual['screening']
@@ -126,6 +139,8 @@ class AnnotationStore:
             state=state, reason=reason if state == STATES[2] else '', note=note,
             reviewed_at=datetime.now(timezone.utc).isoformat(), channels=list(channels),
             filter=config.context())
+        from .ica import context
+        self.records[index]['ica'] = context(self.recording)
         if screening is None:
             self.records[index].pop('screening', None)
         else:
@@ -147,6 +162,7 @@ class AnnotationStore:
         context = dict(method='peak_to_peak', high_uv=config.high_uv, flat_uv=config.flat_uv)
         filtering = result['filter']
         filter_context = filtering.context()
+        from .ica import context as ica_context
         channels = list(result['channels'])
         counts = dict(accepted=0, pending=0)
         for index, record in enumerate(self.records):
@@ -157,7 +173,8 @@ class AnnotationStore:
             if state == STATES[0] and not automatic:
                 continue
             if (record['state'] == state and record.get('screening') == context
-                    and record['channels'] == channels and record['filter'] == filter_context):
+                    and record['channels'] == channels and record['filter'] == filter_context
+                    and record.get('ica') == ica_context(self.recording)):
                 continue
             self.mark(index, state, '', record['note'], channels, filtering, screening=context)
             counts['accepted' if state == STATES[1] else 'pending'] += 1

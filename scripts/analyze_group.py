@@ -15,6 +15,8 @@ from eeg_viewer.spectral import SpectralConfig
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Features EEG grupales para ds004902.')
+    parser.add_argument('--ica-mode', choices=('original', 'confirmed'), default='original')
+    parser.add_argument('--annotations-dir', type=Path, default=ROOT / 'annotations')
     parser.add_argument('--data', type=Path, default=ROOT / 'data', help='Raíz BIDS (default: data/).')
     parser.add_argument('--output', type=Path, help='Carpeta nueva de salida; por defecto results/group-analysis-<UTC>.')
     parser.add_argument('--max-participants', type=int, help='Limita el número de participantes de la lista ordenada.')
@@ -52,6 +54,7 @@ def main(argv=None):
     try:
         result = run_group_analysis(
             data_dir=args.data, output_dir=args.output,
+            ica_mode=args.ica_mode, annotations_dir=args.annotations_dir,
             max_participants=args.max_participants, participants=participants,
             screening_config=ScreeningConfig(high_uv=args.high_uv, flat_uv=args.flat_uv),
             filter_config=FilterConfig(enabled=True, low=0.2, high=45.0),

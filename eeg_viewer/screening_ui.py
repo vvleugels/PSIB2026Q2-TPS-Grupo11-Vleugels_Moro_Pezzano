@@ -82,6 +82,9 @@ class ScreeningUI:
         self.screening_signal.set(filtering.label if filtering.active else
                                   ('Original · Filtrado desactivado' if self.screening_use_filter.get()
                                    else 'Original · Sin filtrar'))
+        if self.recording and self.recording.ica_context:
+            self.screening_signal.set(self.screening_signal.get().replace('Original', 'Sin pasabanda/notch') +
+                                      ' · ICA ' + self.recording.ica_context['revision'][:8])
 
     def start_screening(self):
         if self.busy or not self.recording or not self.visible_channels() or not self.flush_autosave():
@@ -112,6 +115,7 @@ class ScreeningUI:
                 f"{len(result['findings'])}/{result['total']} epochs con avisos · {names}\n"
                 f'{result["filter"].label} · Alta > {config.high_uv:g} µV · Plana < {config.flat_uv:g} µV'
                 + (f" · {result['partial']} parcial" if result['partial'] else '')
+                + (' · ICA ' + recording.ica_context['revision'][:8] if recording.ica_context else '')
                 + '\nCon avisos: revisión manual.')
             try:
                 counts = self.store.apply_screening(result)

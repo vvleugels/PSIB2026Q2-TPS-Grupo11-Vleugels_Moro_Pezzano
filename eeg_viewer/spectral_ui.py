@@ -248,11 +248,19 @@ class SpectralUI:
         revision = self.spectral_revision
         channel, config, filtering = self.channel.get(), self.spectral_config, self.config
         include = self.include_unreviewed.get()
+        ica_selections = None
+        if self.recording.ica_context is not None:
+            from .ica import snapshot
+            ica_selections = snapshot(studies, self.data_dir, self.annotations_dir, 'confirmed')
+            current = self.recording.ica_context
+            ica_selections[str(self.recording.study.path)] = dict(
+                mode='confirmed', source=current['source'], revision=current['revision'],
+                model_sha256=current['model_sha256'])
         expected = {str(self.recording.study.path): (self.store.identity, self.store.digest)}
         data_dir, annotations_dir = self.data_dir, self.annotations_dir
         self.spectral_pending = True
         def work():
-            return run_analysis(studies, channel, filtering, config, data_dir, annotations_dir, include, expected)
+            return run_analysis(studies, channel, filtering, config, data_dir, annotations_dir, include, expected, ica_selections)
         def done(result):
             self.spectral_pending = False
             if revision != self.spectral_revision:
@@ -285,6 +293,11 @@ class SpectralUI:
         lines.append(f"Welch: {effective['seconds']:g} s · {effective['overlap_percent']:g}% · "
                      f"Δf={effective['frequency_step']:g} Hz · Hann · Referencia original. "
                      f"Relativa respecto de {result['spectral']['edges'][0]:g}–{result['spectral']['edges'][-1]:g} Hz.")
+        for session in result['sessions']:
+            correction = session.get('ica')
+            lines.append(session['session'] + ': ' + ('ICA ' + correction['revision'][:8] +
+                         ' · componentes excluidos ' + str([i+1 for i in correction['excluded_components']]) +
+                         ' · canales sin corregir ' + ', '.join(correction['excluded_channels']) if correction else 'Sin ICA'))
         filtering = result['filter']
         lines.append('Filtrado: ' + FilterConfig(
             filtering['enabled'], filtering['low'], filtering['high'], filtering.get('notch')).label)

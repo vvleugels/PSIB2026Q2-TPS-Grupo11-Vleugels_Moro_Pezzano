@@ -48,7 +48,7 @@ def scan_recording(recording, channels, config, filter_config=FilterConfig()):
             # One whole-length read per block of channels bounds memory use.
             for offset in range(0, len(channels), SCAN_BLOCK):
                 names = channels[offset:offset + SCAN_BLOCK]
-                yield names, recording.raw.get_data(picks=list(names))
+                yield names, recording.signal_raw.get_data(picks=list(names))
     epochs = make_epochs(recording.raw.n_times, recording.sfreq)
     issues_by_epoch = {epoch.index: [] for epoch in epochs}
     for names, rows in blocks():
