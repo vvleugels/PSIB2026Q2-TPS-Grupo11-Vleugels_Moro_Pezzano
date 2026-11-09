@@ -7,7 +7,7 @@ import numpy as np
 
 from tps.core.annotations import STATES, REASONS
 from tps.core.processing import FilterConfig
-from tps.gui.theme import BORDER, IRIS, TEXT, autowrap, style_dialog
+from tps.gui.theme import BORDER, IRIS, TEXT, style_dialog
 
 COLORS = {'Sin revisar': '#edf1f2', 'Aceptada': '#d5eee2', 'Con artefactos': '#f9d8d5'}
 
@@ -25,7 +25,7 @@ class ReviewUI:
         self.signal_label = tk.StringVar(value='Original')
         self.save_label = tk.StringVar(value='Sin estudio')
         self.count_label = tk.StringVar(value='')
-        self.epoch_label = tk.StringVar(value='Seleccioná una epoch')
+        self.epoch_label = tk.StringVar(value='Seleccioná una época')
         self.context_label = tk.StringVar(value='Sin evaluación previa')
         self.reason = tk.StringVar()
         self.note = tk.StringVar()
@@ -37,7 +37,7 @@ class ReviewUI:
             variable.trace_add('write', self.editor_changed)
         self.note.trace_add('write', lambda *args: self.editor_changed(debounce=True))
 
-    def build_review_sidebar(self, parent, selection):
+    def build_multi_selector(self, selection):
         self.multi_toggle = ttk.Checkbutton(selection, text='Varios electrodos (hasta 8)',
                                             variable=self.multi, style='Card.TCheckbutton',
                                             command=self.toggle_multi)
@@ -53,8 +53,9 @@ class ReviewUI:
         scroll.pack(side='right', fill='y')
         self.channel_list.pack(fill='x', expand=True)
         self.channel_list.bind('<<ListboxSelect>>', self.multi_changed)
-        self.build_screening(parent)
-        epochs = self.card(parent, 'EPOCHS · 5 SEGUNDOS', expand=True)
+
+    def build_epoch_list(self, parent):
+        epochs = self.card(parent, 'ÉPOCAS · 5 SEGUNDOS', expand=True)
         self.epoch_tree = ttk.Treeview(epochs, columns=('interval', 'state', 'noise'), height=8,
                                       selectmode='browse')
         self.epoch_tree.heading('#0', text='Nº')
@@ -82,30 +83,30 @@ class ReviewUI:
         self.retry_save_button.pack(anchor='w', pady=5)
 
     def build_review_editor(self, chart):
+        """Editor de la época elegida: estado, motivo y nota en una fila; contexto debajo."""
         editor = ttk.Frame(chart, style='Card.TFrame')
-        editor.pack(side='bottom', fill='x', pady=(8, 0))
-        ttk.Label(editor, textvariable=self.epoch_label, style='CardBold.TLabel').pack(anchor='w')
+        editor.pack(side='bottom', fill='x', pady=(6, 0))
         row = ttk.Frame(editor, style='Card.TFrame')
-        row.pack(fill='x', pady=3)
+        row.pack(fill='x')
+        ttk.Label(row, textvariable=self.epoch_label, style='CardBold.TLabel').pack(side='left', padx=(0, 12))
         self.mark_buttons = []
         for label, key in zip(STATES, ('U', 'A', 'R')):
             button = ttk.Radiobutton(row, text=f'{label} ({key})', value=label,
                                      variable=self.mark_state, style='Card.TRadiobutton')
-            button.pack(side='left', padx=(0, 10))
+            button.pack(side='left', padx=(0, 8))
             self.mark_buttons.append(button)
-        row = ttk.Frame(editor, style='Card.TFrame')
-        row.pack(fill='x', pady=3)
         self.reason_box = ttk.Combobox(row, textvariable=self.reason, values=REASONS,
-                                       state='disabled', width=20)
-        self.reason_box.pack(side='left')
+                                       state='disabled', width=18)
+        self.reason_box.pack(side='left', padx=(4, 0))
         ttk.Label(row, text='Nota', style='Card.TLabel').pack(side='left', padx=(10, 6))
         self.note_entry = ttk.Entry(row, textvariable=self.note, validate='key',
                                     validatecommand=(self.root.register(lambda value: len(value) <= 500), '%P'))
         self.note_entry.pack(side='left', fill='x', expand=True)
+        details = ttk.Frame(editor, style='Card.TFrame')
+        details.pack(fill='x', pady=(3, 0))
         for variable in (self.screening_detail, self.context_label):
-            label = ttk.Label(editor, textvariable=variable, style='CardMuted.TLabel')
-            label.pack(fill='x', anchor='w')
-            autowrap(label)
+            label = ttk.Label(details, textvariable=variable, style='CardMuted.TLabel')
+            label.pack(side='left', anchor='w', padx=(0, 16))
         for key, state in zip(('u', 'a', 'r'), STATES):
             self.root.bind(f'<KeyPress-{key}>', lambda event, s=state: self.shortcut(event, s))
             self.root.bind(f'<KeyPress-{key.upper()}>', lambda event, s=state: self.shortcut(event, s))
@@ -230,7 +231,7 @@ class ReviewUI:
         self.channel_list.delete(0, 'end')
         self.save_label.set('Sin estudio')
         self.count_label.set('')
-        self.epoch_label.set('Seleccioná una epoch')
+        self.epoch_label.set('Seleccioná una época')
         self.context_label.set('Sin evaluación previa')
         self.note.set('')
         self.reason.set('')
@@ -315,7 +316,7 @@ class ReviewUI:
             return
         epoch = self.store.epochs[self.selected_epoch]
         record = self.store.records[self.selected_epoch]
-        self.epoch_label.set(f'Epoch {epoch.index + 1} · {epoch.start:g}–{epoch.stop:g} s'
+        self.epoch_label.set(f'Época {epoch.index + 1} · {epoch.start:g}–{epoch.stop:g} s'
                              + (' · Parcial' if epoch.partial else '') + ' · Marca global')
         self.loading_editor = True
         try:

@@ -244,7 +244,7 @@ class SpectralUI:
             self.invalidate_spectrum(str(exc))
             return
         self.invalidate()
-        self.invalidate_spectrum('Calculando Welch por epoch…')
+        self.invalidate_spectrum('Calculando Welch por época…')
         revision = self.spectral_revision
         channel, config, filtering = self.channel.get(), self.spectral_config, self.config
         include = self.include_unreviewed.get()
@@ -266,10 +266,10 @@ class SpectralUI:
             if revision != self.spectral_revision:
                 return
             self.spectral_result = result
-            self.spectral_message.set('Exploratorio · Incluye epochs no revisadas' if include
-                                      else 'Resultado basado únicamente en epochs aceptadas')
+            self.spectral_message.set('Exploratorio · Incluye épocas no revisadas' if include
+                                      else 'Resultado basado únicamente en épocas aceptadas')
             self.status.set('Análisis espectral listo · ' +
-                            ('Exploratorio' if include else 'Solo epochs aceptadas'))
+                            ('Exploratorio' if include else 'Solo épocas aceptadas'))
             self.render_spectral_result()
         def failed(exc):
             self.spectral_pending = False
@@ -283,7 +283,7 @@ class SpectralUI:
         lines = []
         for session in result['sessions']:
             count = session['counts']
-            lines.append(f"{session['condition']}: {count['used']} epochs / {count['seconds']:g} s · "
+            lines.append(f"{session['condition']}: {count['used']} épocas / {count['seconds']:g} s · "
                          f"Artefactos: {count['artifacts']} · No revisadas: {count['pending']} · "
                          f"Parciales excluidas: {count['partial']} · Referencia: {session['reference']}")
             lines.extend(session['warnings'])

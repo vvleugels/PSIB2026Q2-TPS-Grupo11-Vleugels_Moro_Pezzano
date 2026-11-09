@@ -50,7 +50,7 @@ class ValidationSession:
         if not r.data['blind_complete']:
             raise ValueError('Completar primero la revisión ciega.')
         if any(type(i) is not int or not 0 <= i < len(self.prepared.quality.epochs) for i in excluded_epochs):
-            raise ValueError('Epoch excluida inválida.')
+            raise ValueError('Época excluida inválida.')
         prepared = prepare(self.recording.raw, persistent, r.profile)
         fitted = fit_ica(prepared, excluded_epochs, r.data['labels'], r.profile)
         # Compute successfully before replacing the last usable revision.

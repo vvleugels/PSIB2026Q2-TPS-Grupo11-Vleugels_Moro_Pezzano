@@ -229,7 +229,7 @@ class GuiTests(unittest.TestCase):
         a = self.app
         a.calculate_spectrum(); self.wait_ready()
         self.assertIsNone(a.spectral_result)
-        self.assertIn('no hay epochs', a.spectral_message.get())
+        self.assertIn('no hay épocas', a.spectral_message.get())
         a.include_unreviewed.set(True); a.invalidate_spectrum()
         a.calculate_spectrum(); self.wait_ready()
         self.assertTrue(a.spectral_result['exploratory'])

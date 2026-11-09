@@ -69,7 +69,7 @@ class SpectralTests(unittest.TestCase):
             self.analyze()
         self.store.mark(1, STATES[0], '', '', ['Cz'], FilterConfig())
         self.store.save()
-        with self.assertRaisesRegex(ValueError, 'no hay epochs'):
+        with self.assertRaisesRegex(ValueError, 'no hay épocas'):
             self.analyze()
         result = self.analyze(exploratory=True)
         self.assertEqual(result['counts']['used'], 1)
@@ -100,7 +100,7 @@ class SpectralTests(unittest.TestCase):
         result = run_analysis([self.study], 'Cz', FilterConfig(), SpectralConfig(),
                               self.data, self.annotations, True)
         self.assertTrue(result['exploratory'])
-        with self.assertRaisesRegex(ValueError, 'no hay epochs'):
+        with self.assertRaisesRegex(ValueError, 'no hay épocas'):
             run_analysis([self.study], 'Cz', FilterConfig(), SpectralConfig(),
                          self.data, self.annotations)
         self.store.path.write_text('bad json')

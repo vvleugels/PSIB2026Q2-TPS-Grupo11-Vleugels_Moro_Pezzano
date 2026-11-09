@@ -85,10 +85,10 @@ class AnnotationStore:
                 raise ValueError('La versión o identidad del registro cambió.')
             records = saved['epochs']
             if len(records) != len(self.records):
-                raise ValueError('La cantidad de epochs no coincide.')
+                raise ValueError('La cantidad de épocas no coincide.')
             for expected, actual in zip(self.records, records):
                 if any(actual[k] != expected[k] for k in ('index', 'first', 'last', 'partial')):
-                    raise ValueError('Los límites de epochs no coinciden.')
+                    raise ValueError('Los límites de épocas no coinciden.')
                 if actual['state'] not in STATES or actual['reason'] not in REASONS:
                     raise ValueError('Estado o motivo desconocido.')
                 if not isinstance(actual['note'], str) or len(actual['note']) > 500:
@@ -157,7 +157,7 @@ class AnnotationStore:
         if self.blocked:
             raise ValueError(self.blocked)
         if result['total'] != len(self.epochs):
-            raise ValueError('El barrido no coincide con las epochs del estudio.')
+            raise ValueError('El barrido no coincide con las épocas del estudio.')
         config = result['config']
         context = dict(method='peak_to_peak', high_uv=config.high_uv, flat_uv=config.flat_uv)
         filtering = result['filter']

@@ -189,7 +189,7 @@ class ResultsUI:
                                      'El explorador sigue disponible mientras tanto.')
         Tooltip(self.cancel_run_button, 'Detiene el paso en curso. El lote es reanudable: '
                                         'lo ya calculado se conserva.')
-        Tooltip(self.step_buttons['batch'], 'python -m tps.pipeline.batch: filtra, divide en epochs, '
+        Tooltip(self.step_buttons['batch'], 'python -m tps.pipeline.batch: filtra, divide en épocas, '
                                             'aplica el barrido y calcula la potencia de cada registro.')
         Tooltip(self.step_buttons['stats'], 'python -m tps.analysis.stats: regiones, pruebas pareadas SD vs NS, '
                                             'FDR, orden de sesión y clusters.')
@@ -338,7 +338,7 @@ class ResultsUI:
         ttk.Button(row, text='Ver grupo ▸', style='Tool.TButton',
                    command=lambda: self.view_tabs.select(self.group_tab)).pack(side='right')
         Tooltip(self.batch_exclusions_button, 'Abre la tabla de exclusiones del lote filtrada a este estudio: '
-                                              'registro, canales malos y epochs rechazadas con su motivo.')
+                                              'registro, canales malos y épocas rechazadas con su motivo.')
 
     # --------------------------------------------------------------- tree helper
     def make_tree(self, parent, columns):
@@ -750,7 +750,7 @@ class ResultsUI:
             self.batch_epochs.set(summary.reason)
         else:
             self.batch_state.set('✔ Incluido en el análisis')
-            self.batch_epochs.set(f'Epochs usadas: {summary.n_used} · rechazadas: {summary.n_rejected}'
+            self.batch_epochs.set(f'Épocas usadas: {summary.n_used} · rechazadas: {summary.n_rejected}'
                                   ' (barrido automático: dentro de límites, no inspección visual)')
         bad = sorted(summary.bad_channels)
         self.batch_bad.set(f'Canales malos ({len(bad)}): ' + ', '.join(bad) if bad else

@@ -118,6 +118,10 @@ def apply_theme(window):
     style.map('TButton', background=[('disabled', '#f0f4f4'), ('active', '#d5e0e2')],
               foreground=[('disabled', '#a2b0b3')])
     style.configure('Tool.TButton', padding=(8, 5))
+    # Herramienta de modo activa (desplazar / zoom del gráfico).
+    style.configure('ToolOn.TButton', padding=(8, 5), background=IRIS_LIGHT, foreground=IRIS_DARK,
+                    bordercolor=IRIS)
+    style.map('ToolOn.TButton', background=[('active', '#c3e4e7')])
     style.configure('Accent.TButton', padding=(18, 8), background=IRIS, foreground='white',
                     font=fonts.bold, bordercolor=IRIS)
     style.map('Accent.TButton', background=[('disabled', '#a9cfd3'), ('active', IRIS_DARK)],
@@ -143,14 +147,47 @@ def apply_theme(window):
     return fonts
 
 
-def card(parent, title):
-    """Panel blanco con borde y un título pequeño; devuelve (marco exterior, marco interior)."""
+def card(parent, title, collapsible=False):
+    """Panel blanco con borde y un título pequeño; devuelve (marco exterior, marco del contenido).
+
+    collapsible: agrega un triángulo en la esquina del título (▾ abierto, ▸ plegado) que
+    oculta o muestra el contenido; el título queda siempre visible."""
     outer = tk.Frame(parent, background=CARD, highlightbackground=BORDER,
                      highlightcolor=BORDER, highlightthickness=1)
     inner = ttk.Frame(outer, style='Card.TFrame', padding=(10, 6, 10, 8))
     inner.pack(fill='both', expand=True)
-    ttk.Label(inner, text=title.upper(), style='CardTitle.TLabel').pack(anchor='w')
-    return outer, inner
+    header = ttk.Frame(inner, style='Card.TFrame')
+    header.pack(fill='x')
+    title_label = ttk.Label(header, text=title.upper(), style='CardTitle.TLabel')
+    title_label.pack(side='left', anchor='w')
+    body = ttk.Frame(inner, style='Card.TFrame')
+    body.pack(fill='both', expand=True)
+    if collapsible:
+        arrow = tk.Label(header, text='▾', background=CARD, foreground=MUTED, cursor='hand2',
+                         font=('TkDefaultFont', 11, 'bold'), padx=4)
+        arrow.pack(side='right')
+
+        def toggle(event=None):
+            if body.winfo_manager():
+                body.pack_forget()
+                arrow.configure(text='▸')
+                inner.configure(padding=(10, 6, 10, 6))
+                if outer.winfo_manager() == 'pack':   # a plegado no debe ocupar el espacio libre
+                    outer.pack_configure(expand=False, fill='x')
+            else:
+                body.pack(fill='both', expand=True)
+                arrow.configure(text='▾')
+                inner.configure(padding=(10, 6, 10, 8))
+                if outer.winfo_manager() == 'pack' and getattr(outer, 'expands', False):
+                    outer.pack_configure(expand=True, fill='both')
+
+        for widget in (arrow, title_label):   # el título también pliega
+            widget.bind('<Button-1>', toggle)
+        arrow.bind('<Enter>', lambda e: arrow.configure(foreground=IRIS_DARK))
+        arrow.bind('<Leave>', lambda e: arrow.configure(foreground=MUTED))
+        outer.toggle = toggle
+        outer.collapsed = lambda: not body.winfo_manager()
+    return outer, body
 
 
 def callout(parent, variable, color=AMBER, light=AMBER_LIGHT):

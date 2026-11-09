@@ -61,7 +61,7 @@ class CleanResult:
 
 def epochs4(n_times, sfreq):
     if n_times < 1 or not math.isfinite(sfreq) or sfreq < 0.25:
-        raise ValueError('Se requieren muestras y al menos una muestra por epoch de 4 s.')
+        raise ValueError('Se requieren muestras y al menos una muestra por época de 4 s.')
     epochs, first = [], 0
     while first < n_times:
         boundary = round((len(epochs) + 1) * 4 * sfreq)
@@ -184,7 +184,7 @@ def fit_ica(prepared, excluded_epochs=(), manual=None, profile=RuleProfile()):
         if usable:
             chosen.append(e)
     if not chosen or len(channels) < 2:
-        raise ValueError('No hay epochs/canales suficientes sin problemas pendientes para ICA.')
+        raise ValueError('No hay épocas/canales suficientes sin problemas pendientes para ICA.')
     data = np.concatenate([prepared.training.get_data(picks=channels, start=e.first, stop=e.last)
                            for e in chosen], axis=1)
     info = mne.pick_info(prepared.training.info, [prepared.training.ch_names.index(c) for c in channels])
@@ -226,7 +226,7 @@ def finalize(prepared, fitted, excluded_components, confirmed_repairs=(), exclud
     for index in sorted(set(confirmed_repairs)):
         p = available.get(index)
         if p is None or not p.eligible:
-            raise ValueError(f'Epoch {index + 1}: reparación no elegible.')
+            raise ValueError(f'Época {index + 1}: reparación no elegible.')
         e = quality.epochs[index]
         picks = [j for j, c in enumerate(raw.ch_names) if c not in prepared.unavailable]
         segment = mne.io.RawArray(raw.get_data(picks=picks, start=e.first, stop=e.last),

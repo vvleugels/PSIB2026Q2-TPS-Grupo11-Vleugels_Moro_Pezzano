@@ -148,10 +148,10 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
                        (filter_config.low, filter_config.high))):
             mismatches.append(epoch.index + 1)
     if not eligible:
-        raise ValueError(f'{recording.study.label}: no hay epochs elegibles. '
-                         'Revisá y guardá epochs o activá la inclusión exploratoria.')
+        raise ValueError(f'{recording.study.label}: no hay épocas elegibles. '
+                         'Revisá y guardá épocas o activá la inclusión exploratoria.')
     if any(e.last - e.first < effective['nperseg'] for e in eligible):
-        raise ValueError('El segmento Welch supera las muestras de una epoch completa.')
+        raise ValueError('El segmento Welch supera las muestras de una época completa.')
     if filter_config.active:
         continuous = recording.filter.channel(channel, filter_config)
     else:
@@ -161,7 +161,7 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
         samples = (continuous[epoch.first:epoch.last] if continuous is not None else
                    recording.signal_raw.get_data(picks=[channel], start=epoch.first, stop=epoch.last)[0])
         if not np.all(np.isfinite(samples)):
-            raise ValueError(f'Epoch {epoch.index + 1}: hay muestras no finitas; no se omiten automáticamente.')
+            raise ValueError(f'Época {epoch.index + 1}: hay muestras no finitas; no se omiten automáticamente.')
         frequencies, psd = welch_epoch(samples, recording.sfreq, effective)
         total = psd.copy() if total is None else total + psd
     averaged = total / len(eligible) * 1e12
@@ -171,9 +171,9 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
     counts['seconds'] = sum((e.last - e.first) / recording.sfreq for e in eligible)
     warnings = []
     if ica_mismatches:
-        warnings.append('Marcas realizadas con otra ICA: epochs ' + ', '.join(map(str, ica_mismatches)))
+        warnings.append('Marcas realizadas con otra ICA: épocas ' + ', '.join(map(str, ica_mismatches)))
     if mismatches:
-        warnings.append('Marcas realizadas con otro filtrado: epochs ' + ', '.join(map(str, mismatches)))
+        warnings.append('Marcas realizadas con otro filtrado: épocas ' + ', '.join(map(str, mismatches)))
     if filter_config.enabled:
         attenuated = [name for name, low, high in zip(BANDS, config.edges, config.edges[1:])
                       if low < filter_config.low or high > filter_config.high]

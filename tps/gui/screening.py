@@ -16,7 +16,7 @@ class ScreeningUI:
         self.screening_all = tk.BooleanVar(value=True)
         self.screening_use_filter = tk.BooleanVar(value=True)
         self.screening_signal = tk.StringVar(value='Original · Filtrado desactivado')
-        self.screening_summary = tk.StringVar(value='Sin barrido. Acepta las epochs sin avisos.')
+        self.screening_summary = tk.StringVar(value='Sin barrido. Acepta las épocas sin avisos.')
         self.screening_detail = tk.StringVar(value='')
         for variable in (self.screening_high, self.screening_flat, self.screening_all,
                          self.screening_use_filter):
@@ -25,7 +25,7 @@ class ScreeningUI:
     def build_screening(self, parent):
         card = self.card(parent, 'POSIBLES ARTEFACTOS')
         intro = ttk.Label(card, style='CardMuted.TLabel',
-                          text='Pico a pico por epoch de 5 s. Sin avisos: aceptación y guardado '
+                          text='Pico a pico por época de 5 s. Sin avisos: aceptación y guardado '
                                'automáticos. Conserva las decisiones manuales.')
         intro.pack(fill='x', pady=(2, 6))
         autowrap(intro)
@@ -69,7 +69,7 @@ class ScreeningUI:
         if self.screening_pending:
             self.invalidate()
         self.screening_result = None
-        self.screening_summary.set('Sin barrido. Acepta las epochs sin avisos.')
+        self.screening_summary.set('Sin barrido. Acepta las épocas sin avisos.')
         self.screening_detail.set('')
         self.update_screening_signal()
         if hasattr(self, 'epoch_tree'):
@@ -112,7 +112,7 @@ class ScreeningUI:
             self.screening_result = result
             names = ', '.join(result['channels']) if len(result['channels']) <= 4 else f'{len(channels)} electrodos EEG'
             self.screening_summary.set(
-                f"{len(result['findings'])}/{result['total']} epochs con avisos · {names}\n"
+                f"{len(result['findings'])}/{result['total']} épocas con avisos · {names}\n"
                 f'{result["filter"].label} · Alta > {config.high_uv:g} µV · Plana < {config.flat_uv:g} µV'
                 + (f" · {result['partial']} parcial" if result['partial'] else '')
                 + (' · ICA ' + recording.ica_context['revision'][:8] if recording.ica_context else '')

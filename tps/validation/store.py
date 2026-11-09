@@ -263,7 +263,7 @@ class Revision:
         source = self.data['source']
         epochs = epochs4(source['n_times'], source['sfreq'])
         if not 0 <= epoch < len(epochs) or not set(channels) <= set(source['channels']):
-            raise ValueError('Epoch/canal inválido.')
+            raise ValueError('Época/canal inválido.')
         if state not in ('physiological', 'artifact', 'unreviewed') or len(note) > 500:
             raise ValueError('Evaluación inválida.')
         if not final and self.data['blind_complete']:
@@ -284,7 +284,7 @@ class Revision:
             if not e.partial:
                 for c in source['channels']:
                     if self.data['labels'].get(f'{e.index}:{c}', {}).get('state') not in ('artifact', 'physiological'):
-                        raise ValueError('Faltan etiquetas de epochs completas; la revisión ciega sigue abierta.')
+                        raise ValueError('Faltan etiquetas de épocas completas; la revisión ciega sigue abierta.')
         self.data['blind_complete'] = True
         self.data['stage'] = 'quality'
         self.save('Cerrar revisión ciega y revelar sugerencias')

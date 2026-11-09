@@ -2,7 +2,7 @@
 
 GUI de escritorio para explorar registros de sueño normal (NS) y privación del sueño (SD)
 del dataset OpenNeuro ds004902: filtrado opcional (pasabanda y notch), ICA con
-confirmación manual, revisión de artefactos en epochs de 5 segundos, espectros de Welch
+confirmación manual, revisión de artefactos en épocas de 5 segundos, espectros de Welch
 y potencia por bandas, y el análisis de grupo SD vs NS (lote, estadística y figuras),
 que también se puede ejecutar desde la GUI. Python, Tkinter, Matplotlib y MNE; los
 archivos EEG originales nunca se modifican.
@@ -41,7 +41,7 @@ También se puede ejecutar `TPS.bat` por su ruta absoluta desde otro directorio:
 
 La ventana sigue el estilo de la GUI de la guía PSIB. La tarjeta **Pasos** del panel
 izquierdo lista el flujo (paciente, estudio, electrodo,
-filtrado opcional, búsqueda opcional de artefactos, revisión de epochs y espectro): el paso pendiente se resalta en ámbar
+filtrado opcional, búsqueda opcional de artefactos, revisión de épocas y espectro): el paso pendiente se resalta en ámbar
 y **Ir al siguiente paso ▶** abre su herramienta. La franja ámbar sobre el gráfico
 indica qué hacer ahora, y al dejar el mouse sobre un control aparece una ayuda.
 **◀** en la esquina superior derecha de **Registro** pliega el panel lateral;
@@ -71,10 +71,10 @@ sin usar la terminal. Lee y escribe en `results/` (junto a `data/`).
   y arrastre para mover.
 
 En el panel lateral, **Resultado del lote** muestra para el estudio abierto si el lote lo
-incluyó o lo excluyó (y por qué), las epochs usadas y rechazadas, los canales malos y,
+incluyó o lo excluyó (y por qué), las épocas usadas y rechazadas, los canales malos y,
 para el electrodo elegido, sus potencias por banda y el cociente theta/beta. Si el
-electrodo fue un canal malo en el lote se avisa en ámbar. Las epochs que el lote rechazó
-aparecen con «Lote» en la columna Aviso, y su motivo en el detalle de la epoch.
+electrodo fue un canal malo en el lote se avisa en ámbar. Las épocas que el lote rechazó
+aparecen con «Lote» en la columna Aviso, y su motivo en el detalle de la época.
 **Ver exclusiones** abre la tabla de exclusiones filtrada a ese estudio. Aceptada por el
 lote significa «dentro de los límites de amplitud», no inspección visual.
 
@@ -86,7 +86,7 @@ lote significa «dentro de los límites de amplitud», no inspección visual.
    cada **5 segundos**. **Anterior**, **Siguiente** e **Inicio (s) → Ir** recorren
    el registro. El inicio acepta punto o coma decimal; la última ventana puede ser parcial.
 3. La barra del gráfico permite zoom, desplazamiento y restauración. Cambiar de
-   electrodo conserva el tiempo y la epoch seleccionada.
+   electrodo conserva el tiempo y la época seleccionada.
 4. **⚙ Configurar filtrado**, en la tarjeta **Filtrado** del panel lateral, permite activar el filtrado y ajustar sus cortes. Al iniciar,
    está apagado y los cortes son **0,2–45 Hz**. **Aplicar** valida y prepara el filtro
    en segundo plano; **Cancelar** conserva la configuración anterior. Restablecer
@@ -103,7 +103,7 @@ lote significa «dentro de los límites de amplitud», no inspección visual.
 Se utiliza FIR de fase cero en MNE, diseño `firwin`, ventana Hamming, longitud y
 bandas de transición automáticas, padding `reflect_limited`. La GUI configura
 los cortes; el resto del diseño queda fijo. Se filtra **todo el canal continuo**
-antes de extraer ventanas, nunca cada epoch por separado. Los canales filtrados
+antes de extraer ventanas, nunca cada época por separado. Los canales filtrados
 se conservan en una caché en memoria para el estudio y los cortes activos.
 
 El pasabanda se basa en el paper; su diseño concreto no está especificado allí,
@@ -123,13 +123,13 @@ cambio de referencia ni normalización. Se dibujan todas las muestras del tramo.
 
 En el panel **ICA**, abrí **Ajustar / revisar ICA**. El ajuste utiliza todos los
 canales EEG salvo los que excluyas por nombre, una copia continua de entrenamiento
-**1–45 Hz**, epochs completas de **5 s**, Infomax extendida y semilla 42.
+**1–45 Hz**, épocas completas de **5 s**, Infomax extendida y semilla 42.
 Las exclusiones de entrenamiento son independientes de las marcas de revisión:
-los avisos de amplitud y las epochs rechazadas **no se excluyen automáticamente**.
+los avisos de amplitud y las épocas rechazadas **no se excluyen automáticamente**.
 Conservá ejemplos representativos de parpadeos para que ICA pueda separarlos.
 
-1. Opcionalmente indicá canales y números de epochs que no deben entrar al ajuste.
-   Los números de epochs y componentes mostrados empiezan en **1**.
+1. Opcionalmente indicá canales y números de épocas que no deben entrar al ajuste.
+   Los números de épocas y componentes mostrados empiezan en **1**.
 2. Pulsá **Ajustar ICA**. Corre en otro proceso y admite **Cancelar ajuste**.
    Cancelar, cambiar de estudio o cerrar conserva la corrección confirmada anterior.
 3. Elegí un componente y pulsá **Inspeccionar** para ver señal, espectro e indicadores.
@@ -147,8 +147,8 @@ original y después se aplican el pasabanda y notch elegidos; cambiar estos filt
 no requiere volver a ajustar ICA.
 
 La vista, el barrido y Welch usan la misma señal seleccionada. Cambiar ICA invalida
-avisos y espectros anteriores; conserva las marcas de epochs y advierte cuando
-fueron hechas con otra corrección. Una epoch rechazada no pasa a aceptada solo por
+avisos y espectros anteriores; conserva las marcas de épocas y advierte cuando
+fueron hechas con otra corrección. Una época rechazada no pasa a aceptada solo por
 activar ICA. Para comparar NS/SD con ICA, ambas sesiones necesitan una revisión
 confirmada compatible; cada sesión usa su propio modelo.
 
@@ -169,24 +169,24 @@ y revisiones. Una revisión nueva no cambia los insumos de un lote ya iniciado.
 python -m tps.pipeline.batch --ica-mode confirmed --annotations-dir annotations
 ```
 
-## Revisar epochs
+## Revisar épocas
 
-- Las epochs son intervalos consecutivos de **5 s**, sin solapamiento, desde el
-  inicio: `[0,5)`, `[5,10)`, etc. Un registro de 300 s tiene 60 epochs. Un resto
+- Las épocas son intervalos consecutivos de **5 s**, sin solapamiento, desde el
+  inicio: `[0,5)`, `[5,10)`, etc. Un registro de 300 s tiene 60 épocas. Un resto
   final se conserva como **parcial**. El paper utiliza 4 s; aquí se eligieron 5 s.
-- Elegir una epoch en la lista lateral lleva a una ventana que la contiene completa.
+- Elegir una época en la lista lateral lleva a una ventana que la contiene completa.
   También se puede seleccionarla haciendo clic en su intervalo del gráfico, con
   las herramientas de zoom/desplazamiento desactivadas. El borde ámbar indica
   la selección; colores y texto indican su estado.
 - Los estados son **Sin revisar**, **Aceptada** y **Con artefactos**. Todas comienzan
-  sin revisar. Las marcas son **globales para la epoch del estudio**, no por canal.
+  sin revisar. Las marcas son **globales para la época del estudio**, no por canal.
 - Elegir estado, motivo opcional (ocular, muscular, movimiento/electrodo u otro)
   y nota de hasta 500 caracteres. El estado y el motivo se guardan automáticamente
   al cambiarlos; las notas, tras 400 ms sin escribir. No hay que aplicar ni guardar
   cada marca. Se puede cambiar la evaluación tantas veces como sea necesario.
 - Atajos fuera de campos de texto: **A** acepta, **U** vuelve a sin revisar;
   **R** marca artefactos y enfoca el motivo. Todos guardan automáticamente.
-- Los contadores resumen el progreso. Las epochs con artefactos siguen visibles:
+- Los contadores resumen el progreso. Las épocas con artefactos siguen visibles:
   esta versión **no elimina ni excluye muestras**.
 - Cambiar de filtro o canal conserva las marcas. El editor muestra el filtro y los
   canales observados durante la última evaluación; activar un filtro nuevo no
@@ -197,10 +197,10 @@ python -m tps.pipeline.batch --ica-mode confirmed --annotations-dir annotations
 Después de elegir un electrodo, pulsar **Buscar posibles artefactos** en el panel
 lateral. Por defecto recorre todos los canales EEG del estudio; desactivar
 **Todos los electrodos EEG** limita el barrido a los visibles (uno o hasta ocho).
-Se calcula `máximo − mínimo` por canal en cada epoch de 5 s. Por defecto está
+Se calcula `máximo − mínimo` por canal en cada época de 5 s. Por defecto está
 marcado **Usar el filtro activo**: utiliza la misma configuración de filtrado que
 la vista temporal y el análisis espectral. El FIR se aplica al **canal continuo
-completo antes de dividirlo en epochs**, aprovechando la caché existente. El panel,
+completo antes de dividirlo en épocas**, aprovechando la caché existente. El panel,
 el resumen y el detalle identifican **Filtrada · X–Y Hz** o **Original**.
 
 Si el filtrado está desactivado en **⚙ Configurar filtrado**, el barrido utiliza el original
@@ -211,21 +211,21 @@ deriva que disminuyen con el pasabanda de problemas visibles en la adquisición.
 
 Los límites iniciales, ajustables en µV pico a pico, son **Alta > 150** y
 **Plana < 1**. Son valores de partida, no umbrales validados para este conjunto
-de datos. Una epoch recibe un aviso si al menos uno de los canales analizados
+de datos. Una época recibe un aviso si al menos uno de los canales analizados
 cruza un límite. La igualdad no dispara el aviso; se exige `0 ≤ plana < alta`.
 El barrido original también avisa de muestras no finitas. Si se solicita filtrado
 y existen muestras no finitas, se detiene e indica usar el original para localizarlas,
-porque filtrar esos valores puede extender el problema a otras epochs.
+porque filtrar esos valores puede extender el problema a otras épocas.
 Se incluye el tramo final parcial;
 un tramo de una sola muestra se identifica como insuficiente, no como plano.
 
 La columna **Aviso** muestra Alta, Plana u otro problema. El gráfico añade
-**REVISAR** y el editor detalla los canales y amplitudes de la epoch seleccionada.
+**REVISAR** y el editor detalla los canales y amplitudes de la época seleccionada.
 **← Sospechosa / Sospechosa →** recorre los avisos, volviendo al principio/final
 cuando corresponde. El resumen identifica qué electrodos, límites y filtrado se utilizaron.
 Si el canal que disparó el aviso no está visible, seleccionarlo para inspeccionarlo.
 
-Al terminar, las epochs **Sin revisar** que no tienen avisos pasan a **Aceptada**
+Al terminar, las épocas **Sin revisar** que no tienen avisos pasan a **Aceptada**
 y se guardan automáticamente en una sola operación. Las que tienen avisos quedan
 pendientes de revisión. Se conservan las aceptaciones y rechazos manuales, junto
 con sus notas. Una aceptación automática significa que se cumplen los límites del
@@ -234,7 +234,7 @@ actividad fisiológica de gran amplitud y no detectan todos los artefactos.
 
 Las marcas automáticas guardan el método, los umbrales, los canales y el filtro
 utilizados. El editor las identifica como **Aceptación automática**. Al repetir el
-barrido, se reevalúan las decisiones automáticas: si una epoch antes aceptada ahora
+barrido, se reevalúan las decisiones automáticas: si una época antes aceptada ahora
 tiene avisos, vuelve a **Sin revisar**. Cambiar manualmente su estado o nota la
 convierte en una decisión manual que los barridos posteriores conservan.
 Las aceptadas completas participan en el análisis espectral; las parciales siguen
@@ -256,16 +256,16 @@ fuera de `data`. Estos archivos están excluidos de Git: respaldarlos por separa
 Al abrir un estudio se recuperan las marcas guardadas.
 
 El JSON versionado contiene identidad de los archivos fuente (ruta relativa,
-tamaño y modificación), frecuencia, número de muestras, límites de cada epoch,
+tamaño y modificación), frecuencia, número de muestras, límites de cada época,
 estado, motivo, nota, fecha UTC, canales observados y configuración de filtrado,
 incluyendo la versión de MNE. Las marcas del barrido incluyen además su método y
 umbrales de aceptación automática. La escritura utiliza un temporal y reemplazo atómico.
 
 El indicador muestra **Guardando…** y luego **Guardado automáticamente**.
-Las notas pendientes se guardan antes de cambiar de epoch, ventana, canal, filtro,
+Las notas pendientes se guardan antes de cambiar de época, ventana, canal, filtro,
 estudio o paciente, calcular el espectro o cerrar. Si falla el guardado, se conservan
 los cambios en memoria y se habilita **Reintentar guardado**; se bloquean el cambio
-de epoch/ventana y el análisis hasta resolverlo. Al cambiar de estudio o paciente,
+de época/ventana y el análisis hasta resolverlo. Al cambiar de estudio o paciente,
 o cerrar con cambios que no se pudieron guardar, se ofrece **Guardar**, **Descartar**
 o **Cancelar**.
 Si cambia el origen, el archivo de anotaciones fue modificado externamente o su
@@ -279,24 +279,24 @@ En la pestaña **Análisis espectral**, elegir **Estudio actual** o **Comparar N
 y pulsar **Calcular**. Se usa el electrodo individual seleccionado; la lista
 multicanal pertenece únicamente a la vista temporal. NS/SD compara el mismo
 participante, electrodo y condición de ojos, sin mezclar ojos abiertos y cerrados.
-Se requiere igual frecuencia de muestreo y al menos una epoch elegible por sesión.
+Se requiere igual frecuencia de muestreo y al menos una época elegible por sesión.
 
-Por defecto se usan solo las epochs **Aceptadas** y guardadas, incluidas las
+Por defecto se usan solo las épocas **Aceptadas** y guardadas, incluidas las
 aceptadas automáticamente por el barrido. **Incluir también
 las no revisadas** habilita un análisis **Exploratorio**, claramente identificado.
-Siempre se excluyen las epochs con artefactos y las parciales. Las parciales se
-cuentan por separado; los otros conteos se refieren a epochs completas. Si no hay
-archivo de anotaciones, todas las epochs se consideran no revisadas. Las notas
+Siempre se excluyen las épocas con artefactos y las parciales. Las parciales se
+cuentan por separado; los otros conteos se refieren a épocas completas. Si no hay
+archivo de anotaciones, todas las épocas se consideran no revisadas. Las notas
 pendientes se guardan antes de calcular. Si falla ese guardado o hay un archivo
 inválido/incompatible, el cálculo se bloquea.
 
-Welch se calcula de manera independiente por epoch completa de 5 s, **sin concatenar
+Welch se calcula de manera independiente por época completa de 5 s, **sin concatenar
 intervalos**. Se promedian las PSD con igual peso en escala lineal. Se aplica el
 filtro activo sobre cada canal continuo antes de segmentar, con la referencia
 original, sin agregar otros pasos de preprocesamiento. Los resultados muestran
-cantidad de epochs, segundos utilizados, exclusiones y referencia por sesión.
+cantidad de épocas, segundos utilizados, exclusiones y referencia por sesión.
 Una diferencia entre el filtro de revisión y el de análisis se informa sin cambiar
-las marcas. Diferentes cantidades de epochs NS/SD se conservan, sin equilibrado artificial.
+las marcas. Diferentes cantidades de épocas NS/SD se conservan, sin equilibrado artificial.
 
 **Parámetros espectrales** permite ajustar el segmento Welch (2 s por defecto),
 solapamiento (50 %) y cinco fronteras compartidas entre las bandas (0,5 / 4 / 8 /
@@ -329,7 +329,7 @@ con participante, condición de ojos, electrodo y fecha UTC, sin sobrescribir re
 - `PSD.csv`: PSD lineal por frecuencia y sesión, en µV²/Hz.
 - `potencias.csv`: potencias absolutas y relativas por banda y sesión.
 - `configuracion.json`: procedencia, identidad del origen y anotaciones, índices
-  y límites de epochs utilizadas, referencias, parámetros efectivos y versiones.
+  y límites de épocas utilizadas, referencias, parámetros efectivos y versiones.
 - `PSD.png`: solo si se activa **Incluir gráfico PNG**, apagado por defecto.
 
 Con el filtro activo, el eje de frecuencias llega al corte superior más **5 Hz**,
@@ -358,9 +358,9 @@ Opciones del lote:
 - `--subjects-file subsets/group20_seed2026.txt`: un subconjunto fijo de participantes
   (uno por línea, `#` para comentarios). La lista de 20 participantes (semilla 2026) está
   en `subsets/`.
-- `--rejection-mode global|per_channel`: con `global` (por defecto) una epoch marcada en
+- `--rejection-mode global|per_channel`: con `global` (por defecto) una época marcada en
   cualquier canal se descarta para todos; con `per_channel` cada canal usa sus propias
-  epochs limpias y se excluye si le quedan menos de `MIN_CHANNEL_EPOCHS` (10).
+  épocas limpias y se excluye si le quedan menos de `MIN_CHANNEL_EPOCHS` (10).
 - `--ica-mode original|confirmed`, `--annotations-dir`: usar la ICA confirmada de cada registro.
 
 Ojos abiertos es el análisis principal y ojos cerrados el secundario; nunca se combinan.
@@ -376,13 +376,13 @@ Salidas en `results/` (no se versionan; se regeneran con los comandos anteriores
 |---|---|
 | `features_long.csv`, `theta_beta.csv` | potencia absoluta y relativa por canal y banda; cociente theta/beta |
 | `psd_channels.csv` | PSD media por registro y canal, 0–45 Hz (µV²/Hz) |
-| `exclusions.csv`, `recordings_summary.csv` | registros, canales y epochs excluidos, con el motivo |
+| `exclusions.csv`, `recordings_summary.csv` | registros, canales y épocas excluidos, con el motivo |
 | `session_order.csv`, `config_used.json`, `ica_coverage.json` | orden NS/SD; configuración e ICA usadas |
 | `features_region.csv` | log10 de la potencia y potencia relativa por región |
 | `stats_region_log_power.csv`, `stats_region_rel_power.csv` | pruebas pareadas SD vs NS por banda y región |
 | `stats_relative_vs_absolute.csv` | resultados absolutos y relativos lado a lado |
-| `stats_region_log_power_min20.csv` | sensibilidad: solo registros con ≥ 20 epochs limpias |
-| `stats_frontal_theta_beta.csv`, `stats_session_order.csv`, `stats_epochs.csv`, `stats_participants.csv` | theta/beta, orden de sesión, epochs y participantes |
+| `stats_region_log_power_min20.csv` | sensibilidad: solo registros con ≥ 20 épocas limpias |
+| `stats_frontal_theta_beta.csv`, `stats_session_order.csv`, `stats_epochs.csv`, `stats_participants.csv` | theta/beta, orden de sesión, épocas y participantes |
 | `cluster_results.csv`, `stats_cluster_channels.csv` | prueba de clusters por electrodo |
 | `figures/*.png`, `figures/captions.md` | figuras (absolutas y relativas) y sus leyendas |
 | `channel_regions.csv` | canales de cada región |
@@ -395,8 +395,8 @@ Salidas en `results/` (no se versionan; se regeneran con los comandos anteriores
 gui.py              abre el explorador (también TPS.bat / TPS.sh)
 validate_eeg.py     piloto de validación (docs/validation.md)
 tps/
-  config.py         configuración compartida: filtro, epochs, Welch, bandas, umbrales, mínimos
-  core/             procesamiento sin interfaz: datos BIDS, filtros, epochs y anotaciones,
+  config.py         configuración compartida: filtro, épocas, Welch, bandas, umbrales, mínimos
+  core/             procesamiento sin interfaz: datos BIDS, filtros, épocas y anotaciones,
                     barrido, Welch y bandas, ICA (revisiones e Infomax), utilidades JSON
   gui/              ventanas Tk: app, tema, revisión, barrido, espectro, ICA,
                     «Resultados del grupo» y ejecución de los pasos en segundo plano
@@ -422,7 +422,7 @@ python -m unittest discover -s tests -v
 ```
 
 Las pruebas usan archivos temporales y señales conocidas para comprobar unidades,
-filtrado, conservación del origen, límites de epochs, persistencia y fallos de
+filtrado, conservación del origen, límites de épocas, persistencia y fallos de
 escritura; también cubren navegación, multicanal y respuestas asíncronas obsoletas.
 Las pruebas de GUI requieren pantalla y se omiten si no hay una disponible.
 Con Xvfb: `xvfb-run -a python -m unittest discover -s tests -v`.

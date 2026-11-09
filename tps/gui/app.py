@@ -22,7 +22,7 @@ from tps.gui.theme import (INK, INK_MUTED, IRIS, IRIS_DARK, AMBER, BG, CARD, MUT
 
 PROJECT = Path(__file__).resolve().parents[2]
 STEP_TITLES = ('Elegir paciente', 'Elegir estudio', 'Elegir electrodo', 'Revisar filtrado (opcional)',
-               'Buscar artefactos (opcional)', 'Revisar epochs', 'Calcular espectro')
+               'Buscar artefactos (opcional)', 'Revisar épocas', 'Calcular espectro')
 ELECTRODE_IMAGE = 'Electrode-disposition.png'
 
 
@@ -35,6 +35,16 @@ class Toolbar(NavigationToolbar2Tk):
         ('Desplazar', 'Arrastrar para desplazar la vista', 'move', 'pan'),
         ('Zoom', 'Seleccionar un rectángulo para acercar', 'zoom_to_rect', 'zoom'),
     )
+
+    def __init__(self, canvas, window, *args, message=None, **kwargs):
+        self.message_var = message   # si se da, las coordenadas del cursor van a esta variable
+        super().__init__(canvas, window, *args, **kwargs)
+
+    def set_message(self, s):
+        if self.message_var is not None:
+            self.message_var.set(s.replace('\n', ' · '))
+        else:
+            super().set_message(s)
 
 
 class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
@@ -157,26 +167,12 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
         self.sidebar_restore.pack(anchor='n', pady=4)
         Tooltip(self.sidebar_restore, 'Mostrar panel lateral.')
 
-        selection = self.card(body, 'Registro')
-        self.sidebar_button = ttk.Button(selection, text='◀', width=3,
+        # Fila superior: botón para ocultar el panel, fuera de las tarjetas para que no se recorte.
+        top = ttk.Frame(body)
+        top.pack(fill='x', pady=(0, 4))
+        self.sidebar_button = ttk.Button(top, text='◀', width=3, style='Tool.TButton',
                                          command=self.toggle_sidebar)
-        self.sidebar_button.place(relx=1, x=-8, y=0, anchor='ne')
-        self.patient_box = self.selector(selection, 'Paciente', self.patient, self.select_patient)
-        self.study_box = self.selector(selection, 'Estudio  (ses-1 normal · ses-2 privación)',
-                                       self.study, self.select_study)
-        self.channel_box = self.selector(selection, 'Electrodo', self.channel, self.select_channel,
-                                         info=self.show_electrodes)
-
-        filtering = self.card(body, 'Filtrado')
-        row = ttk.Frame(filtering, style='Card.TFrame')
-        row.pack(fill='x', pady=(4, 0))
-        ttk.Label(row, text='Señal:', style='CardMuted.TLabel').pack(side='left')
-        ttk.Label(row, textvariable=self.signal_label, style='CardBold.TLabel').pack(side='left', padx=(6, 0))
-        self.config_button = ttk.Button(filtering, text='⚙ Configurar filtrado',
-                                        command=self.configuration_dialog)
-        self.config_button.pack(fill='x', pady=(6, 0))
-
-        self.build_ica(body)
+        self.sidebar_button.pack(side='right')
 
         steps = self.card(body, 'Pasos')
         self.stepper = Stepper(steps, self.fonts, len(STEP_TITLES), self.run_step)
@@ -188,8 +184,27 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
                                       command=self.next_step)
         self.next_button.pack(fill='x')
 
+        selection = self.card(body, 'Registro')
+        self.patient_box = self.selector(selection, 'Paciente', self.patient, self.select_patient)
+        self.study_box = self.selector(selection, 'Estudio  (ses-1 normal · ses-2 privación)',
+                                       self.study, self.select_study)
+        self.channel_box = self.selector(selection, 'Electrodo', self.channel, self.select_channel,
+                                         info=self.show_electrodes)
+        self.build_multi_selector(selection)
+
+        filtering = self.card(body, 'Filtrado')
+        row = ttk.Frame(filtering, style='Card.TFrame')
+        row.pack(fill='x', pady=(4, 0))
+        ttk.Label(row, text='Señal:', style='CardMuted.TLabel').pack(side='left')
+        ttk.Label(row, textvariable=self.signal_label, style='CardBold.TLabel').pack(side='left', padx=(6, 0))
+        self.config_button = ttk.Button(filtering, text='⚙ Configurar filtrado',
+                                        command=self.configuration_dialog)
+        self.config_button.pack(fill='x', pady=(6, 0))
+
+        self.build_ica(body)
+        self.build_screening(body)
         self.build_batch_card(body)
-        self.build_review_sidebar(body, selection)
+        self.build_epoch_list(body)
 
     def build_main(self, main):
         # Franja ámbar: qué hacer ahora.
@@ -243,6 +258,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
         self.chart_card = self.view_tabs
         chart = temporal
 
+        # Una sola fila: ventana anterior/siguiente, ir a un segundo y herramientas del gráfico.
         controls = ttk.Frame(chart, style='Card.TFrame')
         controls.pack(fill='x', pady=(0, 6))
         self.previous = ttk.Button(controls, text='◀ Anterior', style='Tool.TButton',
@@ -251,13 +267,30 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
         self.next = ttk.Button(controls, text='Siguiente ▶', style='Tool.TButton',
                                command=lambda: self.navigate(10))
         self.next.pack(side='left', padx=(4, 0))
-        ttk.Label(controls, text='Inicio (s)', style='Card.TLabel').pack(side='left', padx=(14, 5))
-        self.start_entry = ttk.Entry(controls, textvariable=self.start_text, width=9)
+        ttk.Label(controls, text='Inicio (s)', style='Card.TLabel').pack(side='left', padx=(12, 5))
+        self.start_entry = ttk.Entry(controls, textvariable=self.start_text, width=8)
         self.start_entry.pack(side='left')
         self.start_entry.bind('<Return>', lambda e: self.go())
-        self.go_button = ttk.Button(controls, text='Ir', style='Tool.TButton', command=self.go)
-        self.go_button.pack(side='left', padx=4)
+        self.go_button = ttk.Button(controls, text='Ir', style='Tool.TButton', width=3, command=self.go)
+        self.go_button.pack(side='left', padx=(4, 0))
+        ttk.Separator(controls, orient='vertical').pack(side='left', fill='y', padx=10, pady=2)
+        self.plot_tools = {}
+        for key, text, tip in (('home', '⌂', 'Restaurar la ventana temporal.'),
+                               ('back', '←', 'Volver a la vista anterior.'),
+                               ('forward', '→', 'Avanzar a la vista siguiente.'),
+                               ('pan', '✥ Desplazar', 'Arrastrar para desplazar la vista.'),
+                               ('zoom', '⬚ Zoom', 'Seleccionar un rectángulo para acercar.')):
+            button = ttk.Button(controls, text=text, style='Tool.TButton',
+                                command=lambda k=key: self.plot_tool(k))
+            if len(text) == 1:
+                button.configure(width=3)
+            button.pack(side='left', padx=(0, 4))
+            Tooltip(button, tip)
+            self.plot_tools[key] = button
+        self.cursor_text = tk.StringVar()
         ttk.Label(controls, textvariable=self.window_text, style='CardMuted.TLabel').pack(side='right')
+        ttk.Label(controls, textvariable=self.cursor_text, style='CardMuted.TLabel',
+                  width=24, anchor='e').pack(side='right', padx=(6, 10))
 
         self.build_review_editor(chart)
         self.plot_container = ttk.Frame(chart, style='Card.TFrame')
@@ -269,9 +302,8 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
         self.figure = Figure(figsize=(8, 4), dpi=100, facecolor='white', layout='constrained')
         self.ax = self.figure.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_view)
-        self.toolbar = Toolbar(self.canvas, chart, pack_toolbar=False)
-        self.toolbar.configure(background='white')
-        self.toolbar.pack(side='bottom', fill='x')
+        # Barra de matplotlib oculta: sus acciones se usan desde los botones de la fila superior.
+        self.toolbar = Toolbar(self.canvas, chart, pack_toolbar=False, message=self.cursor_text)
         self.plot_container.pack(fill='both', expand=True)
         self.plot_window = self.plot_view.create_window(0, 0, window=self.canvas.get_tk_widget(), anchor='nw')
         self.plot_view.bind('<Configure>', self.resize_plot)
@@ -285,7 +317,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
             (self.study_box, 'ses-1 es sueño normal y ses-2 es privación del sueño; '
                              'cada una tiene registros con ojos abiertos y cerrados.'),
             (self.channel_box, 'Electrodo cuya señal se muestra. Cambiarlo conserva el tiempo '
-                               'y la epoch seleccionada.'),
+                               'y la época seleccionada.'),
             (self.multi_toggle, 'Muestra de 1 a 8 electrodos a la vez, en paneles con tiempo compartido.'),
             (self.next_button, 'Abre la herramienta del primer paso pendiente.'),
             (self.config_button, 'Activa el filtrado pasabanda FIR y ajusta sus cortes '
@@ -296,11 +328,11 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
             (self.next, 'Ventana de 10 s siguiente.'),
             (self.start_entry, 'Segundo en el que empieza la ventana. Acepta punto o coma decimal; '
                                'Enter para ir.'),
-            (self.screening_button, 'Mide la amplitud pico a pico de cada epoch. Las epochs sin avisos '
+            (self.screening_button, 'Mide la amplitud pico a pico de cada época. Las épocas sin avisos '
                                     'se aceptan y guardan automáticamente; las decisiones manuales se conservan.'),
-            (self.epoch_tree, 'Elegí una epoch para llevar el gráfico a ella. También podés hacer clic '
+            (self.epoch_tree, 'Elegí una época para llevar el gráfico a ella. También podés hacer clic '
                               'sobre su intervalo en el gráfico.'),
-            (self.calculate_button, 'Calcula la PSD de Welch y la potencia por bandas con las epochs aceptadas.'),
+            (self.calculate_button, 'Calcula la PSD de Welch y la potencia por bandas con las épocas aceptadas.'),
             (self.spectral_settings_button, 'Duración del segmento Welch, solapamiento y límites de las bandas.'),
             (self.export_button, 'Guarda tablas (y opcionalmente el gráfico) en la carpeta que elijas.'),
         ]
@@ -369,7 +401,9 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
 
     @staticmethod
     def card(parent, title, expand=False):
-        outer, inner = card(parent, title)
+        """Sidebar section: every one can be folded with the triangle in its corner."""
+        outer, inner = card(parent, title, collapsible=True)
+        outer.expands = expand
         outer.pack(fill='both' if expand else 'x', expand=expand, pady=(0, 8))
         return inner
 
@@ -413,10 +447,10 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
                 shown),
             row(3, 'Presioná «⚙ Configurar filtrado» y elegí si filtrar la señal (0,2–45 Hz por defecto). '
                    'Presioná «Aplicar» aunque lo dejes apagado.', self.filter_reviewed),
-            row(4, 'Presioná «Buscar posibles artefactos»: las epochs sin avisos se aceptan solas. '
+            row(4, 'Presioná «Buscar posibles artefactos»: las épocas sin avisos se aceptan solas. '
                    'Podés saltear este paso y revisar todo a mano.',
                 self.screening_result is not None or reviewed),
-            row(5, ('Elegí cada epoch pendiente y marcala con A (aceptada), R (con artefactos) '
+            row(5, ('Elegí cada época pendiente y marcala con A (aceptada), R (con artefactos) '
                     'o U (sin revisar).' + (f' Quedan {len(pending)}.' if pending else '')),
                 reviewed),
             row(6, 'Abrí «Análisis espectral» y presioná «Calcular».', self.spectral_result is not None),
@@ -453,13 +487,13 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
             return ('Opcional: revisá el filtrado con «⚙ Configurar filtrado». Por defecto la señal se '
                     'muestra sin filtrar; presioná «Aplicar» para confirmar tu elección.')
         if nxt == 4:
-            return ('Opcional: buscá posibles artefactos para aceptar automáticamente las epochs limpias, '
-                    'o revisá cada epoch a mano.')
+            return ('Opcional: buscá posibles artefactos para aceptar automáticamente las épocas limpias, '
+                    'o revisá cada época a mano.')
         if nxt == 5:
-            return ('Revisá las epochs: elegí una en la lista o hacé clic sobre su intervalo en el gráfico, '
+            return ('Revisá las épocas: elegí una en la lista o hacé clic sobre su intervalo en el gráfico, '
                     'y marcala con A (aceptada), R (con artefactos) o U (sin revisar).')
         if nxt == 6:
-            return 'Todas las epochs están revisadas. Abrí «Análisis espectral» y presioná «Calcular».'
+            return 'Todas las épocas están revisadas. Abrí «Análisis espectral» y presioná «Calcular».'
         return 'Análisis listo. Exportá los resultados o elegí otro estudio para compararlo.'
 
     def next_step(self):
@@ -729,6 +763,17 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
             else:
                 self.toolbar.zoom()
         self.toolbar.update()
+        self.refresh_plot_tools()
+
+    def plot_tool(self, key):
+        """Botón de la fila de controles → acción de la barra de matplotlib oculta."""
+        getattr(self.toolbar, key)()
+        self.refresh_plot_tools()
+
+    def refresh_plot_tools(self):
+        mode = self.toolbar.mode.name if self.toolbar.mode else ''
+        for key in ('pan', 'zoom'):
+            self.plot_tools[key].configure(style='ToolOn.TButton' if mode == key.upper() else 'Tool.TButton')
 
     def clear_plot(self, message):
         self.displayed = None
@@ -757,7 +802,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
             self.epoch_tree.see(str(self.selected_epoch))
             self.load_editor()
         self.draw_segment(segment)
-        self.status.set(self.recording.warning or f'{self.config.label} · Epochs de 5 s · Sin exclusión de muestras')
+        self.status.set(self.recording.warning or f'{self.config.label} · Épocas de 5 s · Sin exclusión de muestras')
 
     def update_controls(self):
         self.refresh_ica()

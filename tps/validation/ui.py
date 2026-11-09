@@ -49,7 +49,7 @@ class ValidationApp:
         header.pack(fill='x')
         source = revision.data['source']
         ttk.Label(header, text=f"{source['participant']} · {source['session']} · {source['task']} · "
-                  f"{source['split']} · epochs de 4 s").pack(side='left')
+                  f"{source['split']} · épocas de 4 s").pack(side='left')
         self.button(header, 'Exportar evaluaciones', self.export).pack(side='right')
         notebook = ttk.Notebook(root)
         notebook.pack(fill='both', expand=True)
@@ -61,7 +61,7 @@ class ValidationApp:
         nav.pack(fill='x')
         self.button(nav, '←', lambda: self.move(-1)).pack(side='left')
         self.button(nav, '→', lambda: self.move(1)).pack(side='left')
-        ttk.Label(nav, text='Epoch').pack(side='left', padx=5)
+        ttk.Label(nav, text='Época').pack(side='left', padx=5)
         self.entry(nav, self.epoch, 6).pack(side='left')
         self.button(nav, 'Ir', self.draw).pack(side='left')
         cb = ttk.Combobox(nav, textvariable=self.channel, values=source['channels'], state='readonly', width=12)
@@ -75,7 +75,7 @@ class ValidationApp:
         marks.pack(fill='x', pady=6)
         for caption, state in [('Fisiológica', 'physiological'), ('Artefacto', 'artifact'), ('Sin revisar', 'unreviewed')]:
             self.button(marks, caption, lambda s=state: self.mark(s, False)).pack(side='left', padx=2)
-        self.button(marks, 'Toda la epoch fisiológica', lambda: self.mark('physiological', True)).pack(side='left', padx=8)
+        self.button(marks, 'Toda la época fisiológica', lambda: self.mark('physiological', True)).pack(side='left', padx=8)
         self.button(marks, 'Cerrar revisión ciega', self.complete).pack(side='right')
         notes = ttk.Frame(review)
         notes.pack(fill='x')
@@ -91,9 +91,9 @@ class ValidationApp:
         ttk.Label(processing, text='Las sugerencias se revelan al cerrar la revisión ciega. '
                   'Ninguna exclusión o reparación se aplica sin confirmación.', wraplength=1100).pack(anchor='w')
         for label, variable in [('Electrodos persistentes confirmados (nombres)', self.persistent),
-                                ('Epochs globalmente inutilizables (números)', self.global_epochs),
+                                ('Épocas globalmente inutilizables (números)', self.global_epochs),
                                 ('Componentes a excluir (números)', self.components),
-                                ('Epochs con reparación local confirmada (números)', self.repairs)]:
+                                ('Épocas con reparación local confirmada (números)', self.repairs)]:
             row = ttk.Frame(processing)
             row.pack(fill='x', pady=3)
             ttk.Label(row, text=label, width=54).pack(side='left')
@@ -182,7 +182,7 @@ class ValidationApp:
     def current_epoch(self):
         index = self.epoch.get() - 1
         if self.session is None or not 0 <= index < len(self.session.prepared.quality.epochs):
-            raise ValueError('Número de epoch fuera del registro.')
+            raise ValueError('Número de época fuera del registro.')
         return self.session.prepared.quality.epochs[index]
 
     def move(self, delta):
@@ -205,9 +205,9 @@ class ValidationApp:
         record = labels.get(f'{e.index}:{c}', {})
         self.note.set(record.get('note', ''))
         completed = sum(v['state'] in ('physiological', 'artifact') for v in labels.values())
-        self.review_status.set(f"{c} · epoch {e.index + 1} · {record.get('state', 'unreviewed')} · "
+        self.review_status.set(f"{c} · época {e.index + 1} · {record.get('state', 'unreviewed')} · "
                                f"{completed} evaluaciones por canal guardadas · "
-                               + ('Parcial: fuera de ICA y espectros' if e.partial else 'Epoch completa'))
+                               + ('Parcial: fuera de ICA y espectros' if e.partial else 'Época completa'))
         self.figure.clear()
         temporal, spectral = self.figure.subplots(2, 1)
         raw = self.session.recording.raw
@@ -265,7 +265,7 @@ class ValidationApp:
         for e in q.epochs:
             entries = [f'{c}: {", ".join(q.reasons(e.index, c))}' for j, c in enumerate(q.channels) if q.flags[e.index, j]]
             if entries:
-                lines.append(f'Epoch {e.index + 1}: ' + '; '.join(entries))
+                lines.append(f'Época {e.index + 1}: ' + '; '.join(entries))
         lines.append('Indicadores no evaluables: ' + str(int((~q.evaluable).sum())))
         self.show('\n'.join(lines))
 
@@ -326,7 +326,7 @@ class ValidationApp:
             raise ValueError('Ajustar ICA primero.')
         components = indices(self.components.get(), self.session.fitted.ica.n_components_)
         def display(proposals):
-            self.show('\n'.join(f'Epoch {p.epoch + 1}: {", ".join(p.channels)} · '
+            self.show('\n'.join(f'Época {p.epoch + 1}: {", ".join(p.channels)} · '
                                 f'{p.total_affected} afectados · ' + ('reparable' if p.eligible else 'supera límite')
                                 for p in proposals) or 'No se proponen reparaciones locales.')
         self.submit(lambda: self.session.repair_proposals(components), display)
@@ -338,7 +338,7 @@ class ValidationApp:
         components = indices(self.components.get(), self.session.fitted.ica.n_components_)
         repairs = indices(self.repairs.get(), len(self.session.prepared.quality.epochs))
         if messagebox.askyesno('Confirmar limpieza', f'Excluir componentes: {[i + 1 for i in components]}\n'
-                              f'Reparar epochs: {[i + 1 for i in repairs]}\nSe invalidará la revisión final '
+                              f'Reparar épocas: {[i + 1 for i in repairs]}\nSe invalidará la revisión final '
                               'anterior. ¿Confirmar conjuntamente?', parent=self.root):
             def done(result):
                 self.final.set(True)

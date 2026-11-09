@@ -27,12 +27,12 @@ class ICAUI:
         self.ica_metadata = None
         section = self.card(parent, 'ICA')
         self.ica_status = tk.StringVar(value='Sin corrección ICA')
-        ttk.Label(section, textvariable=self.ica_status, wraplength=270).pack(fill='x')
+        ttk.Label(section, textvariable=self.ica_status, style='Card.TLabel', wraplength=270).pack(fill='x')
         self.ica_button = ttk.Button(section, text='Ajustar / revisar ICA', command=self.open_ica)
         self.ica_button.pack(fill='x', pady=4)
         self.ica_enabled = tk.BooleanVar(value=False)
         self.ica_toggle = ttk.Checkbutton(section, text='Usar ICA confirmada', variable=self.ica_enabled,
-                                         command=self.toggle_ica)
+                                         style='Card.TCheckbutton', command=self.toggle_ica)
         self.ica_toggle.pack(anchor='w')
 
     def refresh_ica(self):
@@ -89,12 +89,12 @@ class ICAUI:
         dialog.protocol('WM_DELETE_WINDOW', lambda: self.cancel_ica(close=True) if not self.busy else None)
         body = ttk.Frame(dialog, padding=12)
         body.pack(fill='both', expand=True)
-        ttk.Label(body, text='Entrenamiento: 1–45 Hz · epochs de 5 s · Infomax. Conservá ejemplos de parpadeos.\n'
+        ttk.Label(body, text='Entrenamiento: 1–45 Hz · épocas de 5 s · Infomax. Conservá ejemplos de parpadeos.\n'
                   'Estas exclusiones son solo para el ajuste; no cambian las marcas de revisión.').pack(anchor='w')
         self.fit_channels = tk.StringVar()
         self.fit_epochs = tk.StringVar()
         for label, var in [('Canales fuera del ajuste (nombres separados por coma)', self.fit_channels),
-                           ('Epochs fuera del ajuste (números desde 1, separados por coma)', self.fit_epochs)]:
+                           ('Épocas fuera del ajuste (números desde 1, separados por coma)', self.fit_epochs)]:
             ttk.Label(body, text=label).pack(anchor='w')
             ttk.Entry(body, textvariable=var).pack(fill='x')
         row = ttk.Frame(body); row.pack(fill='x', pady=6)

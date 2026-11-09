@@ -35,10 +35,10 @@ def fit_recording(recording, data_dir, excluded_channels=(), excluded_epochs=())
         raise ValueError('ICA requiere al menos dos canales EEG válidos.')
     epochs = make_epochs(recording.raw.n_times, recording.sfreq)
     if any(type(i) is not int or i < 0 or i >= len(epochs) or epochs[i].partial for i in excluded_epochs):
-        raise ValueError('Solo se pueden excluir epochs completas válidas del entrenamiento.')
+        raise ValueError('Solo se pueden excluir épocas completas válidas del entrenamiento.')
     kept = [e for e in epochs if not e.partial and e.index not in excluded_epochs]
     if not kept:
-        raise ValueError('No quedan epochs completas para ajustar ICA.')
+        raise ValueError('No quedan épocas completas para ajustar ICA.')
     identity = source_identity(recording, data_dir)
     # This copy always comes from the original, never from a prior ICA result.
     training = recording.raw.copy().pick(channels).load_data()
