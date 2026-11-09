@@ -4,10 +4,10 @@ import unittest
 import mne
 import numpy as np
 
-from eeg_viewer.data import Recording, Study
-from eeg_viewer.screening import ScreeningConfig, scan_recording
-from eeg_viewer.processing import FILTER_OPTIONS, FilterConfig
-from eeg_viewer.annotations import make_epochs
+from tps.core.data import Recording, Study
+from tps.core.screening import ScreeningConfig, scan_recording
+from tps.core.processing import FILTER_OPTIONS, FilterConfig
+from tps.core.annotations import make_epochs
 from mne.filter import filter_data
 
 

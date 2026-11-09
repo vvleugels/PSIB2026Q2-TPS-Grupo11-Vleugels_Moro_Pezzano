@@ -25,7 +25,7 @@ if ! .venv/bin/python -c 'import tkinter' >/dev/null 2>&1; then
     exit 1
 fi
 
-# The marker name changed when the analysis packages (pandas, Jupyter) were added, so
+# The marker name changed when the analysis packages (pandas) were added, so
 # existing environments install them once. requirements-analysis.txt includes requirements.txt.
 if [[ ! -f .venv/TPS-analysis-dependencies-installed ]]; then
     echo 'Instalando dependencias. Esto puede tardar unos minutos...'

@@ -1,8 +1,9 @@
 """Result figures for the SD vs NS comparison, saved to results/figures/ with captions.
 
-Run from the project folder:  python -m analysis.figures [--results-dir results]
+Run from the project folder:  python -m tps.analysis.figures [--results-dir results]
 
-Every function returns the matplotlib Figure (so notebooks can display it) and saves a PNG.
+Every function returns the matplotlib Figure and saves a PNG; make_all also writes captions.md
+and results/report.md (tps.analysis.report).
 Figures show group-level spectral differences only; no clinical interpretation is implied.
 """
 from __future__ import annotations
@@ -12,17 +13,14 @@ import math
 from pathlib import Path
 import sys
 
-if __package__ in (None, ''):   # allow "python analysis/figures.py" as well as "-m"
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 import numpy as np
 import pandas as pd
 from matplotlib.figure import Figure
 from scipy import stats
 
-import config
-from analysis.hypotheses import evaluate
-from analysis.regions import CHANNEL_REGION, MIN_CHANNEL_FRACTION, REGIONS, frontal_theta_beta
+from tps import config
+from tps.analysis.hypotheses import evaluate
+from tps.analysis.regions import CHANNEL_REGION, MIN_CHANNEL_FRACTION, REGIONS, frontal_theta_beta
 
 # One color per condition everywhere (same teal/rose as the GUI's spectral plot).
 COLORS = {'NS': '#0e7c86', 'SD': '#b94b6b'}
@@ -73,12 +71,23 @@ def standard_info(channels: list[str]):
     return info
 
 
-def channel_differences(features: pd.DataFrame, eyes: str) -> pd.DataFrame:
-    """Per band x channel: mean SD - NS of log10 power over participants with both sessions."""
+# 'absolute': log10 absolute power (µV²); 'relative': relative power (% of 0.5-30 Hz).
+MEASURES = {
+    'absolute': dict(value='log10_power', stats='region_stats', suffix='',
+                     unit='SD − NS (Δ log10 µV²)', axis='log10 power (µV²)', what='band power'),
+    'relative': dict(value='rel_power_pct', stats='rel_stats', suffix='_relative',
+                     unit='SD − NS (Δ percentage points)', axis='relative power (%)',
+                     what='relative band power'),
+}
+
+
+def channel_differences(features: pd.DataFrame, eyes: str, measure: str = 'absolute') -> pd.DataFrame:
+    """Per band x channel: mean SD - NS (log10 power or relative %) over participants with both sessions."""
     data = features[(features['eyes'] == eyes) & (features['abs_power_uV2'] > 0)].copy()
     data['log10_power'] = np.log10(data['abs_power_uV2'])
+    data['rel_power_pct'] = pd.to_numeric(data['rel_power_pct'], errors='coerce')
     wide = data.pivot_table(index=['sub', 'band', 'channel'], columns='condition',
-                            values='log10_power', aggfunc='first').reindex(columns=['NS', 'SD'])
+                            values=MEASURES[measure]['value'], aggfunc='first').reindex(columns=['NS', 'SD'])
     wide['diff'] = wide['SD'] - wide['NS']
     return wide['diff'].dropna().groupby(['band', 'channel']).agg(['mean', 'count']).reset_index()
 
@@ -93,10 +102,15 @@ def significant_channels(clusters: pd.DataFrame | None, eyes: str, band: str) ->
 
 
 def plot_topomaps(features: pd.DataFrame, clusters: pd.DataFrame | None, eyes: str,
-                  out_dir: Path) -> Figure:
-    """SD - NS log10 power per electrode, one map per band; white dots = significant cluster."""
+                  out_dir: Path, measure: str = 'absolute') -> Figure:
+    """SD - NS per electrode, one map per band; white dots = significant cluster.
+
+    Clusters come from the test on log10 absolute power, so relative maps have no markers."""
     import mne
-    diffs = channel_differences(features, eyes)
+    spec = MEASURES[measure]
+    if measure != 'absolute':
+        clusters = None
+    diffs = channel_differences(features, eyes, measure)
     channels = [c for c in CHANNEL_REGION if c in set(diffs['channel'])]
     info = standard_info(channels)
     # One symmetric colour scale for all bands, so maps are comparable.
@@ -113,14 +127,16 @@ def plot_topomaps(features: pd.DataFrame, clusters: pd.DataFrame | None, eyes: s
             mask=mask, mask_params=dict(marker='o', markerfacecolor='white', markeredgecolor='black',
                                         markersize=6), contours=4, sensors=True)
         low, high = BAND_LIMITS[band]
-        ax.set_title(f'{band.capitalize()} ({low:g}–{high:g} Hz)\n{int(mask.sum())} electrodes in '
-                     'significant clusters')
+        title = f'{band.capitalize()} ({low:g}–{high:g} Hz)'
+        # The cluster test runs on absolute power only; relative maps carry no cluster count.
+        ax.set_title(title + (f'\n{int(mask.sum())} electrodes in significant clusters'
+                              if clusters is not None else ''))
     if image is not None:
         bar = fig.colorbar(image, ax=axes, shrink=0.75, location='right')
-        bar.set_label('SD − NS (Δ log10 µV²)')
+        bar.set_label(spec['unit'])
     n = int(diffs['count'].max()) if len(diffs) else 0
-    fig.suptitle(f'{EYES_TITLE[eyes]}: change in band power after SD (n = {n})', fontsize=13)
-    _save(fig, out_dir, f'topomap_{eyes}')
+    fig.suptitle(f"{EYES_TITLE[eyes]}: change in {spec['what']} after SD (n = {n})", fontsize=13)
+    _save(fig, out_dir, f"topomap{spec['suffix']}_{eyes}")
     return fig
 
 
@@ -178,8 +194,9 @@ def plot_psd_by_region(psd: pd.DataFrame, eyes: str, out_dir: Path) -> Figure:
 
 # ------------------------------------------------------------------------- paired plots
 def plot_paired(regions: pd.DataFrame, region_stats: pd.DataFrame | None, eyes: str,
-                out_dir: Path) -> Figure:
+                out_dir: Path, measure: str = 'absolute') -> Figure:
     """Per band x region: one grey line per participant (NS -> SD) plus group mean ± 95 % CI."""
+    spec = MEASURES[measure]
     data = regions[regions['eyes'] == eyes]
     fig = _figure(17, 13)
     axes = fig.subplots(len(config.BANDS), len(REGIONS), squeeze=False)
@@ -187,7 +204,7 @@ def plot_paired(regions: pd.DataFrame, region_stats: pd.DataFrame | None, eyes: 
         for j, region in enumerate(REGIONS):
             ax = axes[i, j]
             cell = data[(data['band'] == band) & (data['region'] == region)]
-            wide = cell.pivot_table(index='sub', columns='condition', values='log10_power').reindex(
+            wide = cell.pivot_table(index='sub', columns='condition', values=spec['value']).reindex(
                 columns=['NS', 'SD']).dropna()
             for _, row in wide.iterrows():
                 ax.plot([0, 1], [row['NS'], row['SD']], color='0.6', lw=0.7, alpha=0.6)
@@ -209,11 +226,11 @@ def plot_paired(regions: pd.DataFrame, region_stats: pd.DataFrame | None, eyes: 
             ax.set_xticks([0, 1], ['NS', 'SD'])
             ax.set_xlim(-0.4, 1.4)
             if j == 0:
-                ax.set_ylabel('log10 power (µV²)')
+                ax.set_ylabel(spec['axis'])
             ax.grid(axis='y', alpha=0.2)
-    fig.suptitle(f'{EYES_TITLE[eyes]}: regional band power per participant (grey lines) and group '
+    fig.suptitle(f"{EYES_TITLE[eyes]}: regional {spec['what']} per participant (grey lines) and group "
                  'mean ± 95 % CI (black)', fontsize=13)
-    _save(fig, out_dir, f'paired_{eyes}')
+    _save(fig, out_dir, f"paired{spec['suffix']}_{eyes}")
     return fig
 
 
@@ -294,12 +311,20 @@ def captions(inputs: dict, summary: pd.DataFrame | None) -> dict[str, str]:
             f'{EYES_TITLE[eyes]}. Mean log10 absolute power (µV²) per band and region. Grey lines: one '
             'participant (NS → SD); coloured points: individual values; black: group mean ± 95 % CI. '
             'Panel titles give n and the BH-FDR-corrected Wilcoxon signed-rank p (20 tests per eye condition).')
+        text[f'topomap_relative_{eyes}'] = (
+            f'{EYES_TITLE[eyes]}. Mean within-participant difference SD − NS of relative band power '
+            f'(percentage points of total {low:g}–{high:g} Hz power) at each electrode. Red: larger share '
+            'after SD; blue: smaller. The cluster test was run on absolute log10 power, so no electrodes are marked.')
+        text[f'paired_relative_{eyes}'] = (
+            f'{EYES_TITLE[eyes]}. Mean relative power (% of total {low:g}–{high:g} Hz power) per band and '
+            'region. Grey lines: one participant (NS → SD); black: group mean ± 95 % CI. Panel titles give n '
+            'and the BH-FDR-corrected Wilcoxon signed-rank p for relative power.')
     text['theta_beta'] = (
         'Frontal theta/beta ratio (mean log10 ratio over frontal channels) for NS (teal) and SD (rose), '
         'eyes open (primary) and eyes closed (secondary). Violins: distribution; grey lines: one '
         'participant; titles: n and Wilcoxon signed-rank p (single pre-specified test, uncorrected).')
     text['hypothesis_summary'] = (
-        f'Hypotheses H1–H4 (analysis/hypotheses.md) against the observed paired effects. Expected and '
+        f'Hypotheses H1–H4 (docs/hypotheses.md) against the observed paired effects. Expected and '
         f'observed direction of SD − NS, corrected p (BH-FDR across 20 band × region tests; H3 single '
         f'test), rank-biserial r and Cohen\'s dz. "supported" = expected sign and p < .05. Relative power '
         f'is relative to {low:g}–{high:g} Hz. Group-level spectral differences only.')
@@ -308,7 +333,7 @@ def captions(inputs: dict, summary: pd.DataFrame | None) -> dict[str, str]:
 
 def write_captions(text: dict[str, str], out_dir: Path) -> Path:
     lines = ['# Figure captions', '',
-             'Generated by `python -m analysis.figures`. Group-level spectral differences only; '
+             'Generated by `python -m tps.analysis.figures`. Group-level spectral differences only; '
              'no clinical interpretation.', '']
     for name, caption in text.items():
         file = f'{name}.md / .csv' if name == 'hypothesis_summary' else f'{name}.png'
@@ -325,11 +350,12 @@ def load_inputs(results_dir: Path) -> dict:
         path = results_dir / name
         return pd.read_csv(path) if path.is_file() else None
     inputs = dict(features=read('features_long.csv'), regions=read('features_region.csv'),
-                  region_stats=read('stats_region_log_power.csv'), tbr_stats=read('stats_frontal_theta_beta.csv'),
+                  region_stats=read('stats_region_log_power.csv'), rel_stats=read('stats_region_rel_power.csv'),
+                  tbr_stats=read('stats_frontal_theta_beta.csv'),
                   clusters=read('cluster_results.csv'), psd=read('psd_channels.csv'),
                   theta_beta=read('theta_beta.csv'))
     if inputs['features'] is None or inputs['regions'] is None:
-        raise FileNotFoundError('Run python -m batch.run_batch and python -m analysis.stats first.')
+        raise FileNotFoundError('Run python -m tps.pipeline.batch and python -m tps.analysis.stats first.')
     inputs['tbr'] = frontal_theta_beta(inputs['theta_beta']) if inputs['theta_beta'] is not None else None
     return inputs
 
@@ -346,12 +372,18 @@ def make_all(results_dir: Path, out_dir: Path | None = None) -> dict[str, Figure
         if inputs['psd'] is not None and len(inputs['psd']):
             made[f'psd_regions_{eyes}'] = plot_psd_by_region(inputs['psd'], eyes, out_dir)
         made[f'paired_{eyes}'] = plot_paired(inputs['regions'], inputs['region_stats'], eyes, out_dir)
+        made[f'topomap_relative_{eyes}'] = plot_topomaps(inputs['features'], None, eyes, out_dir, 'relative')
+        made[f'paired_relative_{eyes}'] = plot_paired(inputs['regions'], inputs['rel_stats'], eyes, out_dir,
+                                                      'relative')
     if inputs['tbr'] is not None:
         made['theta_beta'] = plot_theta_beta(inputs['tbr'], inputs['tbr_stats'], out_dir)
     if inputs['region_stats'] is not None and inputs['tbr_stats'] is not None:
         made['hypothesis_summary'] = hypothesis_summary(inputs['region_stats'], inputs['tbr_stats'], out_dir)
     text = captions(inputs, made.get('hypothesis_summary'))
     write_captions({k: v for k, v in text.items() if k in made}, out_dir)
+    if out_dir == results_dir / 'figures':   # the report links figures/<name>.png
+        from tps.analysis.report import write_report
+        write_report(results_dir)
     return made
 
 

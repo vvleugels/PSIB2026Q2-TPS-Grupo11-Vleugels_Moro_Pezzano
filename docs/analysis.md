@@ -1,19 +1,20 @@
 # Region features and SD vs NS statistics
 
 Group-level comparison of resting-state band power after sleep deprivation (SD) vs normal
-sleep (NS). Inputs are the batch outputs in `results/` (see [batch/README.md](../batch/README.md)).
+sleep (NS). Inputs are the batch outputs in `results/` (see [batch.md](batch.md)).
 These are **group-level spectral differences only**; nothing here supports clinical claims.
 
 ## Run
 
 ```bash
-pip install -r requirements-analysis.txt      # pandas + Jupyter (the GUI does not need them)
-python -m analysis.stats                      # all tables, ~20 s
-python -m analysis.stats --no-clusters        # skip the per-electrode cluster test
-python -m analysis.stats --permutations 10000
+pip install -r requirements-analysis.txt      # pandas (exploring recordings does not need it)
+python -m tps.analysis.stats                      # all tables, ~20 s
+python -m tps.analysis.stats --no-clusters        # skip the per-electrode cluster test
+python -m tps.analysis.stats --permutations 10000
 ```
 
-Or open `notebooks/03_stats.ipynb`, which calls the same functions and shows every table.
+The tables are also in the GUI («Resultados del grupo › Tablas») and, together with the
+hypotheses and figures, in `results/report.md`, written by `python -m tps.analysis.figures`.
 
 ## Design
 
@@ -26,7 +27,7 @@ Or open `notebooks/03_stats.ipynb`, which calls the same functions and shows eve
 * **Epoch counts are not equalised** between sessions; they are reported in
   `stats_epochs.csv` (SD has fewer clean epochs than NS in EO).
 
-## Region features (`analysis/regions.py`)
+## Region features (`tps/analysis/regions.py`)
 
 The 61 channel names come from the BIDS `channels.tsv` (identical in all 218 recordings) and
 are grouped by their 10-10 prefix: frontal (Fp/AF/F, 16), central (FC/C/CP, 20),
@@ -38,7 +39,7 @@ region's channels, with the number of channels used. A region value is only comp
 at least **50 % of its channels** survived screening, because bad channels (mostly frontal,
 from blinks) would otherwise leave regions represented by a few electrodes.
 
-## Statistics (`analysis/stats.py`)
+## Statistics (`tps/analysis/stats.py`)
 
 | Output | Content |
 |---|---|

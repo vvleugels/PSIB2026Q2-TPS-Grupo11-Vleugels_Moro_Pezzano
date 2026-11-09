@@ -1,6 +1,6 @@
 """Run the batch / statistics / figures steps as subprocesses, without blocking the GUI.
 
-The steps are the same commands documented in the README (python -m batch.run_batch,
+The steps are the same commands documented in the README (python -m tps.pipeline.batch,
 analysis.stats, analysis.figures). Running them in a child process keeps the explorer
 responsive and lets the user cancel without leaving half-initialised state in the GUI.
 """
@@ -36,7 +36,7 @@ class Options:
 def command(step: str, options: Options, results_dir: Path) -> list[str]:
     """argv for one step, run with the same Python as the GUI."""
     if step == 'batch':
-        argv = [sys.executable, '-m', 'batch.run_batch', '--out-dir', str(results_dir),
+        argv = [sys.executable, '-m', 'tps.pipeline.batch', '--out-dir', str(results_dir),
                 '--jobs', str(max(1, options.jobs))]
         argv += ['--ica-mode', options.ica_mode]
         if options.data_dir is not None:
@@ -49,10 +49,10 @@ def command(step: str, options: Options, results_dir: Path) -> list[str]:
             argv.append('--force')
         return argv
     if step == 'stats':
-        return [sys.executable, '-m', 'analysis.stats', '--results-dir', str(results_dir),
+        return [sys.executable, '-m', 'tps.analysis.stats', '--results-dir', str(results_dir),
                 '--permutations', str(options.permutations)]
     if step == 'figures':
-        return [sys.executable, '-m', 'analysis.figures', '--results-dir', str(results_dir)]
+        return [sys.executable, '-m', 'tps.analysis.figures', '--results-dir', str(results_dir)]
     raise ValueError(f'Paso desconocido: {step}')
 
 

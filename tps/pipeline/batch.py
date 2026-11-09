@@ -1,6 +1,6 @@
 """Batch band-power extraction for every subject, session and eye condition (no GUI).
 
-Run from the project folder:  python -m batch.run_batch [--eyes open|closed] [--subjects 01 02]
+Run from the project folder:  python -m tps.pipeline.batch [--eyes open|closed] [--subjects 01 02]
 
 Reuses the GUI modules for every computation step (BIDS inventory, loading, continuous
 FIR filtering, 5 s epochs, peak-to-peak screening, Welch and band integration), so a
@@ -22,16 +22,13 @@ import sys
 import time
 from typing import Iterable
 
-if __package__ in (None, ''):   # allow "python batch/run_batch.py" as well as "-m"
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 import numpy as np
 
-import config
-from eeg_viewer.annotations import make_epochs
-from eeg_viewer.data import Recording, Study, discover, open_recording
-from eeg_viewer.screening import scan_recording
-from eeg_viewer.spectral import band_powers, welch_epoch
+from tps import config
+from tps.core.annotations import make_epochs
+from tps.core.data import Recording, Study, annex_placeholder, discover, open_recording
+from tps.core.screening import scan_recording
+from tps.core.spectral import band_powers, welch_epoch
 
 log = logging.getLogger('batch')
 
@@ -64,21 +61,6 @@ def exclusion(study: Study, level: str, reason: str, channel: str = '', epoch: s
 
 
 # ----------------------------------------------------------------------------- inventory
-def annex_placeholder(path: Path) -> bool:
-    """True for a git-annex pointer/symlink left without local content.
-
-    On Windows (no symlinks) git checks such files out as tiny text files whose content
-    is the link target, e.g. '../../.git/annex/objects/...'."""
-    if path.is_symlink():
-        return not path.exists()
-    try:
-        if path.stat().st_size > 1024:
-            return False
-        return b'annex/objects' in path.read_bytes()
-    except OSError:
-        return False
-
-
 def file_problem(study: Study) -> str | None:
     """Reason why a recording cannot be read from disk, or None if its files look complete."""
     set_path = study.path
@@ -92,6 +74,18 @@ def file_problem(study: Study) -> str | None:
     # A missing .fdt is fine only if the data are embedded in the .set; open_recording
     # verifies the .fdt size against the header, so incomplete downloads are caught there.
     return None
+
+
+def read_subjects_file(path: Path) -> list[str]:
+    """Participant IDs from a text file: one per line, '#' starts a comment."""
+    subjects = []
+    for line in Path(path).read_text(encoding='utf-8-sig').splitlines():
+        line = line.split('#', 1)[0].strip()
+        if line:
+            subjects.append(line)
+    if not subjects:
+        raise ValueError(f'{path}: no participant IDs found')
+    return subjects
 
 
 def select_studies(data_dir: Path, eyes: str | None, subjects: Iterable[str] | None
@@ -168,6 +162,28 @@ def decide_epochs(recording: Recording, scan: dict) -> EpochDecision:
     return EpochDecision(used, rejected, bad, partial)
 
 
+def decide_epochs_per_channel(recording: Recording, scan: dict) -> tuple[dict, dict, list]:
+    """Per-channel rejection: each channel keeps the complete epochs in which it passed.
+
+    Returns ({channel: [epochs]}, {channel: reason} for channels below MIN_CHANNEL_EPOCHS,
+    trailing partial epochs)."""
+    epochs = make_epochs(recording.raw.n_times, recording.sfreq)
+    complete = [e for e in epochs if not e.partial]
+    failed = {channel: set() for channel in recording.channels}
+    for epoch in complete:
+        for issue in scan['findings'].get(epoch.index, []):
+            failed[issue['channel']].add(epoch.index)
+    kept, excluded = {}, {}
+    for channel in recording.channels:
+        own = [e for e in complete if e.index not in failed[channel]]
+        if len(own) < config.MIN_CHANNEL_EPOCHS:
+            excluded[channel] = (f'only {len(own)}/{len(complete)} clean epochs for this channel '
+                                 f'(< {config.MIN_CHANNEL_EPOCHS}, per-channel rejection)')
+        else:
+            kept[channel] = own
+    return kept, excluded, [e for e in epochs if e.partial]
+
+
 def channel_psd(recording: Recording, channel: str, epochs: list, effective: dict
                 ) -> tuple[np.ndarray, np.ndarray]:
     """Mean Welch PSD (µV²/Hz) over the given epochs of the filtered continuous channel."""
@@ -185,15 +201,18 @@ def channel_psd(recording: Recording, channel: str, epochs: list, effective: dic
     return frequencies, mean * 1e12
 
 
-def process_recording(recording: Recording) -> dict:
+def process_recording(recording: Recording, rejection_mode: str | None = None) -> dict:
     """Screen, epoch and compute band powers for every good channel of one open recording.
 
     Returns a JSON-serialisable dict with feature rows, theta/beta rows, exclusions and a summary.
+    rejection_mode: 'global' or 'per_channel' (default: config.REJECTION_MODE).
     """
     study = recording.study
     effective = config.SPECTRAL.effective(recording.sfreq)
     # Screening runs on the filtered signal over ALL EEG channels.
     scan = scan_recording(recording, recording.channels, config.SCREENING, config.FILTER)
+    if (rejection_mode or config.REJECTION_MODE) == 'per_channel':
+        return process_per_channel(recording, scan, effective)
     decision = decide_epochs(recording, scan)
     exclusions = [exclusion(study, 'epoch', 'incomplete final epoch (only complete 5 s epochs are used)',
                             epoch=str(e.index + 1)) for e in decision.partial]
@@ -239,11 +258,61 @@ def process_recording(recording: Recording) -> dict:
     return dict(features=features, theta_beta=ratios, psd=psd_table, exclusions=exclusions, summary=summary)
 
 
+def channel_features(recording: Recording, channel: str, epochs: list, effective: dict,
+                     n_used: int, n_rejected: int) -> tuple[list[dict], dict, list, list]:
+    """Feature rows, theta/beta row and PSD of one channel over the given clean epochs."""
+    study = recording.study
+    frequencies, psd = channel_psd(recording, channel, epochs, effective)
+    keep = frequencies <= PSD_MAX_HZ
+    rows, powers = [], {}
+    for name, band in zip(config.BANDS, band_powers(frequencies, psd, config.SPECTRAL.edges)):
+        powers[name] = band['absolute_uv2']
+        relative = band['relative_percent']
+        rows.append({**labels(study), 'channel': channel, 'band': name,
+                     'abs_power_uV2': band['absolute_uv2'],
+                     'rel_power_pct': '' if relative is None else relative,
+                     'n_epochs_used': n_used, 'n_epochs_rejected': n_rejected})
+    ratio = powers['theta'] / powers['beta'] if powers['beta'] > 0 else ''
+    return rows, {**labels(study), 'channel': channel, 'ratio': ratio}, frequencies[keep].tolist(), psd[keep].tolist()
+
+
+def process_per_channel(recording: Recording, scan: dict, effective: dict) -> dict:
+    """Per-channel rejection: n_epochs_used / n_epochs_rejected are per channel in the outputs."""
+    study = recording.study
+    kept, excluded, partial = decide_epochs_per_channel(recording, scan)
+    complete = len([e for e in make_epochs(recording.raw.n_times, recording.sfreq) if not e.partial])
+    exclusions = [exclusion(study, 'epoch', 'incomplete final epoch (only complete 5 s epochs are used)',
+                            epoch=str(e.index + 1)) for e in partial]
+    exclusions += [exclusion(study, 'channel', reason, channel=channel) for channel, reason in sorted(excluded.items())]
+    used = sorted(len(epochs) for epochs in kept.values())
+    median_used = used[len(used) // 2] if used else 0
+    summary = dict(**labels(study), file=study.path.name, n_channels=len(recording.channels),
+                   n_bad_channels=len(excluded), n_epochs_complete=complete,
+                   n_epochs_used=median_used, n_epochs_rejected=complete - median_used, excluded=False)
+    if not kept:
+        exclusions.append(exclusion(study, 'recording', 'no channel kept enough clean epochs '
+                                                        f'(per-channel rejection, minimum {config.MIN_CHANNEL_EPOCHS})'))
+        summary['excluded'] = True
+        return dict(features=[], theta_beta=[], psd=None, exclusions=exclusions, summary=summary)
+    features, ratios, spectra, frequencies = [], [], {}, None
+    for channel in recording.channels:
+        if channel not in kept:
+            continue
+        rows, ratio, frequencies, psd = channel_features(
+            recording, channel, kept[channel], effective, len(kept[channel]), complete - len(kept[channel]))
+        features += rows
+        ratios.append(ratio)
+        spectra[channel] = psd
+    return dict(features=features, theta_beta=ratios, psd=dict(frequencies=frequencies, channels=spectra),
+                exclusions=exclusions, summary=summary)
+
+
 def cache_path(cache_dir: Path, study: Study) -> Path:
     return cache_dir / f'{study.path.stem}.json'
 
 
-def run_one(study: Study, cache_dir: Path, digest: str, selection=None, data_dir=None, annotations_dir=None) -> dict:
+def run_one(study: Study, cache_dir: Path, digest: str, selection=None, data_dir=None, annotations_dir=None,
+            rejection_mode: str | None = None) -> dict:
     """Process one recording in a worker and write its cache file; never raises."""
     started = time.monotonic()
     problem = file_problem(study)
@@ -260,10 +329,10 @@ def run_one(study: Study, cache_dir: Path, digest: str, selection=None, data_dir
         else:
             try:
                 if selection is not None:
-                    from eeg_viewer.ica import apply_snapshot
+                    from tps.core.ica import apply_snapshot
                     apply_snapshot(recording, data_dir, annotations_dir, selection)
-                result = process_recording(recording)
-                from eeg_viewer.ica import context
+                result = process_recording(recording, rejection_mode)
+                from tps.core.ica import context
                 result['ica'] = context(recording)
             except Exception as exc:   # non-finite samples, filter too long, ...
                 result = dict(features=[], theta_beta=[],
@@ -384,9 +453,13 @@ def aggregate(cache_dir: Path, out_dir: Path, digest: str, pair_notes: list[dict
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     parser.add_argument('--ica-mode', choices=('original', 'confirmed'), default='original')
-    parser.add_argument('--annotations-dir', type=Path, default=Path(__file__).resolve().parents[1] / 'annotations')
+    parser.add_argument('--annotations-dir', type=Path, default=config.PROJECT_DIR / 'annotations')
     parser.add_argument('--eyes', choices=('open', 'closed'), help='only this eye condition (default: both)')
     parser.add_argument('--subjects', nargs='+', metavar='SUB', help='e.g. 01 02 or sub-01 (default: all)')
+    parser.add_argument('--subjects-file', type=Path, metavar='FILE',
+                        help='participant IDs, one per line (e.g. subsets/group20_seed2026.txt)')
+    parser.add_argument('--rejection-mode', choices=('global', 'per_channel'), default=None,
+                        help=f'epoch rejection (default from config.py: {config.REJECTION_MODE})')
     parser.add_argument('--data-dir', type=Path, default=config.DATA_DIR)
     parser.add_argument('--out-dir', type=Path, default=config.RESULTS_DIR)
     parser.add_argument('--jobs', type=int, default=1, help='recordings processed in parallel')
@@ -417,15 +490,25 @@ def main(argv: list[str] | None = None) -> int:
 def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
     mode = getattr(args, 'ica_mode', 'original')
     annotations_dir = getattr(args, 'annotations_dir', Path(args.data_dir).parent / 'annotations')
-    from eeg_viewer.ica import snapshot
+    from tps.core.ica import snapshot
     all_studies = [s for group in discover(args.data_dir).values() for s in group]
     selections = snapshot(all_studies, args.data_dir, annotations_dir, mode)
-    digest = hashlib.sha256((config_hash() + mode + str(Path(annotations_dir).resolve())).encode()).hexdigest()[:12]
+    rejection = getattr(args, 'rejection_mode', None) or config.REJECTION_MODE
+    # The default (global) rejection leaves the fingerprint unchanged, so existing caches stay valid.
+    extra = '' if rejection == 'global' else f'per_channel:{config.MIN_CHANNEL_EPOCHS}'
+    digest = hashlib.sha256((config_hash() + mode + str(Path(annotations_dir).resolve()) + extra).encode()).hexdigest()[:12]
     (out_dir / 'config_used.json').write_text(json.dumps(
-        {'config_hash': digest, 'created_at': datetime.now(timezone.utc).isoformat(),
-         'command': ' '.join(sys.argv), 'ica_mode': mode, 'ica_inputs': selections, **config.as_dict()}, indent=2, ensure_ascii=False), encoding='utf-8')
+        # settings_hash: config.py alone (the GUI uses it to tell whether outputs are outdated);
+        # config_hash: also mode and folders, which select the per-recording caches.
+        {'config_hash': digest, 'settings_hash': config_hash(), 'created_at': datetime.now(timezone.utc).isoformat(),
+         'command': ' '.join(sys.argv), 'ica_mode': mode, 'ica_inputs': selections,
+         **config.as_dict(), 'rejection_mode': rejection, 'min_channel_epochs': config.MIN_CHANNEL_EPOCHS},
+        indent=2, ensure_ascii=False), encoding='utf-8')
 
-    studies, _ = select_studies(args.data_dir, args.eyes, args.subjects)
+    subjects = list(args.subjects or [])
+    if getattr(args, 'subjects_file', None):
+        subjects += read_subjects_file(args.subjects_file)
+    studies, _ = select_studies(args.data_dir, args.eyes, subjects or None)
     # Missing NS/SD counterparts are dataset facts, so list them for the whole dataset.
     _, pair_notes = select_studies(args.data_dir, None, None)
     todo = [s for s in studies if args.force or not finished(cache_path(cache_dir, s), digest, selections[str(s.path)])]
@@ -443,12 +526,14 @@ def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
 
     if args.jobs > 1 and len(todo) > 1:
         with ProcessPoolExecutor(max_workers=args.jobs) as pool:
-            futures = {pool.submit(run_one, s, cache_dir, digest, selections[str(s.path)], args.data_dir, annotations_dir): s for s in todo}
+            futures = {pool.submit(run_one, s, cache_dir, digest, selections[str(s.path)], args.data_dir,
+                                   annotations_dir, rejection): s for s in todo}
             for done, future in enumerate(as_completed(futures), 1):
                 report(done, futures[future], future.result())
     else:
         for done, study in enumerate(todo, 1):
-            report(done, study, run_one(study, cache_dir, digest, selections[str(study.path)], args.data_dir, annotations_dir))
+            report(done, study, run_one(study, cache_dir, digest, selections[str(study.path)], args.data_dir,
+                                        annotations_dir, rejection))
 
     # Aggregation covers every finished recording, not just this run's selection, so
     # running --eyes open and later --eyes closed builds one combined table.

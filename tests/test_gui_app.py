@@ -7,8 +7,8 @@ import unittest
 
 import numpy as np
 
-from eeg_viewer.app import App
-from test_data import make_recording
+from tps.gui.app import App
+from test_core_data import make_recording
 
 
 class GuiTests(unittest.TestCase):
@@ -119,7 +119,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn('Archivo ilegible', self.app.status.get())
 
     def test_filter_transaction_rolls_back_then_multichannel_preserves_time(self):
-        from eeg_viewer.processing import FilterConfig
+        from tps.core.processing import FilterConfig
         self.select()
         a = self.app
         before = a.ax.lines[0].get_ydata().copy()
@@ -188,7 +188,7 @@ class GuiTests(unittest.TestCase):
         self.assertTrue(a.save_annotations())
 
     def test_obsolete_filter_completion_cannot_change_next_study(self):
-        from eeg_viewer.processing import FilterConfig
+        from tps.core.processing import FilterConfig
         self.select()
         a = self.app
         ready, release = threading.Event(), threading.Event()
@@ -267,7 +267,7 @@ class GuiTests(unittest.TestCase):
 
     def test_obsolete_spectral_result_after_parameter_change(self):
         from unittest.mock import patch
-        from eeg_viewer.spectral import run_analysis
+        from tps.core.spectral import run_analysis
         self.select()
         a = self.app
         a.include_unreviewed.set(True)
@@ -276,7 +276,7 @@ class GuiTests(unittest.TestCase):
         def delayed(*args):
             ready.set(); release.wait(5)
             return run_analysis(*args)
-        with patch('eeg_viewer.spectral_ui.run_analysis',side_effect=delayed):
+        with patch('tps.gui.spectral.run_analysis',side_effect=delayed):
             a.calculate_spectrum()
             self.assertTrue(ready.wait(2))
             a.include_unreviewed.set(False); a.invalidate_spectrum()
@@ -359,14 +359,14 @@ class GuiTests(unittest.TestCase):
         self.assertIn('Aceptación automática', a.context_label.get())
         a.calculate_spectrum(); self.wait_ready()
         self.assertEqual(a.spectral_result['sessions'][0]['counts']['used'], 2)
-        from eeg_viewer.annotations import AnnotationStore
+        from tps.core.annotations import AnnotationStore
         saved = AnnotationStore(a.annotations_dir, a.recording, a.data_dir)
         self.assertFalse(saved.blocked)
         self.assertEqual(saved.records, a.store.records)
 
     def test_obsolete_screening_result_is_ignored_on_parameter_or_patient_change(self):
         from unittest.mock import patch
-        from eeg_viewer.screening import scan_recording
+        from tps.core.screening import scan_recording
         self.select()
         a = self.app
         for change in ('threshold', 'filter', 'patient'):
@@ -375,13 +375,13 @@ class GuiTests(unittest.TestCase):
             def delayed(*args):
                 ready.set(); release.wait(5)
                 return scan_recording(*args)
-            with patch('eeg_viewer.screening_ui.scan_recording', side_effect=delayed):
+            with patch('tps.gui.screening.scan_recording', side_effect=delayed):
                 a.start_screening()
                 self.assertTrue(ready.wait(2))
                 if change == 'threshold':
                     a.screening_high.set('200')
                 elif change == 'filter':
-                    from eeg_viewer.processing import FilterConfig
+                    from tps.core.processing import FilterConfig
                     a.apply_config(FilterConfig(True, 2, 30))
                 else:
                     a.patient.set('sub-02'); a.select_patient()
@@ -394,7 +394,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(a.patient.get(), 'sub-02')
 
     def test_screening_uses_active_filter_and_invalidates_only_after_successful_change(self):
-        from eeg_viewer.processing import FilterConfig
+        from tps.core.processing import FilterConfig
         self.select()
         a = self.app
         self.assertTrue(a.screening_use_filter.get())

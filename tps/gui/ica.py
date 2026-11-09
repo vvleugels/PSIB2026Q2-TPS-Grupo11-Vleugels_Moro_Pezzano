@@ -13,8 +13,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scipy.signal import welch
 
-from . import ica
-from .processing import ContinuousFilter
+from tps.core import ica
+from tps.core.processing import ContinuousFilter
 
 
 class ICAUI:
@@ -152,8 +152,8 @@ class ICAUI:
             ica.write_json(folder / 'request.json', dict(path=str(study.path.resolve()),
                            participant=study.participant, session=study.session, task=study.task,
                            data_dir=str(self.data_dir.resolve()), channels=channels, epochs=epochs))
-            self.ica_job = subprocess.Popen([sys.executable, '-m', 'eeg_viewer.ica_worker', str(folder)],
-                                            cwd=Path(__file__).resolve().parents[1],
+            self.ica_job = subprocess.Popen([sys.executable, '-m', 'tps.pipeline.ica_worker', str(folder)],
+                                            cwd=Path(__file__).resolve().parents[2],
                                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             self.fit_button.configure(state='disabled')
             self.ica_message.set('Ajustando ICA en otro proceso… Podés cancelar el ajuste.')

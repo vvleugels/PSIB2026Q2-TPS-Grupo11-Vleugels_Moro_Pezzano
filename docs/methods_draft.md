@@ -1,6 +1,6 @@
 # Materials and Methods (draft)
 
-> Draft generated from the code and `config.py`. Every number below is taken from the
+> Draft generated from the code and `tps/config.py`. Every number below is taken from the
 > configuration or the dataset files; items marked **TODO** must be checked or completed by the
 > authors before submission. No clinical claims are made: the analysis describes group-level
 > spectral differences only.
@@ -29,7 +29,7 @@ organised in BIDS 1.8.0 and released under CC0.
 
 ## Preprocessing
 
-Processing was done in Python with MNE-Python, NumPy and SciPy (`batch/run_batch.py`; versions are
+Processing was done in Python with MNE-Python, NumPy and SciPy (`tps/pipeline/batch.py`; versions are
 saved in `results/config_used.json`. TODO: copy the exact versions here). Original files were
 never modified; the data were analysed in the original FCz reference, without re-referencing,
 interpolation, ICA or resampling.
@@ -96,7 +96,7 @@ interpolation, ICA or resampling.
   sum of t; spatial adjacency by Delaunay triangulation of the dataset's electrode positions).
   A channel missing for a participant (bad channel in either session) entered as a zero
   difference, a conservative choice.
-* **Hypotheses:** H1–H4 were specified before inspecting the results (`analysis/hypotheses.md`).
+* **Hypotheses:** H1–H4 were specified before inspecting the results (`docs/hypotheses.md`).
   TODO: confirm the date the hypotheses were fixed and add the verified references.
 * **Significance level:** α = 0.05 (two-sided).
 
@@ -105,6 +105,6 @@ interpolation, ICA or resampling.
 * Sample description (sex, age, inclusion criteria) and the sleep-deprivation protocol.
 * Amplifier model, ground electrode and online filters.
 * Exact software versions (from `results/config_used.json` and `requirements*.txt`).
-* Verified references for H1–H4 (`analysis/hypotheses.md`).
+* Verified references for H1–H4 (`docs/hypotheses.md`).
 * Justification references for the 150 µV / 1 µV limits, the 30 % bad-channel rule and the 12-epoch
   minimum, or a statement that they are pragmatic choices.

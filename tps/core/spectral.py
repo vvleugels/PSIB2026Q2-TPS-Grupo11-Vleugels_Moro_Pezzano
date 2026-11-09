@@ -17,8 +17,8 @@ import scipy
 from scipy.signal import get_window, welch
 from scipy.integrate import trapezoid
 
-from .annotations import AnnotationStore, STATES, source_identity
-from .data import open_recording
+from tps.core.annotations import AnnotationStore, STATES, source_identity
+from tps.core.data import open_recording
 
 BANDS = ('Delta', 'Theta', 'Alfa', 'Beta')
 
@@ -125,7 +125,7 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
     counts = dict(used=0, seconds=0., artifacts=0, pending=0, partial=0, accepted=0)
     mismatches = []
     ica_mismatches = []
-    from .ica import context as ica_context
+    from tps.core.ica import context as ica_context
     for epoch, record in zip(store.epochs, store.records):
         if epoch.partial:
             counts['partial'] += 1
@@ -203,7 +203,7 @@ def run_analysis(studies, channel, filter_config, config, data_dir, annotations_
             recording = open_recording(study)
             stack.callback(recording.close)
             if ica_selections is not None:
-                from .ica import apply_snapshot
+                from tps.core.ica import apply_snapshot
                 apply_snapshot(recording, data_dir, annotations_dir, ica_selections[str(study.path)])
             store = AnnotationStore(annotations_dir, recording, data_dir)
             verify_store(store)

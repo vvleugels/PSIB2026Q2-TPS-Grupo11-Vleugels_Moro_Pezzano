@@ -2,7 +2,6 @@
 from datetime import datetime, timezone
 import hashlib
 import json
-import os
 from pathlib import Path
 import shutil
 import tempfile
@@ -12,9 +11,10 @@ import mne
 import numpy as np
 import scipy
 
-from .annotations import make_epochs, source_identity
-from .processing import ContinuousFilter, FilterConfig
-from .validation import fit_infomax
+from tps.core.annotations import make_epochs, source_identity
+from tps.core.processing import ContinuousFilter, FilterConfig
+from tps.core.infomax import fit_infomax
+from tps.core.jsonio import json_safe, write_json
 
 
 def versions():
@@ -27,21 +27,6 @@ def digest(path):
         for block in iter(lambda: stream.read(1024 * 1024), b''):
             h.update(block)
     return h.hexdigest()
-
-
-def write_json(path, value):
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temp = tempfile.mkstemp(dir=path.parent, prefix='.ica-')
-    try:
-        with os.fdopen(fd, 'w', encoding='utf-8') as stream:
-            json.dump(value, stream, ensure_ascii=False, allow_nan=False, indent=2)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temp, path)
-    finally:
-        if os.path.exists(temp):
-            os.unlink(temp)
 
 
 def fit_recording(recording, data_dir, excluded_channels=(), excluded_epochs=()):
@@ -68,7 +53,6 @@ def fit_recording(recording, data_dir, excluded_channels=(), excluded_epochs=())
         training.close()
     if source_identity(recording, data_dir) != identity:
         raise ValueError('El registro cambió durante el ajuste.')
-    from .validation_session import json_safe
     metadata = json_safe(dict(
         schema=1, source=identity, channels=channels, original_channels=recording.raw.ch_names,
         sfreq=recording.sfreq, reference=recording.metadata.get('EEGReference'),
@@ -186,7 +170,7 @@ def snapshot(studies, data_dir, annotations_dir, mode):
     """Immutable input selection, including explicit failures; never silently fall back."""
     if mode not in ('original', 'confirmed'):
         raise ValueError('Modo ICA inválido.')
-    from .data import open_recording
+    from tps.core.data import open_recording
     result = {}
     for study in studies:
         try:

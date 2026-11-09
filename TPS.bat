@@ -14,7 +14,7 @@ if not exist ".venv\Scripts\python.exe" (
     )
 )
 
-rem The marker name changed when the analysis packages (pandas, Jupyter) were added, so
+rem The marker name changed when the analysis packages (pandas) were added, so
 rem existing environments install them once. requirements-analysis.txt includes requirements.txt.
 if not exist ".venv\TPS-analysis-dependencies-installed" (
     echo Instalando dependencias. Esto puede tardar unos minutos...

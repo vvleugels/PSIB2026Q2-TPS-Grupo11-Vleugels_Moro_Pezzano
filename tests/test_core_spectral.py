@@ -8,12 +8,12 @@ from unittest.mock import patch
 import numpy as np
 from scipy.signal import welch, get_window
 
-from eeg_viewer.annotations import AnnotationStore, STATES
-from eeg_viewer.data import discover, open_recording
-from eeg_viewer.processing import FilterConfig
-from eeg_viewer.spectral import (SpectralConfig, analyze_recording, band_powers,
+from tps.core.annotations import AnnotationStore, STATES
+from tps.core.data import discover, open_recording
+from tps.core.processing import FilterConfig
+from tps.core.spectral import (SpectralConfig, analyze_recording, band_powers,
     integrate_band, psd_db, run_analysis, select_studies, export_result)
-from test_data import make_recording
+from test_core_data import make_recording
 
 
 class SpectralTests(unittest.TestCase):
@@ -151,7 +151,7 @@ class SpectralTests(unittest.TestCase):
         self.store.save()
         self.assertTrue(self.analyze()['warnings'])
         result = run_analysis([self.study], 'Cz', FilterConfig(), SpectralConfig(),self.data,self.annotations)
-        with patch('eeg_viewer.spectral.json.dumps',side_effect=OSError('failure')):
+        with patch('tps.core.spectral.json.dumps',side_effect=OSError('failure')):
             with self.assertRaises(OSError):
                 export_result(result,self.root)
         self.assertEqual(list(self.root.glob('sub-01_*')), [])

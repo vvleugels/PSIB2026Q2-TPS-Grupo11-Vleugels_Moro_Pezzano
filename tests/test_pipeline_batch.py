@@ -10,9 +10,9 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import config
-from batch import run_batch
-from eeg_viewer.data import Recording, Study
+from tps import config
+from tps.pipeline import batch as run_batch
+from tps.core.data import Recording, Study
 
 SFREQ = 250.0
 SECONDS = 102.0   # 20 complete 5 s epochs + a 2 s partial epoch
@@ -123,6 +123,36 @@ class ScreeningTests(unittest.TestCase):
                             for r in result['exclusions']))
 
 
+class PerChannelRejectionTests(unittest.TestCase):
+    """--rejection-mode per_channel (ported from the former group pipeline)."""
+
+    def test_spike_rejects_epochs_only_for_its_channel(self):
+        spiky = sine(10, 20) + noise()
+        for second in (12, 27, 42):   # epochs 3, 6 and 9
+            spiky[int(second * SFREQ)] += 400
+        recording = synthetic({'Fz': spiky, 'Cz': sine(10, 20) + noise(seed=1)})
+        per_channel = run_batch.process_recording(recording, 'per_channel')
+        self.assertEqual(band(per_channel['features'], 'Fz', 'alpha')['n_epochs_used'], 17)
+        self.assertEqual(band(per_channel['features'], 'Cz', 'alpha')['n_epochs_used'], 20)
+        global_mode = run_batch.process_recording(synthetic({'Fz': spiky, 'Cz': sine(10, 20) + noise(seed=1)}),
+                                                  'global')
+        self.assertEqual(band(global_mode['features'], 'Cz', 'alpha')['n_epochs_used'], 17)
+
+    def test_channel_below_minimum_is_excluded(self):
+        noisy = sine(10, 120) + noise(seed=2)   # 240 uV p-p in every epoch
+        result = run_batch.process_recording(synthetic({'Fz': sine(10, 20) + noise(), 'TP9': noisy}),
+                                             'per_channel')
+        self.assertNotIn('TP9', {r['channel'] for r in result['features']})
+        reasons = [r['reason'] for r in result['exclusions'] if r['channel'] == 'TP9']
+        self.assertTrue(reasons and 'per-channel rejection' in reasons[0])
+        self.assertFalse(result['summary']['excluded'])
+
+    def test_recording_excluded_when_no_channel_survives(self):
+        result = run_batch.process_recording(synthetic({'Fz': sine(10, 120) + noise()}), 'per_channel')
+        self.assertTrue(result['summary']['excluded'])
+        self.assertEqual(result['features'], [])
+
+
 class InventoryAndResumeTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -157,6 +187,17 @@ class InventoryAndResumeTests(unittest.TestCase):
             run_batch.main(args)
         self.assertTrue(any('1 already finished, 0 to process' in line for line in logs.output))
         self.assertEqual(cache.stat().st_mtime_ns, stamp)
+
+    def test_subjects_file(self):
+        path = self.root / 'subset.txt'
+        path.write_text('# seed: 2026\nsub-01\n\n  02  # comment\n', encoding='utf-8')
+        self.assertEqual(run_batch.read_subjects_file(path), ['sub-01', '02'])
+        studies, _ = run_batch.select_studies(self.data, None, run_batch.read_subjects_file(path))
+        self.assertEqual({s.participant for s in studies}, {'sub-01'})
+        empty = self.root / 'empty.txt'
+        empty.write_text('# nothing\n', encoding='utf-8')
+        with self.assertRaises(ValueError):
+            run_batch.read_subjects_file(empty)
 
     def test_eyes_and_subject_filters(self):
         studies, _ = run_batch.select_studies(self.data, 'closed', None)

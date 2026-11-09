@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 from scipy.io import savemat
 
-from eeg_viewer.data import discover, open_recording
+from tps.core.data import annex_placeholder, discover, open_recording
 
 
 def make_recording(folder, subject='sub-01', session='ses-1', task='eyesopen'):
@@ -95,13 +95,51 @@ class DataTests(unittest.TestCase):
             r = self.recording()
             r.read_window('Cz', 0)
 
+    # A recording whose data was never downloaded (git-annex) must still be listed, so it can
+    # be reported, and opening it must fail with a clear FileNotFoundError. On Linux/macOS the
+    # file is a broken symlink; on Windows it is a small text pointer. Both forms are tested.
+
+    def symlink_or_skip(self, link, target):
+        """Create a symlink, or skip when the system does not allow it.
+
+        Windows needs Developer Mode or admin rights (WinError 1314); the Windows form of
+        the same case (text pointer) is covered by the placeholder tests below."""
+        try:
+            link.symlink_to(target)
+        except OSError as exc:
+            self.skipTest(f'No se pueden crear symlinks en este sistema: {exc}')
+
     def test_broken_set_link_stays_discoverable(self):
         self.path.unlink()
-        self.path.symlink_to('missing.set')
+        self.symlink_or_skip(self.path, 'missing.set')
+        self.assertTrue(annex_placeholder(self.path))
         inv = discover(self.temp.name)
         self.assertEqual(len(inv['sub-01']), 1)
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaisesRegex(FileNotFoundError, 'git-annex'):
             open_recording(inv['sub-01'][0])
+
+    def test_annex_text_placeholder_stays_discoverable(self):
+        # How git checks out an annexed file without content on Windows.
+        self.path.write_text('../../../.git/annex/objects/61/85/SHA256E-s629416--ab.set/'
+                             'SHA256E-s629416--ab.set')
+        self.assertTrue(annex_placeholder(self.path))
+        inv = discover(self.temp.name)
+        self.assertEqual(len(inv['sub-01']), 1)
+        with self.assertRaisesRegex(FileNotFoundError, 'git-annex'):
+            open_recording(inv['sub-01'][0])
+
+    def test_set_removed_after_discovery_raises_file_not_found(self):
+        study = discover(self.temp.name)['sub-01'][0]
+        self.path.unlink()
+        with self.assertRaisesRegex(FileNotFoundError, 'no está disponible'):
+            open_recording(study)
+
+    def test_real_recording_is_not_a_placeholder(self):
+        self.assertFalse(annex_placeholder(self.path))
+        small = self.path.with_name('notes.txt')
+        small.write_text('a short text file that is not a pointer')
+        self.assertFalse(annex_placeholder(small))
+        self.assertFalse(annex_placeholder(self.path.with_name('absent.set')))
 
     def test_truncated_binary_is_rejected_before_plotting(self):
         with self.path.with_suffix('.fdt').open('r+b') as stream:

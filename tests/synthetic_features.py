@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from analysis.regions import REGIONS
+from tps.analysis.regions import REGIONS
 
 BANDS = ('delta', 'theta', 'alpha', 'beta')
 BASE_LOG10 = {'delta': 1.2, 'theta': 0.8, 'alpha': 1.0, 'beta': 0.4}

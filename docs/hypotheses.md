@@ -1,7 +1,7 @@
 # Hypotheses: resting-state EEG after sleep deprivation (SD) vs normal sleep (NS)
 
 Pre-specified, testable hypotheses. The machine-readable version (used by the figures and the
-summary table) is `analysis/hypotheses.py`; keep both in sync.
+summary table) is `tps/analysis/hypotheses.py`; keep both in sync.
 
 * **Contrast:** paired SD − NS within participant.
 * **Measure:** mean log10 absolute band power per region (`results/features_region.csv`).

@@ -7,7 +7,7 @@ import re
 
 import mne
 import numpy as np
-from .processing import ContinuousFilter, FilterConfig
+from tps.core.processing import ContinuousFilter, FilterConfig
 
 
 def natural_key(value):
@@ -120,7 +120,27 @@ class Recording:
                        first / self.sfreq, last / self.sfreq, tuple(channels))
 
 
+def annex_placeholder(path: Path) -> bool:
+    """True for a git-annex pointer/symlink left without local content.
+
+    On Windows (no symlinks) git checks such files out as tiny text files whose content
+    is the link target, e.g. '../../.git/annex/objects/...'."""
+    if path.is_symlink():
+        return not path.exists()
+    try:
+        if path.stat().st_size > 1024:
+            return False
+        return b'annex/objects' in path.read_bytes()
+    except OSError:
+        return False
+
+
 def open_recording(study):
+    # A git-annex link without local content is listed by discover() (so it can be reported)
+    # but cannot be opened: a broken symlink on Linux/macOS, a small text pointer on Windows.
+    if annex_placeholder(study.path):
+        raise FileNotFoundError(f'El archivo no está descargado (enlace git-annex sin contenido): '
+                                f'{study.path.name}. Descargalo con datalad get.')
     if not study.path.is_file():
         raise FileNotFoundError(f'El archivo no está disponible: {study.path.name}')
     metadata = {}

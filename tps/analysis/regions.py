@@ -14,7 +14,7 @@ by its 10-10 prefix, which encodes the scalp area:
 * occipital PO*, O*       (parieto-occipital and occipital rows)
 
 The order of the prefix tests matters (e.g. "FT7" must go to temporal before "F*").
-``tests/test_stats.py`` checks that every channel of the real montage is mapped once.
+``tests/test_analysis_stats.py`` checks that every channel of the real montage is mapped once.
 """
 from __future__ import annotations
 
@@ -41,6 +41,12 @@ CHANNEL_REGION: dict[str, str] = {ch: region for region, chans in REGIONS.items(
 MIN_CHANNEL_FRACTION = 0.5
 
 KEYS = ['sub', 'ses', 'condition', 'eyes']
+
+
+def region_table() -> pd.DataFrame:
+    """The channel-to-region mapping as a table (region, number of channels, channels)."""
+    return pd.DataFrame([(region, len(channels), ', '.join(channels)) for region, channels in REGIONS.items()],
+                        columns=['region', 'n_channels', 'channels'])
 
 
 def channels_from_bids(data_dir: Path) -> list[str]:

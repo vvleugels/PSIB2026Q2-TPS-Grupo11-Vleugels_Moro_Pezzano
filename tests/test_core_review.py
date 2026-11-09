@@ -9,10 +9,10 @@ import mne
 import numpy as np
 from mne.filter import filter_data
 
-from eeg_viewer.annotations import AnnotationStore, make_epochs, STATES
-from eeg_viewer.data import Recording, Study, discover, open_recording
-from eeg_viewer.processing import FilterConfig, FILTER_OPTIONS
-from test_data import make_recording
+from tps.core.annotations import AnnotationStore, make_epochs, STATES
+from tps.core.data import Recording, Study, discover, open_recording
+from tps.core.processing import FilterConfig, FILTER_OPTIONS
+from test_core_data import make_recording
 
 
 class ProcessingTests(unittest.TestCase):
@@ -146,7 +146,7 @@ class AnnotationTests(unittest.TestCase):
         self.store.save()
         before = self.store.path.read_bytes()
         self.mark()
-        with patch('eeg_viewer.annotations.os.replace', side_effect=OSError('Disco lleno')):
+        with patch('tps.core.annotations.os.replace', side_effect=OSError('Disco lleno')):
             with self.assertRaises(OSError):
                 self.store.save()
         self.assertTrue(self.store.dirty)
@@ -164,7 +164,7 @@ class AnnotationTests(unittest.TestCase):
         self.assertTrue(self.open_store().blocked)
 
     def test_automatic_acceptance_roundtrip_recheck_and_manual_override(self):
-        from eeg_viewer.screening import ScreeningConfig, scan_recording
+        from tps.core.screening import ScreeningConfig, scan_recording
         self.store.mark(0, STATES[0], '', 'nota existente', ['Cz'], FilterConfig())
         self.store.mark(1, STATES[2], 'Ocular', 'revisión manual', ['Fp1'], FilterConfig())
         manual = dict(self.store.records[1])

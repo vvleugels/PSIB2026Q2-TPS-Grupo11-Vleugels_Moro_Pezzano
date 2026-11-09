@@ -1,6 +1,3 @@
-# Extra packages for the statistics module and notebook (not needed by the GUI).
+# Extra packages for the group statistics and figures (not needed to explore recordings).
 -r requirements.txt
 pandas>=2.1
-ipykernel>=6.29
-nbformat>=5.9
-nbclient>=0.9

@@ -2,9 +2,9 @@
 import tkinter as tk
 from tkinter import ttk
 
-from .screening import ScreeningConfig, scan_recording
-from .processing import FilterConfig
-from .theme import autowrap
+from tps.core.screening import ScreeningConfig, scan_recording
+from tps.core.processing import FilterConfig
+from tps.gui.theme import autowrap
 
 
 class ScreeningUI:

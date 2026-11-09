@@ -3,8 +3,8 @@ import json
 from pathlib import Path
 import sys
 
-from .data import Study, open_recording
-from .ica import fit_recording, write_json
+from tps.core.data import Study, open_recording
+from tps.core.ica import fit_recording, write_json
 
 
 def main():

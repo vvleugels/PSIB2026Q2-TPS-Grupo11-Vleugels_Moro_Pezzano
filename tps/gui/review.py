@@ -5,9 +5,9 @@ from tkinter import ttk
 from matplotlib.ticker import MultipleLocator
 import numpy as np
 
-from .annotations import STATES, REASONS
-from .processing import FilterConfig
-from .theme import BORDER, IRIS, TEXT, autowrap, style_dialog
+from tps.core.annotations import STATES, REASONS
+from tps.core.processing import FilterConfig
+from tps.gui.theme import BORDER, IRIS, TEXT, autowrap, style_dialog
 
 COLORS = {'Sin revisar': '#edf1f2', 'Aceptada': '#d5eee2', 'Con artefactos': '#f9d8d5'}
 
@@ -331,7 +331,7 @@ class ReviewUI:
     def update_review_context(self):
         record = self.store.records[self.selected_epoch]
         context = record['filter']
-        from .ica import context as ica_context
+        from tps.core.ica import context as ica_context
         mismatch = record.get('ica') != ica_context(self.recording)
         if context:
             config = FilterConfig(context['enabled'], context['low'], context['high'], context.get('notch'))

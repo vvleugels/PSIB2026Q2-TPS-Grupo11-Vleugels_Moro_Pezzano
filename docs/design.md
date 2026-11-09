@@ -1,11 +1,17 @@
 # Diseño acordado para la próxima implementación
 
+> **Nota histórica.** Este es el documento de diseño original. Las rutas y comandos que
+> menciona (`eeg_viewer/`, `scripts/analyze_group.py`, `group_ui.py`, etc.) corresponden a
+> la estructura anterior. El análisis de grupo de 20 participantes se unificó con el lote
+> (`python -m tps.pipeline.batch --subjects-file subsets/group20_seed2026.txt
+> --rejection-mode per_channel`) y `tps.analysis`; ver el README y [batch.md](batch.md).
+
 Este documento describe el diseño acordado para la próxima implementación del
 procesamiento y la revisión de EEG; **no describe el comportamiento actual**.
 Las decisiones siguientes fijan la dirección del desarrollo. Los detalles de
 implementación y validación que aún no se acordaron se enumeran por separado.
 La creación inicial de este documento fue exclusivamente documental. El estado
-del piloto posterior se detalla a continuación y en [VALIDATION.md](VALIDATION.md).
+del piloto posterior se detalla a continuación y en [validation.md](validation.md).
 
 ## Estado de implementación
 

@@ -9,7 +9,7 @@
 
 La primera etapa está implementada como motor y visor **experimentales separados**
 de `gui.py`. La aplicación habitual conserva su procesamiento actual y sus epochs
-de 5 segundos. La integración del diseño de `documentation.md` requiere primero
+de 5 segundos. La integración del diseño de `docs/design.md` requiere primero
 revisión humana de calibración, congelamiento del perfil y evaluación independiente.
 No hay aceptación automática habilitada ni un perfil aprobado para uso definitivo.
 

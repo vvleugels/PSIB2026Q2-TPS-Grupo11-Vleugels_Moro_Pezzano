@@ -1,6 +1,6 @@
 """Paired SD vs NS statistics on band power (group level, no clinical interpretation).
 
-Run from the project folder:  python -m analysis.stats [--results-dir results] [--permutations 5000]
+Run from the project folder:  python -m tps.analysis.stats [--results-dir results] [--permutations 5000]
 
 Eyes open (EO) is the PRIMARY analysis (all valid participants); eyes closed (EC) is
 SECONDARY (only participants who have it). EO and EC are never pooled. Every comparison
@@ -14,15 +14,12 @@ from pathlib import Path
 import sys
 import warnings
 
-if __package__ in (None, ''):   # allow "python analysis/stats.py" as well as "-m"
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 import numpy as np
 import pandas as pd
 from scipy import stats
 
-import config
-from analysis.regions import KEYS, REGIONS, frontal_theta_beta, region_features
+from tps import config
+from tps.analysis.regions import KEYS, REGIONS, frontal_theta_beta, region_features, region_table
 
 ANALYSES = {'open': 'primary', 'closed': 'secondary'}
 ALPHA = 0.05
@@ -285,11 +282,38 @@ def load(results_dir: Path) -> dict[str, pd.DataFrame | None]:
         path = results_dir / name
         if not path.is_file():
             if required:
-                raise FileNotFoundError(f'{path} not found; run python -m batch.run_batch first')
+                raise FileNotFoundError(f'{path} not found; run python -m tps.pipeline.batch first')
             return None
         return pd.read_csv(path)
     return dict(features=read('features_long.csv', True), theta_beta=read('theta_beta.csv', True),
                 exclusions=read('exclusions.csv'), session_order=read('session_order.csv'))
+
+
+def relative_vs_absolute(absolute: pd.DataFrame, relative: pd.DataFrame) -> pd.DataFrame:
+    """Absolute (log10) and relative (%) SD - NS results side by side per eyes x band x region.
+
+    Shows whether an effect is a change in overall power or in the spectral distribution:
+    absolute power can change while relative power does not, and vice versa."""
+    keys = ['eyes', 'analysis', 'band', 'region']
+    columns = ['n', 'mean_diff', 'rank_biserial', 'cohens_dz', 'p_wilcoxon', 'p_fdr_wilcoxon']
+    table = absolute[keys + columns].merge(relative[keys + columns], on=keys, suffixes=('_absolute', '_relative'))
+    for kind in ('absolute', 'relative'):
+        table[f'significant_{kind}'] = table[f'p_fdr_wilcoxon_{kind}'] < ALPHA
+    table['same_direction'] = np.sign(table['mean_diff_absolute']) == np.sign(table['mean_diff_relative'])
+    return table
+
+
+# Recordings with at least this many clean epochs (100 s) enter the sensitivity analysis,
+# which checks that results do not depend on recordings with little clean data.
+MIN_EPOCHS_SENSITIVITY = 20
+
+
+def min_epochs_sensitivity(features: pd.DataFrame, minimum: int = MIN_EPOCHS_SENSITIVITY) -> pd.DataFrame:
+    """Region tests on log10 power using only recordings with >= `minimum` clean epochs."""
+    kept = features[pd.to_numeric(features['n_epochs_used'], errors='coerce') >= minimum]
+    table = region_tests(region_features(kept), 'log10_power')
+    table.insert(2, 'min_clean_epochs', minimum)
+    return table
 
 
 def run_all(results_dir: Path, data_dir: Path, n_permutations: int = 5000, clusters: bool = True
@@ -299,10 +323,15 @@ def run_all(results_dir: Path, data_dir: Path, n_permutations: int = 5000, clust
     features = inputs['features']
     regions = region_features(features)
     tbr = frontal_theta_beta(inputs['theta_beta'])
+    absolute = region_tests(regions, 'log10_power')
+    relative = region_tests(regions, 'rel_power_pct')
     tables = {
+        'channel_regions': region_table(),
         'features_region': regions,
-        'stats_region_log_power': region_tests(regions, 'log10_power'),
-        'stats_region_rel_power': region_tests(regions, 'rel_power_pct'),
+        'stats_region_log_power': absolute,
+        'stats_region_rel_power': relative,
+        'stats_relative_vs_absolute': relative_vs_absolute(absolute, relative),
+        'stats_region_log_power_min20': min_epochs_sensitivity(features),
         'stats_frontal_theta_beta': tbr_tests(tbr),
         'stats_session_order': session_order_tests(regions, tbr, inputs['session_order']),
         'stats_epochs': epoch_counts(features),

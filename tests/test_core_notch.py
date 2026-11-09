@@ -5,11 +5,11 @@ import unittest
 import mne
 import numpy as np
 
-from eeg_viewer.processing import ContinuousFilter, FilterConfig
-from eeg_viewer.annotations import AnnotationStore, STATES
-from eeg_viewer.data import Recording, Study
-from eeg_viewer.screening import scan_recording, ScreeningConfig
-from eeg_viewer.spectral import analyze_recording, SpectralConfig
+from tps.core.processing import ContinuousFilter, FilterConfig
+from tps.core.annotations import AnnotationStore, STATES
+from tps.core.data import Recording, Study
+from tps.core.screening import scan_recording, ScreeningConfig
+from tps.core.spectral import analyze_recording, SpectralConfig
 
 
 class NotchTests(unittest.TestCase):

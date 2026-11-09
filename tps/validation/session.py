@@ -6,26 +6,11 @@ import mne
 import numpy as np
 from scipy.signal import welch
 
-from .data import Study, open_recording
-from .validation import (ICAResult, ProcessingConfig, Quality, apply_components, assess, candidate_profiles,
+from tps.core.data import Study, open_recording
+from tps.validation.engine import (ICAResult, ProcessingConfig, Quality, apply_components, assess, candidate_profiles,
                          evaluation_report, finalize, fit_ica, interpolate, prepare, proposals)
-from .validation_store import atomic_write, encode, utc, versions
-
-
-def json_safe(value):
-    if isinstance(value, dict):
-        return {str(k): json_safe(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [json_safe(v) for v in value]
-    if isinstance(value, np.ndarray):
-        return json_safe(value.tolist())
-    if isinstance(value, (np.floating, float)):
-        return float(value) if np.isfinite(value) else None
-    if isinstance(value, (np.integer,)):
-        return int(value)
-    if isinstance(value, (np.bool_,)):
-        return bool(value)
-    return value
+from tps.validation.store import atomic_write, encode, utc, versions
+from tps.core.jsonio import json_safe  # noqa: F401  (also used by callers of this module)
 
 
 class ValidationSession:
@@ -194,7 +179,7 @@ class ValidationSession:
             denominator = np.linalg.norm(before[mask])
             bands = {}
             for name, low, high in [('delta', .5, 4), ('theta', 4, 8), ('alpha', 8, 13), ('beta', 13, 30)]:
-                from .spectral import integrate_band
+                from tps.core.spectral import integrate_band
                 a, b = integrate_band(f, before, low, high), integrate_band(f, after, low, high)
                 bands[name] = dict(before_uv2=a * 1e12, after_uv2=b * 1e12,
                                    relative_change=(b - a) / a if a else None)

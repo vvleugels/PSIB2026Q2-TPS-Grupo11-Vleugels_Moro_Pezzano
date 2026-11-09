@@ -12,13 +12,13 @@ import mne
 import numpy as np
 from scipy.io import savemat
 
-from eeg_viewer import ica
-from eeg_viewer.annotations import AnnotationStore, STATES, source_identity
-from eeg_viewer.data import Study, open_recording
-from eeg_viewer.processing import FilterConfig
-from eeg_viewer.screening import ScreeningConfig, scan_recording
-from eeg_viewer.spectral import SpectralConfig, run_analysis
-from batch import run_batch
+from tps.core import ica
+from tps.core.annotations import AnnotationStore, STATES, source_identity
+from tps.core.data import Study, open_recording
+from tps.core.processing import FilterConfig
+from tps.core.screening import ScreeningConfig, scan_recording
+from tps.core.spectral import SpectralConfig, run_analysis
+from tps.pipeline import batch as run_batch
 
 
 def fixture(root, session='ses-1', seconds=30):
@@ -173,7 +173,7 @@ class ICATests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ica.corrected_copy(self.recording, self.model, [999])
 
-    def test_multiprocess_batch_and_legacy_pipeline_with_missing_pair(self):
+    def test_multiprocess_batch_with_missing_pair(self):
         data = self.root / 'batch-data'
         ns, _ = fixture(data, seconds=80)
         fixture(data, session='ses-2', seconds=80)
@@ -186,7 +186,7 @@ class ICATests(unittest.TestCase):
         finally:
             recording.close()
         out = self.root/'batch-out'
-        command = [sys.executable, '-m', 'batch.run_batch', '--data-dir', str(data),
+        command = [sys.executable, '-m', 'tps.pipeline.batch', '--data-dir', str(data),
                    '--out-dir', str(out), '--annotations-dir', str(self.annotations),
                    '--ica-mode', 'confirmed', '--jobs', '2']
         completed = subprocess.run(command, cwd=Path(__file__).resolve().parents[1],
@@ -205,7 +205,7 @@ class ICATests(unittest.TestCase):
         except ImportError:
             pass
         else:
-            from analysis.stats import paired_frame
+            from tps.analysis.stats import paired_frame
             self.assertTrue(paired_frame(pd.DataFrame(rows), 'abs_power_uV2', ['channel', 'band']).empty)
         # Same output directory cannot aggregate corrected caches into an original run.
         command[command.index('confirmed')] = 'original'
@@ -215,13 +215,6 @@ class ICATests(unittest.TestCase):
         coverage = json.loads((out/'ica_coverage.json').read_text())
         self.assertEqual(coverage['processing_modes'], ['original'])
         self.assertEqual((coverage['confirmed'], coverage['excluded']), (0, 0))
-        from eeg_viewer.group_analysis import run_group_analysis
-        result = run_group_analysis(data, self.root/'legacy-out', participants=['sub-01'], eyes='open',
-                                    channels=['Fp1'], min_channel_epochs=1, ica_mode='confirmed',
-                                    annotations_dir=self.annotations)
-        self.assertTrue(result['features'])
-        self.assertEqual({r['session'] for r in result['features']}, {'ses-1'})
-        self.assertTrue(any('ICA confirmada' in r['reason'] for r in result['exclusions']))
 
     def test_only_explicit_exclusions_are_applied(self):
         model = self.model.copy()

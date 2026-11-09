@@ -10,17 +10,17 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 from PIL import Image, ImageTk
 
-from .ica_ui import ICAUI
-from .data import discover, open_recording
-from .annotations import AnnotationStore, STATES
-from .review_ui import ReviewUI
-from .spectral_ui import SpectralUI
-from .screening_ui import ScreeningUI
-from .results_ui import ResultsUI
-from .theme import (INK, INK_MUTED, INK_SOFT, IRIS, IRIS_DARK, AMBER, BG, CARD, MUTED, Stepper,
+from tps.gui.ica import ICAUI
+from tps.core.data import discover, open_recording
+from tps.core.annotations import AnnotationStore, STATES
+from tps.gui.review import ReviewUI
+from tps.gui.spectral import SpectralUI
+from tps.gui.screening import ScreeningUI
+from tps.gui.results import ResultsUI
+from tps.gui.theme import (INK, INK_MUTED, IRIS, IRIS_DARK, AMBER, BG, CARD, MUTED, Stepper,
                     Tooltip, apply_theme, autowrap, callout, card, mark_image, style_dialog)
 
-PROJECT = Path(__file__).resolve().parent.parent
+PROJECT = Path(__file__).resolve().parents[2]
 STEP_TITLES = ('Elegir paciente', 'Elegir estudio', 'Elegir electrodo', 'Revisar filtrado (opcional)',
                'Buscar artefactos (opcional)', 'Revisar epochs', 'Calcular espectro')
 ELECTRODE_IMAGE = 'Electrode-disposition.png'
@@ -235,8 +235,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
         spectral = ttk.Frame(self.view_tabs, style='Card.TFrame', padding=10)
         self.view_tabs.add(temporal, text='Señal temporal')
         self.view_tabs.add(spectral, text='Análisis espectral')
-        # «Resultados del grupo» replaces the read-only GroupUI tab; Tomás's figures and
-        # tables from results/group20-channel-2026/analysis are listed inside it.
+        # «Resultados del grupo»: runs the group pipeline and shows its tables and figures.
         group = ttk.Frame(self.view_tabs, style='Card.TFrame', padding=10)
         self.view_tabs.add(group, text='Resultados del grupo')
         self.group_tab = group
@@ -505,9 +504,8 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
         if getattr(self, 'electrode_window', None) is not None and self.electrode_window.winfo_exists():
             self.electrode_window.lift()
             return
-        path = next((p for p in (PROJECT / 'assets' / ELECTRODE_IMAGE, PROJECT / ELECTRODE_IMAGE)
-                     if p.is_file()), None)
-        if path is None:
+        path = PROJECT / 'assets' / ELECTRODE_IMAGE
+        if not path.is_file():
             self.status.set(f'No se encontró {ELECTRODE_IMAGE} en la carpeta del proyecto.')
             return
         try:
@@ -628,7 +626,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
     def load(self, study):
         self.release_recording()
         self.worker_recording = open_recording(study)
-        from . import ica
+        from tps.core import ica
         import json
         pointer = ica.revision_root(self.annotations_dir, study) / 'latest.json'
         if pointer.exists():

@@ -1,18 +1,20 @@
 # PSIB — Explorador EEG
 
-GUI de escritorio para explorar registros de sueño normal y privación del sueño,
-filtrar opcionalmente, revisar artefactos en epochs de 5 segundos y analizar
-espectros con Welch y potencia por bandas. Python,
-Tkinter, Matplotlib y MNE; los archivos EEG originales nunca se modifican.
+GUI de escritorio para explorar registros de sueño normal (NS) y privación del sueño (SD)
+del dataset OpenNeuro ds004902: filtrado opcional (pasabanda y notch), ICA con
+confirmación manual, revisión de artefactos en epochs de 5 segundos, espectros de Welch
+y potencia por bandas, y el análisis de grupo SD vs NS (lote, estadística y figuras),
+que también se puede ejecutar desde la GUI. Python, Tkinter, Matplotlib y MNE; los
+archivos EEG originales nunca se modifican.
 
-El [piloto de limpieza EEG y validación](VALIDATION.md) se ejecuta por separado con
-`validate_eeg.py`. Implementa el motor experimental de 4 segundos y la revisión
-humana para evaluar el protocolo de limpieza. Sus revisiones son independientes
-de la ICA manual de esta GUI; no habilita aceptación automática definitiva.
-
-La [extracción por lotes](batch/README.md) (`python -m batch.run_batch`) calcula la potencia por bandas de todos los participantes, sesiones, condiciones de ojos y electrodos sin abrir la GUI; la configuración compartida está en `config.py`.
-
-Las [estadísticas SD vs NS](analysis/README.md) (`python -m analysis.stats`, notebook `notebooks/03_stats.ipynb`) agregan las potencias por región y comparan las sesiones de forma pareada; requieren `pip install -r requirements-analysis.txt`.
+| Documento | Contenido |
+|---|---|
+| [docs/batch.md](docs/batch.md) | extracción por lotes: pasos, opciones y salidas |
+| [docs/analysis.md](docs/analysis.md) | regiones, estadística SD vs NS y clusters |
+| [docs/hypotheses.md](docs/hypotheses.md) | hipótesis H1–H4 (referencias pendientes, TODO) |
+| [docs/methods_draft.md](docs/methods_draft.md) | borrador de Materiales y Métodos |
+| [docs/validation.md](docs/validation.md) | piloto de limpieza y validación (`validate_eeg.py`), independiente de la GUI |
+| [docs/design.md](docs/design.md) | nota de diseño original (histórica) |
 
 ## Instalación y ejecución
 
@@ -30,7 +32,7 @@ En Linux también podés ejecutar `./TPS.sh`: crea `.venv` e instala las depende
 en el primer inicio (requiere internet). Si la instalación falla, la reintenta al
 volver a ejecutarlo. Acepta su ruta absoluta desde cualquier carpeta.
 En Windows, hace doble clic en `TPS.bat`. En el primer inicio crea `.venv` e instala
-las dependencias (también pandas y Jupyter, para «Resultados del grupo»); hace falta una conexión a internet. Si falla la instalación,
+las dependencias (también pandas, para «Resultados del grupo»); hace falta una conexión a internet. Si falla la instalación,
 corregí el problema y volvé a ejecutar el lanzador: reintentará la instalación.
 También se puede ejecutar `TPS.bat` por su ruta absoluta desde otro directorio:
 `data` y `annotations` siempre se resuelven junto al proyecto.
@@ -53,7 +55,7 @@ La tercera pestaña reúne el análisis por lotes, la estadística SD vs NS y la
 sin usar la terminal. Lee y escribe en `results/` (junto a `data/`).
 
 - **Proceso**: tres pasos (1 Potencias por lote, 2 Estadística, 3 Figuras) con su estado
-  (listo, sin resultados o desactualizado si cambió `config.py` o un paso anterior), sus
+  (listo, sin resultados o desactualizado si cambió `tps/config.py` o un paso anterior), sus
   opciones (ojos, procesos en paralelo, recalcular todo, permutaciones) y **Ejecutar**.
   **Ejecutar todo** los encadena; **Cancelar** detiene el paso en curso (el lote es
   reanudable). Los pasos corren en un proceso aparte: el explorador sigue disponible.
@@ -65,10 +67,8 @@ sin usar la terminal. Lee y escribe en `results/` (junto a `data/`).
   con filtros por ojos, sesión, banda, región y participante, y orden por columna
   (clic en el encabezado). Se resaltan las filas con p < 0,05.
 - **Figuras**: topomapas, PSD por región, gráficos pareados y theta/beta con su leyenda
-  (`captions.md`); zoom con los botones o Ctrl + rueda y arrastre para mover. También
-  aparecen los topomapas y gráficos de pares (absolutos y relativos) del análisis grupal
-  de Tomás (`results/group20-channel-2026/analysis/`), marcados «(Tomás)»; sus tablas
-  (estadística regional, relativa vs absoluta, resumen y epochs) están en **Tablas**.
+  (`captions.md`), en versión absoluta y relativa; zoom con los botones o Ctrl + rueda
+  y arrastre para mover.
 
 En el panel lateral, **Resultado del lote** muestra para el estudio abierto si el lote lo
 incluyó o lo excluyó (y por qué), las epochs usadas y rechazadas, los canales malos y,
@@ -166,8 +166,7 @@ por registro y revisiones en `config_used.json`; las cachés distinguen las fuen
 y revisiones. Una revisión nueva no cambia los insumos de un lote ya iniciado.
 
 ```bash
-python -m batch.run_batch --ica-mode confirmed --annotations-dir annotations
-python scripts/analyze_group.py --ica-mode confirmed --annotations-dir annotations
+python -m tps.pipeline.batch --ica-mode confirmed --annotations-dir annotations
 ```
 
 ## Revisar epochs
@@ -340,194 +339,81 @@ La figura exportada usa la escala elegida y este mismo rango inicial,
 con leyenda y etiqueta exploratoria cuando corresponde. Los CSV siempre conservan
 valores lineales. La exportación es manual y no modifica anotaciones ni datos originales.
 
-## Análisis de grupo
+## Análisis por lotes, estadística y figuras
 
-El flujo grupal se ejecuta por separado de la GUI y no usa anotaciones manuales:
-
-```bash
-python scripts/analyze_group.py
-python scripts/analyze_group.py --max-participants 3
-python scripts/analyze_group.py --participants sub-11 sub-12 sub-13 --max-participants 3
-python scripts/analyze_group.py --participants sub-12 sub-13 sub-14 --eyes open --channels Fp1 Cz Oz --rejection-mode channel --high-uv 150 --output results/example-channel
-python scripts/analyze_group.py --participants-file participants_group20_seed2026.txt --rejection-mode channel --high-uv 150 --min-channel-epochs 10 --checkpoint-each-record --output results/group20-channel-2026
-```
-
-Lee `SessionOrder` de `data/participants.tsv`; recorre `ses-1` (sueño normal) y
-`ses-2` (privación), con ojos abiertos para todos los participantes y ojos cerrados
-para `sub-01` a `sub-38`. Filtra cada canal continuo con el FIR existente de
-0,2–45 Hz. El barrido de `screening.py` marca la epoch completa si cualquier canal
-supera 150 µV pico a pico o queda por debajo de 1 µV pico a pico; también descarta
-epochs parciales. Los umbrales se pueden ajustar con `--high-uv` y `--flat-uv`.
-`--rejection-mode epoch` conserva el comportamiento por defecto: si un canal marca
-una epoch, se descarta para todos los canales. Con `--rejection-mode channel`, cada
-canal usa sus propias epochs limpias y no pierde épocas marcadas solo en otro canal.
-En ambos modos se excluye un canal del registro si le quedan menos de 10 epochs
-limpias; se puede indicar otro mínimo con `--min-channel-epochs`. Las exclusiones
-por canal aparecen en `exclusions.csv`. `features.csv` registra `epochs_used` en
-cada fila de canal/sesión/condición, además del modo y del umbral alto efectivo.
-En modo canal también incluye `epochs_used_global`, el número de epochs que habrían
-quedado con el rechazo global, obtenido del mismo barrido. `--participants-file`
-lee IDs de un archivo de texto, uno por línea (ignora comentarios `#`).
-`--checkpoint-each-record` muestra el avance y vacía las tablas después de cada
-registro para conservar resultados parciales ante una interrupción.
-`--eyes open` permite limitar el flujo a ojos abiertos; `--channels` permite elegir
-electrodos para una comparación puntual. El límite alto es configurable, por ejemplo
-`--high-uv 180` (µV pico a pico).
-
-Welch y las bandas usan los parámetros iniciales de `spectral.py`: ventanas de 2 s,
-50 % de solapamiento, Hann periódica y bandas delta 0,5–4, theta 4–8, alfa 8–13 y
-beta 13–30 Hz. La carpeta nueva de salida contiene `features.csv` (una fila por
-participante, sesión, condición ocular, canal y banda, con `SessionOrder`, modo,
-umbral y cantidad de epochs usadas por canal), `record_summary.csv` (epochs usadas y
-descartadas por registro),
-`exclusions.csv` (registros faltantes, incompletos o sin epochs utilizables) y
-`analysis.json` con la configuración y versiones. Por defecto se crea una carpeta
-con sello UTC bajo `results/`; `--output` permite elegir otra ruta nueva. La opción
-`--participants` permite elegir IDs concretos para pruebas o corridas parciales.
-
-### Análisis regional del lote
-
-Para resumir `results/group20-channel-2026/features.csv` sin volver a leer señales:
+Se ejecuta desde **Resultados del grupo › Proceso** o en la terminal, desde la carpeta
+del proyecto (en Windows, `.venv\Scripts\python.exe` en lugar de `python`):
 
 ```bash
-python scripts/analyze_regions.py
+python -m tps.pipeline.batch --jobs 6   # 1. potencia por bandas de cada registro (~4 min)
+python -m tps.analysis.stats            # 2. regiones y comparaciones SD vs NS (~20 s)
+python -m tps.analysis.figures          # 3. figuras, tabla de hipótesis y leyendas
 ```
 
-Se transforma la potencia absoluta a `log10(µV²)` por canal y se promedia dentro
-de cada participante, sesión, condición ocular, región y banda. La asignación es:
-frontal `F` (excluye `Fp` y `AF`), central `FC/C`, parietal `CP/P`, occipital `PO/O`
-y temporal `FT/T/TP`. Los electrodos `Fp` y `AF` no entran en regiones; sí aparecen
-en los topomaps. Para los mapas se usa el montaje `standard_1020` de MNE; las etiquetas
-que solo difieren en mayúsculas, como `Cpz` y `CPz`, se combinan en la posición común.
+Cada paso lee lo que produce el anterior en `results/`. El lote es reanudable: vuelve a
+calcular solo los registros nuevos o los afectados por un cambio de `tps/config.py`.
+Opciones del lote:
 
-`stats_table.csv` contiene tests de Wilcoxon pareados SD−NS por banda y región,
-separados por condición ocular, con FDR de Benjamini–Hochberg aplicada a las 20
-comparaciones de cada condición. El tamaño de efecto es la correlación biserial por
-rangos pareada. `SessionOrder` se evalúa comparando las diferencias SD−NS entre los
-dos órdenes con Mann–Whitney; esos p-valores también tienen FDR por condición ocular.
-La carpeta `analysis/` guarda además `regional_features.csv`, `channel_region_map.csv`,
-los ocho gráficos `pairs_{open|closed}_{delta|theta|alpha|beta}.png` y los ocho
-topomaps correspondientes de la diferencia media SD−NS por canal.
+- `--eyes open|closed`, `--subjects 01 02`, `--force`, `--jobs N`
+- `--subjects-file subsets/group20_seed2026.txt`: un subconjunto fijo de participantes
+  (uno por línea, `#` para comentarios). La lista de 20 participantes (semilla 2026) está
+  en `subsets/`.
+- `--rejection-mode global|per_channel`: con `global` (por defecto) una epoch marcada en
+  cualquier canal se descarta para todos; con `per_channel` cada canal usa sus propias
+  epochs limpias y se excluye si le quedan menos de `MIN_CHANNEL_EPOCHS` (10).
+- `--ica-mode original|confirmed`, `--annotations-dir`: usar la ICA confirmada de cada registro.
 
-Para comparar potencia relativa y analizar retención de epochs, ejecutar
-`python scripts/compare_relative_epochs.py`. Usa `relative_percent` si está presente
-(en este lote las cuatro bandas suman 100% por canal-registro); si falta, deriva cada
-proporción de las cuatro potencias absolutas. Compara las pruebas relativas con las
-absolutas con FDR por condición ocular, resume epochs globales y por canal y repite
-las pruebas absolutas usando solo canales con al menos 20 epochs en ambas sesiones.
-Los tres CSV se guardan con nombres nuevos en `analysis/`, sin sobrescribir los
-resultados regionales previos. Los canales excluidos se infieren por su ausencia
-respecto del conjunto de canales del propio `features.csv`.
+Ojos abiertos es el análisis principal y ojos cerrados el secundario; nunca se combinan.
+Los resultados describen diferencias espectrales a nivel de grupo, sin interpretación
+clínica. «Aceptada» en el barrido automático significa «dentro de los límites de
+amplitud», no inspección visual. El paso 3 también escribe `results/report.md`: un solo
+documento con todas las tablas, las hipótesis y las figuras con sus leyendas (botón
+**Abrir informe** en **Proceso**).
 
-Prueba sintética del cálculo grupal:
-
-```bash
-python -m unittest tests.test_group_analysis -v
-```
-
-### Resumen regional y comparación pareada
-
-`python scripts/analyze_regions.py` analiza el `features.csv` existente; no vuelve
-a cargar registros EEG. Convierte `absolute_uv2` a `log10(µV²)` por canal y luego
-promedia esos valores por participante, sesión, condición ocular, región y banda.
-La asignación de canales es frontal `F` (excluye los polares `Fp` y `AF`), central
-`FC/C`, parietal `CP/P`, occipital `PO/O` y temporal `FT/T/TP`. Fp/AF no se usan en
-las medias regionales, pero sí en topomaps.
-
-`results/group20-channel-2026/analysis/stats_table.csv` contiene Wilcoxon pareados
-SD−NS por región/banda, para ojos abiertos y cerrados por separado. Informa pares,
-mediana de la diferencia log10 y correlación rank-biserial pareada; BH-FDR se aplica
-a las 20 pruebas de cada condición ocular. El orden de sesión se evalúa con
-Mann–Whitney sobre las diferencias SD−NS entre los grupos `NS->SD` y `SD->NS`, con
-FDR independiente por condición ocular. También se generan `regional_features.csv`,
-`channel_region_map.csv`, ocho gráficos `pairs_{open|closed}_{delta|theta|alpha|beta}.png`
-y ocho mapas de la diferencia media topográfica SD−NS usando `standard_1020` de MNE.
-
-Las figuras absolutas se corrigen con `python scripts/regenerate_group_figures.py`;
-los topomaps usan una esfera MNE de 11 cm y extrapolación hasta el contorno para
-contener los sensores. El mismo comando produce pares y topomaps relativos con
-nombres `pairs_relative_...` y `topomap_relative_...`, además de `group_summary.csv`.
-Estas figuras y tablas se ven dentro de la pestaña **Resultados del grupo**
-(**Figuras** y **Tablas**, marcadas «(Tomás)»), junto a las del análisis por lotes.
-`eeg_viewer/group_ui.py`, la pestaña de solo lectura que las mostraba antes, sigue en el
-repositorio pero la GUI ya no la usa.
-
-En la corrida de verificación del 7 de noviembre de 2026, la senoide sintética de
-10 Hz quedó en alfa y la ejecución con `sub-11` a `sub-13` produjo 1.952 filas de
-features, 9 resúmenes de registro y 4 exclusiones. El archivo `record_summary.csv`
-permite revisar cuántas epochs sobrevivieron por registro.
-
-La auditoría de esta copia local encontró 71 filas en `participants.tsv`, pero solo
-61 carpetas de participantes y 175 de los 218 `.set` esperados. Faltan todos los
-registros de `sub-01` a `sub-10` y tres registros de `sub-11`; además, hay tres
-archivos `.fdt` truncados en `sub-28` y `sub-44`. El flujo registra ausencias y
-errores de lectura en `exclusions.csv`; no completa ni modifica los datos fuente.
-La suite completa terminó con 74 de 75 pruebas aprobadas: la única excepción fue
-la creación de un symlink en Windows (`WinError 1314`, privilegio no disponible).
-
-## Datos y organización
-
-Se espera BIDS: `data/sub-*/ses-*/eeg/*_eeg.set`, sus `.fdt` y metadatos JSON.
-Los enlaces git-annex deben tener contenido local. Los archivos incompletos se
-rechazan antes de graficar. Frecuencia, duración y canales provienen del registro;
-la referencia proviene del JSON. Los campos ausentes se indican como no disponibles.
-
-- `eeg_viewer/data.py`: inventario y acceso de solo lectura por canal/tramo.
-- `eeg_viewer/processing.py`: configuración y caché del filtro continuo.
-- `eeg_viewer/annotations.py`: epochs, identidad del origen y persistencia atómica.
-- `eeg_viewer/spectral.py`: Welch por epoch, bandas y exportación.
-- `eeg_viewer/screening.py`, `eeg_viewer/screening_ui.py`: barrido de amplitud y avisos de revisión.
-- `eeg_viewer/app.py`, `eeg_viewer/review_ui.py` y `eeg_viewer/spectral_ui.py`:
-  interfaz y coordinación asíncrona.
-
-## Análisis por lotes, estadística y figuras (sin GUI)
-
-Flujo completo, desde la carpeta del proyecto (en Windows, `.venv\Scripts\python.exe` en lugar de `python`):
-
-```bash
-pip install -r requirements-analysis.txt   # pandas y Jupyter; la GUI no los necesita
-python -m batch.run_batch --jobs 6         # 1. potencia por bandas de cada registro (~16 min)
-python -m analysis.stats                   # 2. regiones y comparaciones SD vs NS (~20 s)
-python -m analysis.figures                 # 3. figuras, tabla de hipótesis y leyendas
-```
-
-Cada paso lee lo que produce el anterior en `results/`. El lote es reanudable: vuelve
-a calcular solo los registros nuevos o los afectados por un cambio de `config.py`.
-Opciones del lote: `--eyes open|closed`, `--subjects 01 02`, `--force`. Ojos abiertos
-es el análisis principal y ojos cerrados el secundario; nunca se combinan. Los
-resultados describen diferencias espectrales a nivel de grupo, sin interpretación clínica.
-«Aceptada» en el barrido automático significa «dentro de los límites de amplitud», no
-inspección visual.
-
-Archivos nuevos:
-
-- `config.py`: configuración compartida (filtro, epochs, Welch, bandas, umbrales, mínimos).
-- `batch/run_batch.py`, `batch/README.md`: extracción por lotes y su documentación.
-- `analysis/regions.py`: canales por región (construido desde `channels.tsv`) y promedios regionales.
-- `analysis/stats.py`, `analysis/README.md`: pruebas pareadas, FDR, orden de sesión y clusters.
-- `analysis/hypotheses.py`, `analysis/hypotheses.md`: hipótesis H1–H4 (referencias pendientes, TODO).
-- `analysis/figures.py`: topomapas, PSD por región, gráficos pareados, theta/beta, tabla resumen.
-- `eeg_viewer/results_ui.py`, `eeg_viewer/results_data.py`, `eeg_viewer/pipeline.py`: pestaña
-  «Resultados del grupo», lectura de `results/` y ejecución de los pasos en segundo plano.
-- `notebooks/03_stats.ipynb`, `notebooks/04_results_figures.ipynb`: muestran tablas y figuras
-  importando los módulos (no contienen cálculos propios).
-- `report/methods_draft.md`: borrador de Materiales y Métodos con los parámetros exactos.
-- `requirements-analysis.txt`: dependencias adicionales de análisis y notebooks.
-- `tests/test_batch.py`, `tests/test_stats.py`, `tests/test_figures.py`, `tests/test_results.py`,
-  `tests/synthetic_features.py`: pruebas con señales y tablas sintéticas.
-
-Salidas en `results/`:
+Salidas en `results/` (no se versionan; se regeneran con los comandos anteriores):
 
 | Archivo | Contenido |
 |---|---|
 | `features_long.csv`, `theta_beta.csv` | potencia absoluta y relativa por canal y banda; cociente theta/beta |
 | `psd_channels.csv` | PSD media por registro y canal, 0–45 Hz (µV²/Hz) |
 | `exclusions.csv`, `recordings_summary.csv` | registros, canales y epochs excluidos, con el motivo |
-| `session_order.csv`, `config_used.json` | orden NS/SD de cada participante; configuración usada |
+| `session_order.csv`, `config_used.json`, `ica_coverage.json` | orden NS/SD; configuración e ICA usadas |
 | `features_region.csv` | log10 de la potencia y potencia relativa por región |
-| `stats_*.csv`, `cluster_results.csv` | resultados estadísticos (ver `analysis/README.md`) |
-| `figures/*.png`, `figures/captions.md` | figuras y sus leyendas |
+| `stats_region_log_power.csv`, `stats_region_rel_power.csv` | pruebas pareadas SD vs NS por banda y región |
+| `stats_relative_vs_absolute.csv` | resultados absolutos y relativos lado a lado |
+| `stats_region_log_power_min20.csv` | sensibilidad: solo registros con ≥ 20 epochs limpias |
+| `stats_frontal_theta_beta.csv`, `stats_session_order.csv`, `stats_epochs.csv`, `stats_participants.csv` | theta/beta, orden de sesión, epochs y participantes |
+| `cluster_results.csv`, `stats_cluster_channels.csv` | prueba de clusters por electrodo |
+| `figures/*.png`, `figures/captions.md` | figuras (absolutas y relativas) y sus leyendas |
+| `channel_regions.csv` | canales de cada región |
+| `report.md` | informe con todas las tablas, hipótesis y figuras |
 | `figures/hypothesis_summary.csv/.md` | hipótesis, dirección esperada y observada, p corregido, tamaño del efecto |
+
+## Estructura del código
+
+```
+gui.py              abre el explorador (también TPS.bat / TPS.sh)
+validate_eeg.py     piloto de validación (docs/validation.md)
+tps/
+  config.py         configuración compartida: filtro, epochs, Welch, bandas, umbrales, mínimos
+  core/             procesamiento sin interfaz: datos BIDS, filtros, epochs y anotaciones,
+                    barrido, Welch y bandas, ICA (revisiones e Infomax), utilidades JSON
+  gui/              ventanas Tk: app, tema, revisión, barrido, espectro, ICA,
+                    «Resultados del grupo» y ejecución de los pasos en segundo plano
+  pipeline/         lote (batch.py) y ajuste de ICA en un proceso aparte (ica_worker.py)
+  analysis/         regiones, estadística, hipótesis, figuras e informe (report.py)
+  validation/       piloto de limpieza y validación (motor, sesión, almacén, interfaz, CLI)
+tests/              pruebas (sintéticas y de GUI)
+docs/               documentación detallada
+assets/             imágenes (disposición de electrodos)
+subsets/            listas de participantes para el lote
+```
+
+`core` no depende de Tk ni del piloto de validación; `gui`, `pipeline` y `analysis` usan
+`core`. Los datos se esperan en `data/` (BIDS: `data/sub-*/ses-*/eeg/*_eeg.set`, sus
+`.fdt` y metadatos JSON); las anotaciones y revisiones ICA en `annotations/`, y los
+resultados en `results/`, todos junto al proyecto. Los enlaces git-annex deben tener
+contenido local; los archivos incompletos se rechazan antes de graficar.
 
 ## Verificación
 

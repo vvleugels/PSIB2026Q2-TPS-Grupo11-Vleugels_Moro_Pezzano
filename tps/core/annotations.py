@@ -101,7 +101,7 @@ class AnnotationStore:
                     context = actual['filter']
                     if not isinstance(context, dict) or type(context['enabled']) is not bool:
                         raise ValueError('Contexto de filtrado inválido.')
-                    from .processing import FilterConfig
+                    from tps.core.processing import FilterConfig
                     FilterConfig(context['enabled'], context['low'], context['high'], context.get('notch')).validate(
                         self.recording.sfreq)
                 elif actual['state'] != STATES[0] or actual['filter'] is not None:
@@ -120,7 +120,7 @@ class AnnotationStore:
                             or any(c not in self.recording.channels for c in correction['excluded_channels'])):
                         raise ValueError('Contexto ICA inválido.')
                 if actual.get('screening') is not None:
-                    from .screening import ScreeningConfig
+                    from tps.core.screening import ScreeningConfig
                     screening = actual['screening']
                     if (not isinstance(screening, dict) or screening['method'] != 'peak_to_peak'
                             or actual['reviewed_at'] is None or actual['state'] == STATES[2]):
@@ -139,7 +139,7 @@ class AnnotationStore:
             state=state, reason=reason if state == STATES[2] else '', note=note,
             reviewed_at=datetime.now(timezone.utc).isoformat(), channels=list(channels),
             filter=config.context())
-        from .ica import context
+        from tps.core.ica import context
         self.records[index]['ica'] = context(self.recording)
         if screening is None:
             self.records[index].pop('screening', None)
@@ -162,7 +162,7 @@ class AnnotationStore:
         context = dict(method='peak_to_peak', high_uv=config.high_uv, flat_uv=config.flat_uv)
         filtering = result['filter']
         filter_context = filtering.context()
-        from .ica import context as ica_context
+        from tps.core.ica import context as ica_context
         channels = list(result['channels'])
         counts = dict(accepted=0, pending=0)
         for index, record in enumerate(self.records):

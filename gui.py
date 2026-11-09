@@ -27,7 +27,7 @@ def loading_window() -> tk.Tk:
 if __name__ == '__main__':
     root = loading_window()
     try:
-        from eeg_viewer.app import main
+        from tps.gui.app import main
     except ModuleNotFoundError as exc:
         root.destroy()
         raise SystemExit(

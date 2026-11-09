@@ -2,9 +2,9 @@
 
 Computes absolute and relative band power for **every subject, session (NS/SD), eye
 condition and EEG channel** of ds004902, without opening the GUI. All settings come from
-[`config.py`](../config.py), the single source of truth shared with the rest of the team.
+[`tps/config.py`](../tps/config.py), the single source of truth shared with the rest of the team.
 
-Every computation step reuses the GUI modules in `eeg_viewer/`, so a recording gives the
+Every computation step reuses the core modules in `tps/core/`, so a recording gives the
 same numbers here and in the GUI with the same settings:
 
 | Step | Function reused |
@@ -22,14 +22,16 @@ same numbers here and in the GUI with the same settings:
 From the project folder, with the project's virtual environment:
 
 ```bash
-python -m batch.run_batch                      # everything (both eye conditions)
-python -m batch.run_batch --eyes open          # only eyes open
-python -m batch.run_batch --subjects 01 02     # only some subjects (01 or sub-01)
-python -m batch.run_batch --jobs 6             # 6 recordings in parallel
-python -m batch.run_batch --force              # recompute finished recordings
+python -m tps.pipeline.batch                      # everything (both eye conditions)
+python -m tps.pipeline.batch --eyes open          # only eyes open
+python -m tps.pipeline.batch --subjects 01 02     # only some subjects (01 or sub-01)
+python -m tps.pipeline.batch --jobs 6             # 6 recordings in parallel
+python -m tps.pipeline.batch --force              # recompute finished recordings
+python -m tps.pipeline.batch --subjects-file subsets/group20_seed2026.txt   # a fixed participant subset
+python -m tps.pipeline.batch --rejection-mode per_channel   # each channel keeps its own clean epochs
 ```
 
-On Windows: `.venv\Scripts\python.exe -m batch.run_batch ...`. One recording takes about
+On Windows: `.venv\Scripts\python.exe -m tps.pipeline.batch ...`. One recording takes about
 10 s per core; the whole dataset (218 recordings) takes ~6 min with `--jobs 6`.
 
 The run is **resumable**: each finished recording is cached in
@@ -81,7 +83,7 @@ Check `exclusions.csv` before interpreting frontal results.
 ## Tests
 
 ```bash
-python -m unittest discover -s tests -p "test_batch.py" -v
+python -m unittest discover -s tests -p "test_pipeline_batch.py" -v
 ```
 
 The tests use synthetic signals only (a 10 Hz sine must put > 90 % of its power in alpha,

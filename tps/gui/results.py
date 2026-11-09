@@ -1,7 +1,7 @@
 """«Resultados del grupo» tab and the per-study batch card.
 
 Shows what the batch pipeline, the statistics and the figures produced (results/), and runs
-those steps in a child process (eeg_viewer.pipeline) so the explorer stays usable.
+those steps in a child process (tps.gui.runner) so the explorer stays usable.
 """
 from __future__ import annotations
 
@@ -14,9 +14,9 @@ from tkinter import messagebox, ttk
 
 from PIL import Image, ImageTk
 
-from .pipeline import STEP_LABELS, STEPS, Options, Runner, missing_dependencies
-from .results_data import FILTER_COLUMNS, HEADINGS, TABLES, Results, filter_rows, fmt, number, sort_rows
-from .theme import (AMBER, AMBER_LIGHT, BG, CARD, ERROR, IRIS, IRIS_LIGHT, MUTED, TEXT, Tooltip,
+from tps.gui.runner import STEP_LABELS, STEPS, Options, Runner, missing_dependencies
+from tps.gui.results_data import FILTER_COLUMNS, HEADINGS, TABLES, Results, filter_rows, fmt, number, sort_rows
+from tps.gui.theme import (AMBER_LIGHT, BG, ERROR, IRIS, IRIS_LIGHT, MUTED, TEXT, Tooltip,
                     autowrap, callout, card)
 
 CANVAS_BG = '#10242a'
@@ -33,26 +33,16 @@ FIGURE_NAMES = {
     'topomap_open': 'Topomapas · ojos abiertos', 'topomap_closed': 'Topomapas · ojos cerrados',
     'psd_regions_open': 'PSD por región · ojos abiertos', 'psd_regions_closed': 'PSD por región · ojos cerrados',
     'paired_open': 'Potencia pareada · ojos abiertos', 'paired_closed': 'Potencia pareada · ojos cerrados',
+    'topomap_relative_open': 'Topomapas relativos · ojos abiertos',
+    'topomap_relative_closed': 'Topomapas relativos · ojos cerrados',
+    'paired_relative_open': 'Potencia relativa pareada · ojos abiertos',
+    'paired_relative_closed': 'Potencia relativa pareada · ojos cerrados',
     'theta_beta': 'Theta/beta frontal',
 }
-GROUP_CAPTION = 'Figura del análisis grupal de Tomás (scripts/analyze_group.py).'
-KIND_ES = {'topomap': 'Topomapa', 'pairs': 'Pares'}
-BAND_ES = {'delta': 'delta', 'theta': 'theta', 'alpha': 'alfa', 'beta': 'beta'}
 
 
 def figure_name(path: Path) -> str:
-    """Readable Spanish name; Tomás's files are named <kind>[_relative]_<eyes>_<band>."""
-    if path.stem in FIGURE_NAMES:
-        return FIGURE_NAMES[path.stem]
-    parts = path.stem.split('_')
-    if parts and parts[0] in KIND_ES:
-        relative = 'relative' in parts
-        eyes = next((EYES_ES[p].lower() for p in parts if p in EYES_ES), '')
-        band = next((BAND_ES[p] for p in parts if p in BAND_ES), '')
-        name = KIND_ES[parts[0]] + (' relativo' if relative and parts[0] == 'topomap' else
-                                    ' relativos' if relative else '')
-        return f'{name} · ojos {eyes} · {band} (Tomás)' if eyes and band else f'{name} (Tomás)'
-    return path.stem
+    return FIGURE_NAMES.get(path.stem, path.stem)
 
 
 HYPOTHESIS_COLUMNS = ('hypothesis', 'eyes', 'band', 'region', 'expected', 'observed', 'n',
@@ -178,6 +168,11 @@ class ResultsUI:
         self.cancel_run_button.pack(side='left', padx=6)
         ttk.Button(controls, text='Abrir carpeta de resultados',
                    command=lambda: self.open_results_path(self.results_dir)).pack(side='right')
+        report_button = ttk.Button(controls, text='Abrir informe',
+                                   command=lambda: self.open_results_path(self.results_dir / 'report.md'))
+        report_button.pack(side='right', padx=(6, 0))
+        Tooltip(report_button, 'results/report.md: todas las tablas, hipótesis y figuras con sus leyendas '
+                               'en un solo documento (lo genera el paso 3).')
         self.log_button = ttk.Button(controls, text='Mostrar registro ▾', command=self.toggle_run_log)
         self.log_button.pack(side='right', padx=6)
         progress_row = ttk.Frame(page, style='Card.TFrame')
@@ -194,11 +189,11 @@ class ResultsUI:
                                      'El explorador sigue disponible mientras tanto.')
         Tooltip(self.cancel_run_button, 'Detiene el paso en curso. El lote es reanudable: '
                                         'lo ya calculado se conserva.')
-        Tooltip(self.step_buttons['batch'], 'python -m batch.run_batch: filtra, divide en epochs, '
+        Tooltip(self.step_buttons['batch'], 'python -m tps.pipeline.batch: filtra, divide en epochs, '
                                             'aplica el barrido y calcula la potencia de cada registro.')
-        Tooltip(self.step_buttons['stats'], 'python -m analysis.stats: regiones, pruebas pareadas SD vs NS, '
+        Tooltip(self.step_buttons['stats'], 'python -m tps.analysis.stats: regiones, pruebas pareadas SD vs NS, '
                                             'FDR, orden de sesión y clusters.')
-        Tooltip(self.step_buttons['figures'], 'python -m analysis.figures: figuras, leyendas y tabla de hipótesis.')
+        Tooltip(self.step_buttons['figures'], 'python -m tps.analysis.figures: figuras, leyendas y tabla de hipótesis.')
         Tooltip(self.force_toggle, 'Desactivado: solo procesa los registros nuevos o afectados por '
                                    'un cambio de config.py.')
 
@@ -435,12 +430,11 @@ class ResultsUI:
 
     def hypothesis_statements(self) -> str:
         try:
-            sys.path.insert(0, str(self.project_dir))
-            from analysis.hypotheses import HYPOTHESES   # needs pandas; text falls back below
+            from tps.analysis.hypotheses import HYPOTHESES   # needs pandas; text falls back below
         except Exception:
-            return 'H1–H4: ver analysis/hypotheses.md (referencias pendientes, TODO).'
+            return 'H1–H4: ver docs/hypotheses.md (referencias pendientes, TODO).'
         lines = [f'{h.id}: {h.statement}' for h in HYPOTHESES]
-        return '\n'.join(lines) + '\nReferencias: pendientes de verificación (TODO en analysis/hypotheses.md).'
+        return '\n'.join(lines) + '\nReferencias: pendientes de verificación (TODO en docs/hypotheses.md).'
 
     # ----------------------------------------------------------------- tables
     def current_table(self) -> str | None:
@@ -492,8 +486,8 @@ class ResultsUI:
                          command=lambda c=column: self.show_table(sort=c))
             width = 260 if column in ('reason', 'channels', 'note', 'file') else 95
             tree.column(column, width=width, minwidth=50, stretch=column in ('reason', 'channels'))
-        significant = next((c for c in ('p_fdr_wilcoxon', 'p_cluster', 'p_fdr_mannwhitney', 'fdr_q_value',
-                                        'q_absolute') if c in columns), None)
+        significant = next((c for c in ('p_fdr_wilcoxon', 'p_fdr_wilcoxon_absolute', 'p_cluster',
+                                        'p_fdr_mannwhitney') if c in columns), None)
         for row in shown:
             p = number(row.get(significant, '')) if significant else None
             tag = ('significativa',) if p is not None and p < 0.05 else ()
@@ -554,9 +548,7 @@ class ResultsUI:
             self.draw_figure()
             return
         self.figure_title.set(figure_name(path))
-        tomas = path.parent != self.results.figures_dir
-        self.figure_caption.set(GROUP_CAPTION if tomas else
-                                self.figure_captions.get(path.stem, 'Sin leyenda en captions.md.'))
+        self.figure_caption.set(self.figure_captions.get(path.stem, 'Sin leyenda en captions.md.'))
         self.figure_fit = True
         self.figure_size = None
         self.draw_figure()

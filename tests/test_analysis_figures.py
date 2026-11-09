@@ -18,9 +18,9 @@ class FigureTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Synthetic batch + statistics outputs in a temporary results folder."""
-        from analysis.regions import REGIONS, frontal_theta_beta
-        from analysis.stats import cluster_tests, montage_channels, run_all
-        from analysis.figures import standard_info
+        from tps.analysis.regions import REGIONS, frontal_theta_beta
+        from tps.analysis.stats import cluster_tests, montage_channels, run_all
+        from tps.analysis.figures import standard_info
         from synthetic_features import make_features, make_psd, theta_beta_from
         cls.temp = tempfile.TemporaryDirectory()
         cls.results = Path(cls.temp.name)
@@ -36,7 +36,7 @@ class FigureTests(unittest.TestCase):
         clusters, channels = cluster_tests(features, standard_info(montage_channels(features)), 100)
         clusters.to_csv(cls.results / 'cluster_results.csv', index=False)
         cls.clusters = clusters
-        from analysis.figures import make_all
+        from tps.analysis.figures import make_all
         cls.out = cls.results / 'figures'
         cls.made = make_all(cls.results, cls.out)   # built once: many subplots make this slow
 
@@ -46,7 +46,8 @@ class FigureTests(unittest.TestCase):
 
     def test_make_all_saves_every_figure_and_caption(self):
         out, made = self.out, self.made
-        expected = [f'{kind}_{eyes}' for kind in ('topomap', 'psd_regions', 'paired')
+        expected = [f'{kind}_{eyes}' for kind in ('topomap', 'psd_regions', 'paired', 'topomap_relative',
+                                                  'paired_relative')
                     for eyes in ('open', 'closed')] + ['theta_beta']
         for name in expected:
             self.assertIn(name, made)
@@ -60,14 +61,27 @@ class FigureTests(unittest.TestCase):
             self.assertIn(f'## {name}', captions)
         self.assertNotIn('nan', captions.lower().replace('nan ', ''))
 
+    def test_report_collects_tables_hypotheses_and_figures(self):
+        """results/report.md replaces the former notebooks: one document with every result."""
+        report = (self.results / 'report.md').read_text(encoding='utf-8')
+        for section in ('## Region mapping', '## Participants', '## Epochs used per session',
+                        '## Band power by region', '## Relative power', '## Absolute vs relative power',
+                        '## Sensitivity', '## Frontal theta/beta ratio', '## Session order check',
+                        '## Significant electrode clusters', '## Hypotheses', '## Figures'):
+            self.assertIn(section, report)
+        for name in self.made:
+            if name != 'hypothesis_summary':
+                self.assertIn(f'](figures/{name}.png)', report)   # every figure, linked relative to results/
+        self.assertNotIn('nan |', report.lower())
+
     def test_topomap_marks_significant_cluster_channels(self):
-        from analysis.figures import significant_channels
+        from tps.analysis.figures import significant_channels
         marked = significant_channels(self.clusters, 'open', 'theta')
         self.assertGreater(len(marked), 30)   # theta shift was simulated everywhere
         self.assertEqual(significant_channels(None, 'open', 'theta'), set())
 
     def test_hypothesis_summary_reflects_simulated_effects(self):
-        from analysis.hypotheses import HYPOTHESES, agreement
+        from tps.analysis.hypotheses import HYPOTHESES, agreement
         table = pd.read_csv(self.out / 'hypothesis_summary.csv')
         self.assertEqual(set(table['hypothesis']), {h.id for h in HYPOTHESES})
         theta = table[(table['hypothesis'] == 'H1') & (table['band'] == 'theta') & (table['eyes'] == 'open')]
@@ -86,13 +100,13 @@ class FigureTests(unittest.TestCase):
         self.assertEqual(agreement(None, 0.1, 0.01), 'exploratory: significant')
 
     def test_references_are_todo_not_invented(self):
-        from analysis.hypotheses import HYPOTHESES
+        from tps.analysis.hypotheses import HYPOTHESES
         for h in HYPOTHESES:
             for ref in h.references:
                 self.assertEqual((ref.authors, ref.year, ref.doi), ('TODO', 'TODO', 'TODO'))
 
     def test_missing_psd_skips_only_that_figure(self):
-        from analysis.figures import make_all
+        from tps.analysis.figures import make_all
         with tempfile.TemporaryDirectory() as folder:
             folder = Path(folder)
             for name in ('features_long.csv', 'features_region.csv', 'theta_beta.csv',

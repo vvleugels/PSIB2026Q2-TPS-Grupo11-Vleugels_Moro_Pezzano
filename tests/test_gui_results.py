@@ -10,8 +10,8 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from eeg_viewer.pipeline import Options, Runner, command, missing_dependencies, parse_progress
-from eeg_viewer.results_data import Results, filter_rows, fmt, sort_rows
+from tps.gui.runner import Options, Runner, command, missing_dependencies, parse_progress
+from tps.gui.results_data import Results, filter_rows, fmt, sort_rows
 
 try:
     import pandas as pd
@@ -30,8 +30,8 @@ def write_csv(path, rows):
 
 def build_results(folder: Path) -> None:
     """A small but complete results/ folder: batch tables, statistics, figures and captions."""
-    from analysis.figures import make_all
-    from analysis.stats import run_all
+    from tps.analysis.figures import make_all
+    from tps.analysis.stats import run_all
     from synthetic_features import make_features, make_psd, theta_beta_from
     features = make_features(6, {('theta', 'frontal'): 0.2}, ('open',), noise=0.1)
     features.to_csv(folder / 'features_long.csv', index=False)
@@ -81,7 +81,8 @@ class ResultsDataTests(unittest.TestCase):
         self.assertIn('stats_region_log_power', results.available_tables())
         self.assertIn('exclusions', results.available_tables())
         names = [p.stem for p in results.figure_list()]
-        self.assertEqual(names[:2], ['topomap_open', 'psd_regions_open'])   # EO first, closed absent
+        # Eyes open only here (no EC data): absolute, then relative topomaps, then PSDs.
+        self.assertEqual(names[:3], ['topomap_open', 'topomap_relative_open', 'psd_regions_open'])
         captions = results.captions()
         self.assertIn('topomap_open', captions)
         self.assertFalse(captions['topomap_open'].startswith('File:'))
@@ -115,6 +116,12 @@ class ResultsDataTests(unittest.TestCase):
                 (other / name).write_bytes((self.folder / name).read_bytes())
             (other / 'config_used.json').write_text(json.dumps({'config_hash': 'old'}))
             self.assertTrue(Results(other).status()['batch'].stale)
+            # The batch's combined cache key differs from the settings fingerprint (it also
+            # includes the ICA mode and folders); only settings_hash decides staleness.
+            from tps.pipeline.batch import config_hash
+            (other / 'config_used.json').write_text(json.dumps(
+                {'config_hash': 'run-specific', 'settings_hash': config_hash()}))
+            self.assertFalse(Results(other).status()['batch'].stale)
 
     def test_filter_sort_and_format(self):
         rows = [dict(eyes='open', band='theta', p='0.2'), dict(eyes='closed', band='theta', p='0.01'),
@@ -132,14 +139,14 @@ class PipelineTests(unittest.TestCase):
     def test_commands_and_progress(self):
         out = Path('results')
         batch = command('batch', Options(eyes='closed', jobs=3, force=True), out)
-        self.assertEqual(batch[1:3], ['-m', 'batch.run_batch'])
+        self.assertEqual(batch[1:3], ['-m', 'tps.pipeline.batch'])
         self.assertIn('--force', batch)
         self.assertEqual(batch[batch.index('--eyes') + 1], 'closed')
         self.assertEqual(batch[batch.index('--jobs') + 1], '3')
         self.assertNotIn('--eyes', command('batch', Options(), out))
         stats = command('stats', Options(permutations=200), out)
         self.assertEqual(stats[stats.index('--permutations') + 1], '200')
-        self.assertIn('analysis.figures', command('figures', Options(), out))
+        self.assertIn('tps.analysis.figures', command('figures', Options(), out))
         self.assertEqual(parse_progress('2026 INFO [25/100] sub-01 (12s) ...'), 25.0)
         self.assertIsNone(parse_progress('Session order: written'))
         self.assertEqual(missing_dependencies('batch'), [])
@@ -166,7 +173,7 @@ class PipelineTests(unittest.TestCase):
     def test_cancel_stops_the_step_and_the_next_ones(self):
         from unittest import mock
         slow = [sys.executable, '-c', 'import time; print("[1/2] started", flush=True); time.sleep(60)']
-        with tempfile.TemporaryDirectory() as folder,                 mock.patch('eeg_viewer.pipeline.command', return_value=slow):
+        with tempfile.TemporaryDirectory() as folder,                 mock.patch('tps.gui.runner.command', return_value=slow):
             runner = Runner(PROJECT, Path(folder))
             started = time.monotonic()
             runner.start(['batch', 'stats'], Options())
@@ -188,7 +195,7 @@ class PipelineTests(unittest.TestCase):
     def test_cancel_during_start_still_kills(self):
         from unittest import mock
         slow = [sys.executable, '-c', 'import time; time.sleep(60)']
-        with tempfile.TemporaryDirectory() as folder,                 mock.patch('eeg_viewer.pipeline.command', return_value=slow):
+        with tempfile.TemporaryDirectory() as folder,                 mock.patch('tps.gui.runner.command', return_value=slow):
             runner = Runner(PROJECT, Path(folder))
             started = time.monotonic()
             runner.start(['batch'], Options())
@@ -213,8 +220,8 @@ class ResultsTabTests(unittest.TestCase):
 
     def setUp(self):
         import tkinter as tk
-        from eeg_viewer.app import App
-        from test_data import make_recording
+        from tps.gui.app import App
+        from test_core_data import make_recording
         try:
             self.root = tk.Tk()
         except tk.TclError as exc:

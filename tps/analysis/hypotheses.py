@@ -1,6 +1,6 @@
 """Pre-specified hypotheses (band, region, expected direction) and their evaluation.
 
-The text version, with rationale, is analysis/hypotheses.md. References are left as TODO on
+The text version, with rationale, is docs/hypotheses.md. References are left as TODO on
 purpose: they must be filled in only after the papers have been verified.
 """
 from __future__ import annotations
@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
-from analysis.regions import REGIONS
+from tps.analysis.regions import REGIONS
 
 ALPHA = 0.05
 INCREASE, DECREASE, NONE = '+', '-', None
@@ -41,7 +41,7 @@ HYPOTHESES: tuple[Hypothesis, ...] = (
     Hypothesis(
         'H1', 'Delta and theta power increase after SD, largest over frontal / fronto-central regions.',
         bands=('delta', 'theta'), regions=('frontal', 'central'), direction=INCREASE,
-        note='Fronto-central sites (FC*) belong to the "central" region in analysis/regions.py.'),
+        note='Fronto-central sites (FC*) belong to the "central" region in tps/analysis/regions.py.'),
     Hypothesis(
         'H2', 'Alpha power decreases after SD, largest over posterior regions; expected clearer '
               'with eyes closed than eyes open. Prior findings are mixed (both decreases and '

@@ -6,8 +6,8 @@ import tkinter as tk
 import unittest
 from unittest.mock import patch
 
-from eeg_viewer.app import App
-from test_ica import fixture
+from tps.gui.app import App
+from test_core_ica import fixture
 
 
 class ICAGuiTests(unittest.TestCase):
@@ -50,7 +50,7 @@ class ICAGuiTests(unittest.TestCase):
         self.assertEqual(len(a.ica_figure.axes), 3)
         a.preview_ica(); self.wait()
         self.assertEqual(len(a.ica_figure.axes[0].lines), 2)
-        with patch('eeg_viewer.ica_ui.messagebox.askyesno', return_value=True):
+        with patch('tps.gui.ica.messagebox.askyesno', return_value=True):
             a.confirm_ica(); self.wait()
         revision = a.recording.ica_context['revision']
         self.assertIn(revision[:8], a.signal_label.get())

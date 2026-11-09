@@ -15,9 +15,9 @@ import mne
 import numpy as np
 import scipy
 
-from .data import discover, open_recording
-from .processing import FilterConfig
-from .validation import ProcessingConfig, RuleProfile, epochs4, valid_position
+from tps.core.data import discover, open_recording
+from tps.core.processing import FilterConfig
+from tps.validation.engine import ProcessingConfig, RuleProfile, epochs4, valid_position
 
 
 def utc():
@@ -65,9 +65,11 @@ def export_new(path, value):
 
 
 def versions():
-    package = Path(__file__).parent
-    implementation = {name: sha(package / name) for name in
-                      ('validation.py', 'validation_session.py', 'validation_store.py', 'processing.py')}
+    package = Path(__file__).resolve().parents[1]
+    # Keys keep the original file names so earlier records stay comparable.
+    files = {'validation.py': 'validation/engine.py', 'validation_session.py': 'validation/session.py',
+             'validation_store.py': 'validation/store.py', 'processing.py': 'core/processing.py'}
+    implementation = {name: sha(package / path) for name, path in files.items()}
     return dict(python=platform.python_version(), mne=mne.__version__,
                 numpy=np.__version__, scipy=scipy.__version__, implementation=implementation)
 
@@ -353,7 +355,7 @@ def freeze_profile(sample, revisions, output):
     profiles = {digest_json(r.data['profile']) for r in loaded}
     if len(profiles) != 1:
         raise ValueError('Todas las calibraciones deben usar el mismo perfil definitivo.')
-    from .validation_session import ValidationSession
+    from tps.validation.session import ValidationSession
     evidence = []
     for r in loaded:
         session = ValidationSession(r)

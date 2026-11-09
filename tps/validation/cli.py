@@ -3,10 +3,10 @@ import argparse
 import json
 from pathlib import Path
 
-from .validation_session import ValidationSession
-from .validation_store import Revision, create_sample, export_new, freeze_profile
+from tps.validation.session import ValidationSession
+from tps.validation.store import Revision, create_sample, export_new, freeze_profile
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def main(argv=None):
@@ -47,10 +47,10 @@ def main(argv=None):
             revision = Revision.create(args.annotations, matches[0], args.sample, frozen=args.frozen)
             print(revision.directory.absolute())
             if args.open:
-                from .validation_ui import launch
+                from tps.validation.ui import launch
                 launch(revision)
         elif args.command == 'review':
-            from .validation_ui import launch
+            from tps.validation.ui import launch
             launch(Revision(args.revision))
         elif args.command == 'freeze':
             freeze_profile(args.sample, args.revisions, args.output)

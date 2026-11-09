@@ -17,6 +17,8 @@ import re
 TABLES = {
     'stats_region_log_power': 'Potencia por región (log10), SD vs NS',
     'stats_region_rel_power': 'Potencia relativa por región, SD vs NS',
+    'stats_relative_vs_absolute': 'Relativa vs absoluta por región',
+    'stats_region_log_power_min20': 'Potencia por región, solo registros con ≥ 20 epochs',
     'stats_frontal_theta_beta': 'Theta/beta frontal, SD vs NS',
     'stats_session_order': 'Control del orden de sesión',
     'stats_epochs': 'Epochs usadas por sesión',
@@ -25,20 +27,7 @@ TABLES = {
     'exclusions': 'Exclusiones del lote',
     'recordings_summary': 'Resumen por registro',
     'features_region': 'Potencia por región y participante',
-    'tomas_stats_table': 'Estadística regional absoluta (Tomás)',
-    'tomas_stats_relative_vs_absolute': 'Relativa vs absoluta por región (Tomás)',
-    'tomas_group_summary': 'Resumen del grupo (Tomás)',
-    'tomas_epochs_and_exclusions': 'Epochs y exclusiones por sesión (Tomás)',
-}
-# Tomás's group analysis (scripts/analyze_group.py) writes here; its tables and figures are
-# shown in the same tab as ours instead of in a separate read-only tab.
-GROUP_ANALYSIS_DIR = Path('group20-channel-2026') / 'analysis'
-# Tables that do not live at results/<name>.csv.
-TABLE_PATHS = {
-    'tomas_stats_table': GROUP_ANALYSIS_DIR / 'stats_table.csv',
-    'tomas_stats_relative_vs_absolute': GROUP_ANALYSIS_DIR / 'stats_relative_vs_absolute.csv',
-    'tomas_group_summary': GROUP_ANALYSIS_DIR / 'group_summary.csv',
-    'tomas_epochs_and_exclusions': GROUP_ANALYSIS_DIR / 'epochs_and_exclusions_by_session_condition.csv',
+    'channel_regions': 'Canales por región',
 }
 # Readable Spanish column headings; unknown columns keep their own name.
 HEADINGS = {
@@ -58,6 +47,14 @@ HEADINGS = {
     'p_fdr_mannwhitney': 'p FDR', 'n_ns_first': 'n NS primero', 'n_sd_first': 'n SD primero',
     'hypothesis': 'Hipótesis', 'expected': 'Esperado', 'observed': 'Observado',
     'p_corrected': 'p corregido', 'agreement': 'Acuerdo', 'largest_region': 'Región mayor efecto',
+    'mean_diff_absolute': 'Dif. media absoluta (log10)', 'mean_diff_relative': 'Dif. media relativa (pp)',
+    'p_fdr_wilcoxon_absolute': 'p FDR absoluta', 'p_fdr_wilcoxon_relative': 'p FDR relativa',
+    'significant_absolute': 'Signif. absoluta', 'significant_relative': 'Signif. relativa',
+    'same_direction': 'Mismo sentido', 'min_clean_epochs': 'Mín. epochs',
+    'n_absolute': 'n absoluta', 'n_relative': 'n relativa',
+    'rank_biserial_absolute': 'r biserial absoluta', 'rank_biserial_relative': 'r biserial relativa',
+    'cohens_dz_absolute': 'd_z absoluta', 'cohens_dz_relative': 'd_z relativa',
+    'p_wilcoxon_absolute': 'p Wilcoxon absoluta', 'p_wilcoxon_relative': 'p Wilcoxon relativa',
 }
 FILTER_COLUMNS = ('eyes', 'ses', 'band', 'region', 'sub')
 BANDS = ('delta', 'theta', 'alpha', 'beta')
@@ -68,7 +65,7 @@ def read_csv(path: Path) -> list[dict[str, str]]:
     """Rows of a CSV file as dicts of strings; [] if the file does not exist."""
     if not path.is_file():
         return []
-    # utf-8-sig also reads files written with a byte-order mark (Tomás's CSVs have one).
+    # utf-8-sig also reads files written with a byte-order mark (e.g. saved from Excel).
     with path.open(encoding='utf-8-sig', newline='') as stream:
         return list(csv.DictReader(stream))
 
@@ -142,7 +139,7 @@ class Results:
         self._cache: dict[str, list[dict]] = {}
 
     def table_path(self, name: str) -> Path:
-        return self.directory / TABLE_PATHS.get(name, Path(f'{name}.csv'))
+        return self.directory / f'{name}.csv'
 
     def table(self, name: str) -> list[dict[str, str]]:
         if name not in self._cache:
@@ -164,10 +161,10 @@ class Results:
         except (OSError, ValueError):
             return False
         try:
-            from batch.run_batch import config_hash   # project module; absent in some test setups
+            from tps.pipeline.batch import config_hash   # project module; absent in some test setups
         except Exception:
             return False
-        return used.get('config_hash') != config_hash()
+        return used.get('settings_hash', used.get('config_hash')) != config_hash()
 
     def status(self) -> dict[str, StepStatus]:
         """Done / missing / outdated state of the batch, statistics and figures steps."""
@@ -194,29 +191,14 @@ class Results:
 
     # ----------------------------------------------------------------------- figures
     def figure_list(self) -> list[Path]:
-        """PNG figures in a stable, meaningful order (ours first, eyes open first), then Tomás's."""
+        """PNG figures in a stable, meaningful order (eyes open first, absolute before relative)."""
         if not self.figures_dir.is_dir():
-            return self.group_figures()
-        order = ['topomap_open', 'topomap_closed', 'psd_regions_open', 'psd_regions_closed',
-                 'paired_open', 'paired_closed', 'theta_beta']
-        files = {p.stem: p for p in self.figures_dir.glob('*.png')}
-        ours = [files[n] for n in order if n in files] + sorted(p for n, p in files.items() if n not in order)
-        return ours + self.group_figures()
-
-    def group_figures(self) -> list[Path]:
-        """Tomás's PNGs (topomaps and paired plots, absolute and relative), after ours."""
-        folder = self.directory / GROUP_ANALYSIS_DIR
-        if not folder.is_dir():
             return []
-        eyes = {'open': 0, 'closed': 1}
-        bands = {'delta': 0, 'theta': 1, 'alpha': 2, 'beta': 3}
-
-        def key(path: Path):
-            parts = path.stem.split('_')
-            return (parts[0] != 'topomap', 'relative' in parts,
-                    min((eyes[p] for p in parts if p in eyes), default=9),
-                    min((bands[p] for p in parts if p in bands), default=9), path.stem)
-        return sorted(folder.glob('*.png'), key=key)
+        order = ['topomap_open', 'topomap_closed', 'topomap_relative_open', 'topomap_relative_closed',
+                 'psd_regions_open', 'psd_regions_closed', 'paired_open', 'paired_closed',
+                 'paired_relative_open', 'paired_relative_closed', 'theta_beta']
+        files = {p.stem: p for p in self.figures_dir.glob('*.png')}
+        return [files[n] for n in order if n in files] + sorted(p for n, p in files.items() if n not in order)
 
     def captions(self) -> dict[str, str]:
         """{figure name: caption text} parsed from figures/captions.md."""

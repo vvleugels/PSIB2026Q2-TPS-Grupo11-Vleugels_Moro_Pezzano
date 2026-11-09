@@ -10,13 +10,13 @@ from unittest.mock import patch
 import mne
 import numpy as np
 
-from eeg_viewer.validation import (CleanResult, ICAResult, RuleProfile, assess, epochs4,
+from tps.validation.engine import (CleanResult, ICAResult, RuleProfile, assess, epochs4,
                                   evaluation_report, finalize, fit_ica, interpolate,
                                   prepare, proposals, robust_scores)
-from eeg_viewer.validation_store import (Revision, atomic_write, digest_json, encode,
+from tps.validation.store import (Revision, atomic_write, digest_json, encode,
                                         freeze_profile, read_frozen, sha)
-from eeg_viewer.validation_session import ValidationSession
-from eeg_viewer.validation_ui import indices
+from tps.validation.session import ValidationSession
+from tps.validation.ui import indices
 
 
 def synthetic(seconds=40, positions=True):
@@ -82,7 +82,7 @@ class ValidationEngineTests(unittest.TestCase):
     def test_nonfinite_rejected_before_filter(self):
         raw = synthetic()
         raw._data[0, 123] = np.nan
-        with patch('eeg_viewer.validation.ContinuousFilter') as filtering:
+        with patch('tps.validation.engine.ContinuousFilter') as filtering:
             with self.assertRaisesRegex(ValueError, 'no finitas'):
                 prepare(raw)
             filtering.assert_not_called()
@@ -115,14 +115,14 @@ class ValidationEngineTests(unittest.TestCase):
 
     def test_ica_nonconvergence_blocks_result(self):
         prepared = prepare(synthetic())
-        with patch('eeg_viewer.validation.mne.preprocessing.ICA') as factory:
+        with patch('tps.validation.engine.mne.preprocessing.ICA') as factory:
             factory.return_value.n_iter_ = 1000
             with self.assertRaisesRegex(ValueError, 'no convergió'):
                 fit_ica(prepared)
 
     def test_ica_excludes_partial_and_marked_epochs_and_passes_effective_rank(self):
         p = prepare(synthetic(40.5), ['Fp1'])
-        with patch('eeg_viewer.validation.mne.preprocessing.ICA') as factory:
+        with patch('tps.validation.engine.mne.preprocessing.ICA') as factory:
             ica = factory.return_value
             ica.n_iter_ = 10
             def trace(*args, **kwargs):
@@ -148,7 +148,7 @@ class ValidationEngineTests(unittest.TestCase):
         adjusted = p.analysis.copy()
         adjusted._data[4, :400] *= 50
         before = adjusted.get_data().copy()
-        with patch('eeg_viewer.validation.apply_components', return_value=adjusted):
+        with patch('tps.validation.engine.apply_components', return_value=adjusted):
             result = finalize(p, None, [], profile=RuleProfile(robust_z=100))
         self.assertNotIn('Fp1', result.reference_channels)
         self.assertIn('Cz', result.reference_channels)
@@ -275,7 +275,7 @@ class RevisionTests(unittest.TestCase):
         atomic_write(self.sample, encode(dict(records=[self.source])))
         with self.assertRaisesRegex(ValueError, 'Congelar'):
             self.revision()
-        from eeg_viewer.validation import ProcessingConfig
+        from tps.validation.engine import ProcessingConfig
         frozen = self.root / 'frozen.json'
         profile = asdict(RuleProfile())
         atomic_write(frozen, encode(dict(version=1, status='frozen_for_evaluation',
@@ -317,7 +317,7 @@ class RevisionTests(unittest.TestCase):
         r.complete_blind()
         def recording(_):
             return SimpleNamespace(raw=raw.copy(), sfreq=100., close=lambda: None)
-        with patch('eeg_viewer.validation_session.open_recording', side_effect=recording):
+        with patch('tps.validation.session.open_recording', side_effect=recording):
             s = ValidationSession(r)
             s.fit([], [])
             s.clean([], [])

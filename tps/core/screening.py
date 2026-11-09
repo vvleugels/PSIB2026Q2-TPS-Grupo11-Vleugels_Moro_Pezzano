@@ -4,8 +4,8 @@ import math
 
 import numpy as np
 
-from .annotations import make_epochs
-from .processing import FilterConfig
+from tps.core.annotations import make_epochs
+from tps.core.processing import FilterConfig
 
 SCAN_BLOCK = 16  # channels read (or sliced) together while scanning
 

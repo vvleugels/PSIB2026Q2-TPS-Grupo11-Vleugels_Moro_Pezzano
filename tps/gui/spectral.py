@@ -5,9 +5,9 @@ from tkinter import ttk, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-from .theme import BG, CARD, IRIS, IRIS_LIGHT, TEXT, style_dialog
-from .processing import FilterConfig
-from .spectral import SpectralConfig, select_studies, run_analysis, plot_result, export_result
+from tps.gui.theme import BG, CARD, IRIS, IRIS_LIGHT, TEXT, style_dialog
+from tps.core.processing import FilterConfig
+from tps.core.spectral import SpectralConfig, select_studies, run_analysis, plot_result, export_result
 
 
 # Tabla de bandas: (id, encabezado, ancho). Al comparar NS/SD, cada banda ocupa una fila
@@ -250,7 +250,7 @@ class SpectralUI:
         include = self.include_unreviewed.get()
         ica_selections = None
         if self.recording.ica_context is not None:
-            from .ica import snapshot
+            from tps.core.ica import snapshot
             ica_selections = snapshot(studies, self.data_dir, self.annotations_dir, 'confirmed')
             current = self.recording.ica_context
             ica_selections[str(self.recording.study.path)] = dict(

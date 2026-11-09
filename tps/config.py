@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from eeg_viewer.processing import FilterConfig
-from eeg_viewer.screening import ScreeningConfig
-from eeg_viewer.spectral import SpectralConfig
+from tps.core.processing import FilterConfig
+from tps.core.screening import ScreeningConfig
+from tps.core.spectral import SpectralConfig
 
-PROJECT_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = Path(__file__).resolve().parents[1]   # tps/config.py -> project folder
 DATA_DIR = PROJECT_DIR / 'data'
 RESULTS_DIR = PROJECT_DIR / 'results'
 
@@ -23,7 +23,7 @@ FILTER = FilterConfig(enabled=True, low=0.2, high=45.0)
 
 # Epochs: 5 s, non-overlapping, starting at sample 0. Only complete epochs are used;
 # the trailing partial epoch (if any) is discarded. The length is fixed by
-# eeg_viewer.annotations.make_epochs, which the GUI also uses.
+# tps.core.annotations.make_epochs, which the GUI also uses.
 EPOCH_SECONDS = 5.0
 
 # Welch: 2 s Hann (periodic) segments, 50 % overlap, density scaling, mean average.
@@ -52,6 +52,16 @@ BAD_CHANNEL_MAX_FRACTION: float | None = 0.30
 # for stable estimates, so recordings below this are excluded rather than reported
 # with very noisy spectra.
 MIN_CLEAN_EPOCHS = 12
+
+# Epoch rejection mode.
+# 'global' (default): an epoch is rejected for every channel when any non-bad channel fails
+#   it, so all channels of a recording use the same epochs.
+# 'per_channel': each channel keeps the epochs in which it passed screening (its own epochs);
+#   a channel with fewer than MIN_CHANNEL_EPOCHS clean epochs is excluded. This was the
+#   'channel' rejection mode of the former 20-participant group pipeline.
+# The batch can override it with --rejection-mode.
+REJECTION_MODE = 'global'
+MIN_CHANNEL_EPOCHS = 10
 
 SESSIONS = {'ses-1': 'NS', 'ses-2': 'SD'}
 EYES = {'eyesopen': 'open', 'eyesclosed': 'closed'}

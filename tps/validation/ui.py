@@ -6,15 +6,14 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-import mne
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 from scipy.signal import welch
 
-from .validation import RuleProfile, apply_components
-from .validation_session import ValidationSession
-from .validation_store import export_new
+from tps.validation.engine import RuleProfile
+from tps.validation.session import ValidationSession
+from tps.validation.store import export_new
 
 
 def indices(text, maximum):

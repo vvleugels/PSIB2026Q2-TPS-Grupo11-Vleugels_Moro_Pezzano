@@ -6,9 +6,9 @@ import tkinter as tk
 import unittest
 from unittest.mock import patch
 
-from eeg_viewer.validation_store import Revision, atomic_write, encode
-from eeg_viewer.validation_ui import ValidationApp
-import test_validation as fixtures
+from tps.validation.store import Revision, atomic_write, encode
+from tps.validation.ui import ValidationApp
+import test_validation_engine as fixtures
 
 
 class ValidationGuiTests(unittest.TestCase):
@@ -24,7 +24,7 @@ class ValidationGuiTests(unittest.TestCase):
         atomic_write(self.sample, encode(dict(records=[self.source])))
         self.revision = Revision.create(self.annotations, self.source, self.sample)
         recording = SimpleNamespace(raw=raw, sfreq=100., close=raw.close)
-        loader = patch('eeg_viewer.validation_session.open_recording', return_value=recording)
+        loader = patch('tps.validation.session.open_recording', return_value=recording)
         loader.start()
         self.addCleanup(loader.stop)
         self.app = ValidationApp(self.tkroot, self.revision)
