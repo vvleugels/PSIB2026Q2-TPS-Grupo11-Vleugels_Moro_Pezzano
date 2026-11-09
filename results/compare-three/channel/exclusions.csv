@@ -1,2 +1,0 @@
-﻿participant,session,session_condition,eyes,SessionOrder,recording,channel,reason
-sub-13,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-13_ses-2_task-eyesopen_eeg.set,Fp1,0 epochs limpias; mínimo requerido: 10 (modo channel).

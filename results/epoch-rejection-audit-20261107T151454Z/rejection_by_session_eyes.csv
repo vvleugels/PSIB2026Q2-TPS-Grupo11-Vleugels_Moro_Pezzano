@@ -1,5 +1,0 @@
-﻿session,condition,eyes,complete_records,epochs_total,epochs_rejected,pooled_rejection_proportion,mean_record_rejection_proportion
-ses-1,NS,closed,26,1560,781,0.5006410256410256,0.5006410256410256
-ses-1,NS,open,60,3590,2598,0.7236768802228413,0.7243888888888889
-ses-2,SD,closed,28,1680,728,0.43333333333333335,0.4333333333333333
-ses-2,SD,open,58,3459,2920,0.8441746169413126,0.8428745789042534

@@ -1,5 +1,0 @@
-﻿metric,value
-participant_count,20
-participants,"sub-12, sub-13, sub-15, sub-16, sub-19, sub-21, sub-22, sub-23, sub-25, sub-26, sub-27, sub-29, sub-30, sub-31, sub-32, sub-33, sub-34, sub-36, sub-37, sub-38"
-rejection_mode,channel
-channel_exclusion_counts,Ver epochs_and_exclusions_by_session_condition.csv; conteo inferido de canales ausentes

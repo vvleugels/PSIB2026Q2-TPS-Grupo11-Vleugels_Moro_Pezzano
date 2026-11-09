@@ -1,5 +1,0 @@
-﻿participant,session,session_condition,eyes,SessionOrder,recording,reason
-sub-11,ses-1,Sueño normal,Ojos abiertos,SD->NS,sub-11_ses-1_task-eyesopen_eeg.set,No se encontró el archivo .set esperado.
-sub-11,ses-1,Sueño normal,Ojos cerrados,SD->NS,sub-11_ses-1_task-eyesclosed_eeg.set,No se encontró el archivo .set esperado.
-sub-11,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-11_ses-2_task-eyesopen_eeg.set,No se encontró el archivo .set esperado.
-sub-13,ses-2,Privación del sueño,Ojos abiertos,SD->NS,sub-13_ses-2_task-eyesopen_eeg.set,No quedaron epochs completas utilizables.
