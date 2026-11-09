@@ -14,16 +14,18 @@ if not exist ".venv\Scripts\python.exe" (
     )
 )
 
-if not exist ".venv\TPS-dependencies-installed" (
+rem The marker name changed when the analysis packages (pandas, Jupyter) were added, so
+rem existing environments install them once. requirements-analysis.txt includes requirements.txt.
+if not exist ".venv\TPS-analysis-dependencies-installed" (
     echo Instalando dependencias. Esto puede tardar unos minutos...
-    ".venv\Scripts\python.exe" -m pip install -r requirements.txt
+    ".venv\Scripts\python.exe" -m pip install -r requirements-analysis.txt
     if errorlevel 1 (
         echo.
         echo No se pudieron instalar las dependencias. Revisa tu conexion e intenta de nuevo.
         pause
         exit /b 1
     )
-    type nul > ".venv\TPS-dependencies-installed"
+    type nul > ".venv\TPS-analysis-dependencies-installed"
 )
 
 ".venv\Scripts\python.exe" gui.py

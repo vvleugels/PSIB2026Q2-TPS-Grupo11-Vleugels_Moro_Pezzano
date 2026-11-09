@@ -49,6 +49,16 @@ class SpectralConfig:
                     return_onesided=True, average='mean')
 
 
+def welch_epoch(samples, sfreq, effective):
+    """Welch PSD of one epoch (V²/Hz), with the parameters from SpectralConfig.effective.
+
+    Shared by the GUI and the batch pipeline so both compute the spectrum identically."""
+    window = get_window('hann', effective['nperseg'], fftbins=True)
+    return welch(samples, fs=sfreq, window=window, nperseg=effective['nperseg'],
+                 noverlap=effective['noverlap'], nfft=effective['nfft'], detrend='constant',
+                 return_onesided=True, scaling='density', average='mean', axis=-1)
+
+
 def integrate_band(frequencies, psd, low, high):
     """Integrate a continuous piecewise-linear PSD at the exact requested edges."""
     if not frequencies[0] <= low < high <= frequencies[-1]:
@@ -143,16 +153,12 @@ def analyze_recording(recording, channel, filter_config, config, store, include_
     else:
         continuous = None
     total = None
-    window = get_window('hann', effective['nperseg'], fftbins=True)
     for epoch in eligible:
         samples = (continuous[epoch.first:epoch.last] if continuous is not None else
                    recording.raw.get_data(picks=[channel], start=epoch.first, stop=epoch.last)[0])
         if not np.all(np.isfinite(samples)):
             raise ValueError(f'Epoch {epoch.index + 1}: hay muestras no finitas; no se omiten automáticamente.')
-        frequencies, psd = welch(samples, fs=recording.sfreq, window=window,
-                                 nperseg=effective['nperseg'], noverlap=effective['noverlap'],
-                                 nfft=effective['nfft'], detrend='constant',
-                                 return_onesided=True, scaling='density', average='mean')
+        frequencies, psd = welch_epoch(samples, recording.sfreq, effective)
         total = psd.copy() if total is None else total + psd
     averaged = total / len(eligible) * 1e12
     if not np.all(np.isfinite(averaged)):

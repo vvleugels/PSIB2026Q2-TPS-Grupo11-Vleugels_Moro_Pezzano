@@ -1,0 +1,6 @@
+# Extra packages for the statistics module and notebook (not needed by the GUI).
+-r requirements.txt
+pandas>=2.1
+ipykernel>=6.29
+nbformat>=5.9
+nbclient>=0.9

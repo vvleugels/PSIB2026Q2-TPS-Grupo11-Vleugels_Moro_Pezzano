@@ -56,6 +56,25 @@ class DataTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             r.read_window('missing', 0)
 
+    def test_read_channels_equals_per_channel_windows(self):
+        r = self.recording()
+        for channels in (['Cz'], ['Fp1', 'Cz'], ['Cz', 'Fp1', 'Cz']):
+            for start, seconds in ((0, 10), (3.33, 2), (10, 10), (12.4999, 10)):
+                with self.subTest(channels=channels, start=start, seconds=seconds):
+                    segment = r.read_channels(channels, start, seconds=seconds)
+                    windows = [r.read_window(c, start, seconds) for c in channels]
+                    np.testing.assert_array_equal(segment.values_uv,
+                                                  np.stack([w.values_uv for w in windows]))
+                    np.testing.assert_array_equal(segment.times, windows[0].times)
+                    self.assertEqual((segment.start, segment.stop),
+                                     (windows[0].start, windows[0].stop))
+                    self.assertEqual(segment.channels, tuple(channels))
+        for start in (-1, 12.5, float('nan')):
+            with self.subTest(start=start), self.assertRaisesRegex(ValueError, 'El inicio debe'):
+                r.read_channels(['Cz', 'Fp1'], start)
+        with self.assertRaises(ValueError):
+            r.read_channels(['Cz', 'missing'], 0)
+
     def test_inventory_sort_and_available_studies(self):
         make_recording(self.temp.name, subject='sub-10')
         make_recording(self.temp.name, subject='sub-2', session='ses-2', task='eyesclosed')

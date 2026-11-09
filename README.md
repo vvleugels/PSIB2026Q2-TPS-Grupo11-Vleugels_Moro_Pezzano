@@ -10,6 +10,10 @@ El [piloto de limpieza EEG y validación](VALIDATION.md) se ejecuta por separado
 humana previa a la integración; todavía no modifica el flujo de esta GUI ni habilita
 aceptación automática definitiva.
 
+La [extracción por lotes](batch/README.md) (`python -m batch.run_batch`) calcula la potencia por bandas de todos los participantes, sesiones, condiciones de ojos y electrodos sin abrir la GUI; la configuración compartida está en `config.py`.
+
+Las [estadísticas SD vs NS](analysis/README.md) (`python -m analysis.stats`, notebook `notebooks/03_stats.ipynb`) agregan las potencias por región y comparan las sesiones de forma pareada; requieren `pip install -r requirements-analysis.txt`.
+
 ## Instalación y ejecución
 
 Requiere Python 3.10 o superior y una sesión gráfica. Desde la carpeta del proyecto:
@@ -17,7 +21,7 @@ Requiere Python 3.10 o superior y una sesión gráfica. Desde la carpeta del pro
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-analysis.txt   # incluye requirements.txt
 python gui.py
 ```
 
@@ -26,7 +30,7 @@ En Linux también podés ejecutar `./TPS.sh`: crea `.venv` e instala las depende
 en el primer inicio (requiere internet). Si la instalación falla, la reintenta al
 volver a ejecutarlo. Acepta su ruta absoluta desde cualquier carpeta.
 En Windows, hace doble clic en `TPS.bat`. En el primer inicio crea `.venv` e instala
-las dependencias; hace falta una conexión a internet. Si falla la instalación,
+las dependencias (también pandas y Jupyter, para «Resultados del grupo»); hace falta una conexión a internet. Si falla la instalación,
 corregí el problema y volvé a ejecutar el lanzador: reintentará la instalación.
 También se puede ejecutar `TPS.bat` por su ruta absoluta desde otro directorio:
 `data` y `annotations` siempre se resuelven junto al proyecto.
@@ -42,6 +46,37 @@ indica qué hacer ahora, y al dejar el mouse sobre un control aparece una ayuda.
 **▶** vuelve a mostrarlo. **▲** en la esquina inferior derecha de **Información
 del estudio** la reduce a un resumen; **▼** la expande. La elección se conserva
 al redimensionar la ventana.
+
+## Resultados del grupo
+
+La tercera pestaña reúne el análisis por lotes, la estadística SD vs NS y las figuras,
+sin usar la terminal. Lee y escribe en `results/` (junto a `data/`).
+
+- **Proceso**: tres pasos (1 Potencias por lote, 2 Estadística, 3 Figuras) con su estado
+  (listo, sin resultados o desactualizado si cambió `config.py` o un paso anterior), sus
+  opciones (ojos, procesos en paralelo, recalcular todo, permutaciones) y **Ejecutar**.
+  **Ejecutar todo** los encadena; **Cancelar** detiene el paso en curso (el lote es
+  reanudable). Los pasos corren en un proceso aparte: el explorador sigue disponible.
+  El registro muestra la salida de cada paso y se abre solo si algo falla.
+- **Hipótesis**: H1–H4 y la tabla de dirección esperada vs observada, p corregido y
+  tamaño del efecto, coloreada por acuerdo (verde apoyada, rojo opuesta, gris no
+  significativa). Las referencias siguen pendientes (TODO).
+- **Tablas**: todas las tablas `stats_*.csv`, clusters, exclusiones y resumen por registro,
+  con filtros por ojos, sesión, banda, región y participante, y orden por columna
+  (clic en el encabezado). Se resaltan las filas con p < 0,05.
+- **Figuras**: topomapas, PSD por región, gráficos pareados y theta/beta con su leyenda
+  (`captions.md`); zoom con los botones o Ctrl + rueda y arrastre para mover. También
+  aparecen los topomapas y gráficos de pares (absolutos y relativos) del análisis grupal
+  de Tomás (`results/group20-channel-2026/analysis/`), marcados «(Tomás)»; sus tablas
+  (estadística regional, relativa vs absoluta, resumen y epochs) están en **Tablas**.
+
+En el panel lateral, **Resultado del lote** muestra para el estudio abierto si el lote lo
+incluyó o lo excluyó (y por qué), las epochs usadas y rechazadas, los canales malos y,
+para el electrodo elegido, sus potencias por banda y el cociente theta/beta. Si el
+electrodo fue un canal malo en el lote se avisa en ámbar. Las epochs que el lote rechazó
+aparecen con «Lote» en la columna Aviso, y su motivo en el detalle de la epoch.
+**Ver exclusiones** abre la tabla de exclusiones filtrada a ese estudio. Aceptada por el
+lote significa «dentro de los límites de amplitud», no inspección visual.
 
 ## Explorar y filtrar
 
@@ -361,10 +396,10 @@ Las figuras absolutas se corrigen con `python scripts/regenerate_group_figures.p
 los topomaps usan una esfera MNE de 11 cm y extrapolación hasta el contorno para
 contener los sensores. El mismo comando produce pares y topomaps relativos con
 nombres `pairs_relative_...` y `topomap_relative_...`, además de `group_summary.csv`.
-`eeg_viewer/group_ui.py` implementa la pestaña de solo lectura “Resultados de grupo”:
-permite elegir ojos, banda, tipo de figura y potencia; muestra la figura con barra
-de zoom y la tabla regional n/mediana/efecto/q. Lee solo archivos precomputados en
-`analysis/` y avisa claramente cuando falta alguno.
+Estas figuras y tablas se ven dentro de la pestaña **Resultados del grupo**
+(**Figuras** y **Tablas**, marcadas «(Tomás)»), junto a las del análisis por lotes.
+`eeg_viewer/group_ui.py`, la pestaña de solo lectura que las mostraba antes, sigue en el
+repositorio pero la GUI ya no la usa.
 
 En la corrida de verificación del 7 de noviembre de 2026, la senoide sintética de
 10 Hz quedó en alfa y la ejecución con `sub-11` a `sub-13` produjo 1.952 filas de
@@ -393,6 +428,55 @@ la referencia proviene del JSON. Los campos ausentes se indican como no disponib
 - `eeg_viewer/screening.py`, `eeg_viewer/screening_ui.py`: barrido de amplitud y avisos de revisión.
 - `eeg_viewer/app.py`, `eeg_viewer/review_ui.py` y `eeg_viewer/spectral_ui.py`:
   interfaz y coordinación asíncrona.
+
+## Análisis por lotes, estadística y figuras (sin GUI)
+
+Flujo completo, desde la carpeta del proyecto (en Windows, `.venv\Scripts\python.exe` en lugar de `python`):
+
+```bash
+pip install -r requirements-analysis.txt   # pandas y Jupyter; la GUI no los necesita
+python -m batch.run_batch --jobs 6         # 1. potencia por bandas de cada registro (~16 min)
+python -m analysis.stats                   # 2. regiones y comparaciones SD vs NS (~20 s)
+python -m analysis.figures                 # 3. figuras, tabla de hipótesis y leyendas
+```
+
+Cada paso lee lo que produce el anterior en `results/`. El lote es reanudable: vuelve
+a calcular solo los registros nuevos o los afectados por un cambio de `config.py`.
+Opciones del lote: `--eyes open|closed`, `--subjects 01 02`, `--force`. Ojos abiertos
+es el análisis principal y ojos cerrados el secundario; nunca se combinan. Los
+resultados describen diferencias espectrales a nivel de grupo, sin interpretación clínica.
+«Aceptada» en el barrido automático significa «dentro de los límites de amplitud», no
+inspección visual.
+
+Archivos nuevos:
+
+- `config.py`: configuración compartida (filtro, epochs, Welch, bandas, umbrales, mínimos).
+- `batch/run_batch.py`, `batch/README.md`: extracción por lotes y su documentación.
+- `analysis/regions.py`: canales por región (construido desde `channels.tsv`) y promedios regionales.
+- `analysis/stats.py`, `analysis/README.md`: pruebas pareadas, FDR, orden de sesión y clusters.
+- `analysis/hypotheses.py`, `analysis/hypotheses.md`: hipótesis H1–H4 (referencias pendientes, TODO).
+- `analysis/figures.py`: topomapas, PSD por región, gráficos pareados, theta/beta, tabla resumen.
+- `eeg_viewer/results_ui.py`, `eeg_viewer/results_data.py`, `eeg_viewer/pipeline.py`: pestaña
+  «Resultados del grupo», lectura de `results/` y ejecución de los pasos en segundo plano.
+- `notebooks/03_stats.ipynb`, `notebooks/04_results_figures.ipynb`: muestran tablas y figuras
+  importando los módulos (no contienen cálculos propios).
+- `report/methods_draft.md`: borrador de Materiales y Métodos con los parámetros exactos.
+- `requirements-analysis.txt`: dependencias adicionales de análisis y notebooks.
+- `tests/test_batch.py`, `tests/test_stats.py`, `tests/test_figures.py`, `tests/test_results.py`,
+  `tests/synthetic_features.py`: pruebas con señales y tablas sintéticas.
+
+Salidas en `results/`:
+
+| Archivo | Contenido |
+|---|---|
+| `features_long.csv`, `theta_beta.csv` | potencia absoluta y relativa por canal y banda; cociente theta/beta |
+| `psd_channels.csv` | PSD media por registro y canal, 0–45 Hz (µV²/Hz) |
+| `exclusions.csv`, `recordings_summary.csv` | registros, canales y epochs excluidos, con el motivo |
+| `session_order.csv`, `config_used.json` | orden NS/SD de cada participante; configuración usada |
+| `features_region.csv` | log10 de la potencia y potencia relativa por región |
+| `stats_*.csv`, `cluster_results.csv` | resultados estadísticos (ver `analysis/README.md`) |
+| `figures/*.png`, `figures/captions.md` | figuras y sus leyendas |
+| `figures/hypothesis_summary.csv/.md` | hipótesis, dirección esperada y observada, p corregido, tamaño del efecto |
 
 ## Verificación
 

@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from matplotlib.ticker import MultipleLocator
+import numpy as np
 
 from .annotations import STATES, REASONS
 from .processing import FilterConfig
@@ -260,7 +261,9 @@ class ReviewUI:
         for epoch, record in zip(self.store.epochs, self.store.records):
             state = record['state']
             counts[state] += 1
-            badge = self.screening_badge(epoch.index)
+            # Screening findings first; otherwise flag epochs the batch pipeline rejected.
+            badge = self.screening_badge(epoch.index) or (
+                'Lote' if hasattr(self, 'batch_rejection') and self.batch_rejection(epoch.index) else '')
             values = (f'{epoch.start:g}–{epoch.stop:g}' + (' parcial' if epoch.partial else ''), state, badge)
             tags = (state, 'sospechosa') if badge else (state,)
             if self.epoch_tree.exists(str(epoch.index)):
@@ -486,17 +489,40 @@ class ReviewUI:
         self.plot_view.itemconfigure(self.plot_window, width=width, height=height)
         self.plot_view.configure(scrollregion=(0, 0, width, height))
 
+    @staticmethod
+    def padded_limits(values):
+        """y limits with 15 % padding, like ax.margins(y=.15) on the data alone."""
+        low, high = float(np.min(values)), float(np.max(values))
+        pad = .15 * (high - low) if high > low else max(abs(high), 1.0) * .15
+        return low - pad, high + pad
+
     def draw_segment(self, segment):
+        previous = self.displayed
         self.displayed = segment
+        lines = getattr(self, 'segment_lines', [])
+        if (previous is not None and previous.channels == segment.channels
+                and len(lines) == len(segment.channels) and len(self.figure.axes) == len(lines)):
+            # Same electrodes: update the existing lines instead of rebuilding the figure,
+            # which skips the subplot creation and most of the constrained-layout work.
+            for ax, line, values in zip(self.figure.axes, lines, segment.values_uv):
+                line.set_data(segment.times, values)
+                ax.set_xlim(segment.start, segment.stop)
+                ax.set_ylim(*self.padded_limits(values))
+            self.reset_toolbar()
+            self.toolbar.push_current()
+            self.draw_overlays()
+            return
         self.figure.clear()
         self.epoch_artists = []
+        self.segment_lines = []
         axes = self.figure.subplots(len(segment.channels), 1, sharex=True, squeeze=False).ravel()
         self.ax = axes[0]
         for ax, channel, values in zip(axes, segment.channels, segment.values_uv):
             line, = ax.plot(segment.times, values, color='#0e7c86', linewidth=.8)
             line.get_path().should_simplify = False
+            self.segment_lines.append(line)
             ax.set_xlim(segment.start, segment.stop)
-            ax.margins(y=.15)
+            ax.set_ylim(*self.padded_limits(values))
             ax.set_ylabel(f'{channel}\nµV')
             ax.xaxis.set_major_locator(MultipleLocator(5))
             ax.grid(axis='x', color='#bdccce', linewidth=.8)
