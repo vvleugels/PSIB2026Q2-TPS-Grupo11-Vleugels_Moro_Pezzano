@@ -5,8 +5,6 @@
 .venv/
 __pycache__/
 *.py[cod]
-/annotations/*
-!/annotations/.gitkeep
 results/*
 
 # Batch pipeline: per-recording cache and run log (regenerable)
