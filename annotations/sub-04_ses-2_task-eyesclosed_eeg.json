@@ -721,10 +721,10 @@
       "first": 17500,
       "last": 20000,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:35.892760+00:00",
+      "reviewed_at": "2026-11-10T20:52:12.554983+00:00",
       "channels": [
         "Fp1",
         "AF3",
@@ -756,8 +756,10 @@
         "PO3",
         "PO7",
         "Oz",
+        "O1",
         "Fpz",
         "Fp2",
+        "AF4",
         "AF8",
         "F2",
         "F4",
@@ -788,9 +790,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -1018,10 +1020,10 @@
       "first": 25000,
       "last": 27500,
       "partial": false,
-      "state": "Aceptada",
+      "state": "Con artefactos",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:35.893064+00:00",
+      "reviewed_at": "2026-11-10T20:52:23.322921+00:00",
       "channels": [
         "Fp1",
         "AF3",
@@ -1053,8 +1055,10 @@
         "PO3",
         "PO7",
         "Oz",
+        "O1",
         "Fpz",
         "Fp2",
+        "AF4",
         "AF8",
         "F2",
         "F4",
@@ -1085,9 +1089,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -1810,10 +1814,10 @@
       "first": 45000,
       "last": 47500,
       "partial": false,
-      "state": "Aceptada",
+      "state": "Con artefactos",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:35.893878+00:00",
+      "reviewed_at": "2026-11-10T20:52:33.536811+00:00",
       "channels": [
         "Fp1",
         "AF3",
@@ -1845,8 +1849,10 @@
         "PO3",
         "PO7",
         "Oz",
+        "O1",
         "Fpz",
         "Fp2",
+        "AF4",
         "AF8",
         "F2",
         "F4",
@@ -1877,9 +1883,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -5963,5 +5969,15 @@
         "decision_origin": "automatic_batch"
       }
     }
-  ]
+  ],
+  "bad_channels": {
+    "O1": {
+      "reason": "",
+      "marked_at": "2026-11-10T20:50:34.721908+00:00"
+    },
+    "AF4": {
+      "reason": "",
+      "marked_at": "2026-11-10T21:00:10.052862+00:00"
+    }
+  }
 }

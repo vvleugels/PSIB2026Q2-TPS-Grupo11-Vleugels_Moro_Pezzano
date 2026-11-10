@@ -796,12 +796,14 @@
       "first": 20000,
       "last": 22500,
       "partial": false,
-      "state": "Aceptada",
+      "state": "Con artefactos",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.258329+00:00",
+      "reviewed_at": "2026-11-10T22:09:58.014748+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -830,7 +832,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -860,9 +865,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -877,7 +882,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -892,12 +904,14 @@
       "first": 22500,
       "last": 25000,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.258431+00:00",
+      "reviewed_at": "2026-11-10T22:14:29.847672+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -926,7 +940,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -956,9 +973,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -973,7 +990,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -1276,12 +1300,14 @@
       "first": 32500,
       "last": 35000,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.258835+00:00",
+      "reviewed_at": "2026-11-10T22:10:19.262520+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -1310,7 +1336,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -1340,9 +1369,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -1357,7 +1386,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -1852,12 +1888,14 @@
       "first": 47500,
       "last": 50000,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.259489+00:00",
+      "reviewed_at": "2026-11-10T22:14:34.610815+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -1886,7 +1924,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -1916,9 +1957,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -1933,7 +1974,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -2140,12 +2188,14 @@
       "first": 55000,
       "last": 57500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.259809+00:00",
+      "reviewed_at": "2026-11-10T22:11:34.868345+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -2174,7 +2224,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -2204,9 +2257,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -2221,7 +2274,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -2908,12 +2968,14 @@
       "first": 75000,
       "last": 77500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.260613+00:00",
+      "reviewed_at": "2026-11-10T22:11:48.097753+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -2942,7 +3004,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -2972,9 +3037,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -2989,7 +3054,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -3004,12 +3076,14 @@
       "first": 77500,
       "last": 80000,
       "partial": false,
-      "state": "Aceptada",
+      "state": "Con artefactos",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.260712+00:00",
+      "reviewed_at": "2026-11-10T22:12:29.246645+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -3038,7 +3112,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -3068,9 +3145,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -3085,7 +3162,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -3196,12 +3280,14 @@
       "first": 82500,
       "last": 85000,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.260909+00:00",
+      "reviewed_at": "2026-11-10T22:12:47.737604+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -3230,7 +3316,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -3260,9 +3349,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -3277,7 +3366,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -3292,12 +3388,14 @@
       "first": 85000,
       "last": 87500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.261009+00:00",
+      "reviewed_at": "2026-11-10T22:12:49.589012+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -3326,7 +3424,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -3356,9 +3457,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -3373,7 +3474,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -3484,12 +3592,14 @@
       "first": 90000,
       "last": 92500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.261209+00:00",
+      "reviewed_at": "2026-11-10T22:14:47.200203+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -3518,7 +3628,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -3548,9 +3661,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -3565,7 +3678,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -3772,12 +3892,14 @@
       "first": 97500,
       "last": 100000,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.261512+00:00",
+      "reviewed_at": "2026-11-10T22:13:04.723513+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -3806,7 +3928,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -3836,9 +3961,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -3853,7 +3978,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -3868,12 +4000,14 @@
       "first": 100000,
       "last": 102500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.261613+00:00",
+      "reviewed_at": "2026-11-10T22:13:10.941541+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -3902,7 +4036,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -3932,9 +4069,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -3949,7 +4086,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -3964,12 +4108,14 @@
       "first": 102500,
       "last": 105000,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.261711+00:00",
+      "reviewed_at": "2026-11-10T22:13:17.110575+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -3998,7 +4144,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -4028,9 +4177,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -4045,7 +4194,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -4060,12 +4216,14 @@
       "first": 105000,
       "last": 107500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.261808+00:00",
+      "reviewed_at": "2026-11-10T22:13:20.615379+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -4094,7 +4252,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -4124,9 +4285,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -4141,7 +4302,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -4636,12 +4804,14 @@
       "first": 120000,
       "last": 122500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.262403+00:00",
+      "reviewed_at": "2026-11-10T22:13:30.032158+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -4670,7 +4840,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -4700,9 +4873,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -4717,7 +4890,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -5020,12 +5200,14 @@
       "first": 130000,
       "last": 132500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.262801+00:00",
+      "reviewed_at": "2026-11-10T22:13:38.591090+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -5054,7 +5236,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -5084,9 +5269,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -5101,7 +5286,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -5212,12 +5404,14 @@
       "first": 135000,
       "last": 137500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.262999+00:00",
+      "reviewed_at": "2026-11-10T22:13:45.620294+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -5246,7 +5440,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -5276,9 +5473,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -5293,7 +5490,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -5308,12 +5512,14 @@
       "first": 137500,
       "last": 140000,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.263096+00:00",
+      "reviewed_at": "2026-11-10T22:14:06.708185+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -5342,7 +5548,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -5372,9 +5581,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -5389,7 +5598,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -5404,12 +5620,14 @@
       "first": 140000,
       "last": 142500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.263194+00:00",
+      "reviewed_at": "2026-11-10T22:15:07.268824+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -5438,7 +5656,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -5468,9 +5689,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -5485,7 +5706,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -5596,12 +5824,14 @@
       "first": 145000,
       "last": 147500,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.263390+00:00",
+      "reviewed_at": "2026-11-10T22:14:12.994142+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -5630,7 +5860,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -5660,9 +5893,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -5677,7 +5910,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -5692,12 +5932,14 @@
       "first": 147500,
       "last": 150000,
       "partial": false,
-      "state": "Con artefactos",
+      "state": "Aceptada",
       "reason": "",
       "note": "",
-      "reviewed_at": "2026-11-10T19:31:36.263491+00:00",
+      "reviewed_at": "2026-11-10T22:14:15.891976+00:00",
       "channels": [
+        "Fp1",
         "AF3",
+        "AF7",
         "Fz",
         "F1",
         "F3",
@@ -5726,7 +5968,10 @@
         "PO7",
         "Oz",
         "O1",
+        "Fpz",
+        "Fp2",
         "AF4",
+        "AF8",
         "F2",
         "F4",
         "F6",
@@ -5756,9 +6001,9 @@
       ],
       "filter": {
         "enabled": true,
-        "low": 0.2,
+        "low": 0.5,
         "high": 45.0,
-        "notch": null,
+        "notch": 50.0,
         "method": "fir",
         "phase": "zero",
         "fir_window": "hamming",
@@ -5773,7 +6018,14 @@
         "notch_phase": "zero",
         "filter_order": "bandpass_then_notch"
       },
-      "ica": null,
+      "ica": {
+        "revision": "e1a9ea1a36e94bfc892daab4e026a7bf",
+        "model_sha256": "971449447ed26c53a1c186926cfdd85206c9eb2feb5ff795afb8039591a2415f",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
       "batch_import": {
         "source": "results/per_recording/sub-09_ses-2_task-eyesopen_eeg.json",
         "sha256": "0397dd36515ca452688cb7251ca1ff24f5db66b172fc977c1623f1306be9aade",
@@ -5783,5 +6035,23 @@
         "decision_origin": "automatic_batch"
       }
     }
-  ]
+  ],
+  "bad_channels": {
+    "AF7": {
+      "reason": "",
+      "marked_at": "2026-11-10T22:10:32.403129+00:00"
+    },
+    "Fz": {
+      "reason": "",
+      "marked_at": "2026-11-10T22:10:32.428588+00:00"
+    },
+    "Fp1": {
+      "reason": "",
+      "marked_at": "2026-11-10T22:10:34.198554+00:00"
+    },
+    "AF8": {
+      "reason": "",
+      "marked_at": "2026-11-10T22:11:09.174890+00:00"
+    }
+  }
 }
