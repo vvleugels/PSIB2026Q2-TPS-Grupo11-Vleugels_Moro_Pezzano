@@ -11,7 +11,7 @@ import mne
 import numpy as np
 import scipy
 
-from tps.core.annotations import make_epochs, source_identity
+from tps.core.annotations import make_epochs, same_source, source_identity
 from tps.core.processing import ContinuousFilter, FilterConfig
 from tps.core.infomax import fit_infomax
 from tps.core.jsonio import json_safe, write_json
@@ -86,13 +86,24 @@ def read_revision(annotations_dir, study, revision=None):
 
 
 def validate_revision(recording, data_dir, metadata):
-    if (metadata['source'] != source_identity(recording, data_dir)
+    if (not same_source(metadata['source'], source_identity(recording, data_dir))
             or metadata['original_channels'] != recording.raw.ch_names
             or metadata['sfreq'] != recording.sfreq
             or metadata['reference'] != recording.metadata.get('EEGReference')):
         raise ValueError('La ICA guardada no corresponde al registro actual.')
-    if metadata['versions'] != versions():
-        raise ValueError('Las versiones del entorno cambiaron; volvé a ajustar ICA.')
+    # Library versions are not compared: the saved model is a fixed unmixing matrix, so it is
+    # applied the same with other MNE/NumPy/SciPy versions. version_note() reports a difference.
+
+
+def version_note(metadata):
+    """'' when the revision was fitted with this computer's library versions, else a short note."""
+    saved, current = metadata.get('versions') or {}, versions()
+    if saved == current:
+        return ''
+    names = {'mne': 'MNE', 'numpy': 'NumPy', 'scipy': 'SciPy'}
+    def text(values):
+        return ' · '.join(f'{names[k]} {values.get(k, "?")}' for k in names)
+    return f'Ajustada con {text(saved)}; este equipo usa {text(current)}. Se aplica igual.'
 
 
 def corrected_copy(recording, model, excluded):
@@ -202,7 +213,7 @@ def snapshot(studies, data_dir, annotations_dir, mode):
 def apply_snapshot(recording, data_dir, annotations_dir, selection):
     if selection.get('error'):
         raise ValueError(selection['error'])
-    if source_identity(recording, data_dir) != selection['source']:
+    if not same_source(selection['source'], source_identity(recording, data_dir)):
         raise ValueError('El registro cambió después de iniciar el análisis.')
     if selection['mode'] == 'confirmed':
         metadata = apply_revision(recording, data_dir, annotations_dir, selection['revision'])

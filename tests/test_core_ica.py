@@ -123,9 +123,11 @@ class ICATests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'registro actual'):
             ica.apply_revision(self.recording, self.data, self.annotations)
         self.recording.metadata['EEGReference'] = 'FCz'
-        with patch.object(ica, 'versions', return_value={}):
-            with self.assertRaisesRegex(ValueError, 'versiones'):
-                ica.apply_revision(self.recording, self.data, self.annotations)
+        # Other library versions (e.g. the professors' computer): applied, with a note.
+        with patch.object(ica, 'versions', return_value={'mne': '0.0'}):
+            metadata = ica.apply_revision(self.recording, self.data, self.annotations)
+            self.assertIn('MNE 0.0', ica.version_note(metadata))
+        self.assertIsNotNone(self.recording.ica_context)
 
     def test_window_screening_welch_and_saved_review_use_same_revision(self):
         value = self.confirm([0])

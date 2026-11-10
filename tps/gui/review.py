@@ -153,6 +153,7 @@ class ReviewUI:
         for key, state in zip(('u', 'a', 'r'), STATES):
             self.root.bind(f'<KeyPress-{key}>', lambda event, s=state: self.shortcut(event, s))
             self.root.bind(f'<KeyPress-{key.upper()}>', lambda event, s=state: self.shortcut(event, s))
+        self.root.bind('<KeyPress-space>', self.space_restore)
 
     def configuration_dialog(self):
         """Filter settings with the current state, quick presets and a live «al aplicar» summary.
@@ -601,6 +602,18 @@ class ReviewUI:
         can_mark = self.store is not None and not self.store.blocked and not self.busy
         self.reason_box.configure(state='readonly' if can_mark and self.mark_state.get() == STATES[2]
                                   else 'disabled')
+
+    def space_restore(self, event):
+        """Space bar: undo the zoom/pan of the signal plot (same as a double click)."""
+        if event.widget.winfo_toplevel() != self.root:
+            return
+        if event.widget.winfo_class() in ('Entry', 'TEntry', 'Text', 'TCombobox', 'Spinbox', 'TSpinbox'):
+            return   # typing a note or a start time
+        if self.displayed is None or self.view_tabs.index('current') != 0:
+            return
+        self.restore_view()
+        self.status.set('Vista completa de la ventana.')
+        return 'break'
 
     def shortcut(self, event, state):
         if event.widget.winfo_toplevel() != self.root:

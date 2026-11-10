@@ -14,14 +14,43 @@ archivos EEG originales nunca se modifican.
 | [docs/methods_draft.md](docs/methods_draft.md) | borrador de Materiales y Métodos |
 | [docs/validation.md](docs/validation.md) | piloto de limpieza y validación (`validate_eeg.py`), independiente de la GUI |
 
+## Para evaluar el trabajo
+
+1. Descargar este repositorio (clonarlo o «Download ZIP» en GitHub).
+2. Descargar el dataset **OpenNeuro ds004902, versión 1.0.8** («A Resting-state EEG Dataset for
+   Sleep Deprivation», <https://openneuro.org/datasets/ds004902/versions/1.0.8>) y copiar su
+   contenido en la carpeta `data/` del proyecto, de modo que queden `data/sub-01/`,
+   `data/participants.tsv`, etc. También se puede descargar por línea de comandos:
+
+   ```bash
+   pip install openneuro-py
+   openneuro-py download --dataset ds004902 --tag 1.0.8 --target-dir data
+   ```
+
+3. En Windows, doble clic en **TPS.bat**; en Linux, `./TPS.sh`. El primer inicio crea el entorno
+   e instala las **versiones exactas** con las que se probó el programa (`requirements-lock.txt`,
+   requiere **Python 3.12 o superior** e internet). Con un Python más antiguo instala versiones
+   compatibles en su lugar y el programa funciona igual.
+4. Las **anotaciones del equipo** (marcas de épocas, canales malos y correcciones ICA
+   confirmadas) vienen en la carpeta `annotations/` del repositorio y se cargan solas al abrir
+   cada estudio. Si una ICA se ajustó con otras versiones de MNE/NumPy/SciPy, se aplica igual y
+   el panel ICA lo indica.
+5. Para ver los resultados del grupo: pestaña **Resultados del grupo › Ejecutar todo** (unos
+   5 minutos). Los registros incompletos o ausentes se excluyen y se informan con su motivo en
+   «Exclusiones del lote» y «Resumen por registro».
+
+La carpeta `annotations/` contiene la revisión manual del equipo: no la borres ni la regeneres.
+
 ## Instalación y ejecución
 
-Requiere Python 3.10 o superior y una sesión gráfica. Desde la carpeta del proyecto:
+Requiere Python 3.10 o superior (recomendado 3.12 o superior, para usar las versiones exactas)
+y una sesión gráfica. Desde la carpeta del proyecto:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements-analysis.txt   # incluye requirements.txt
+python -m pip install -r requirements-lock.txt       # versiones exactas probadas (Python 3.12+)
+# o, con un Python más antiguo: python -m pip install -r requirements-analysis.txt
 python gui.py
 ```
 
@@ -30,7 +59,8 @@ En Linux también podés ejecutar `./TPS.sh`: crea `.venv` e instala las depende
 en el primer inicio (requiere internet). Si la instalación falla, la reintenta al
 volver a ejecutarlo. Acepta su ruta absoluta desde cualquier carpeta.
 En Windows, hace doble clic en `TPS.bat`. En el primer inicio crea `.venv` e instala
-las dependencias (también pandas, para «Resultados del grupo»); hace falta una conexión a internet. Si falla la instalación,
+las dependencias en las versiones de `requirements-lock.txt` (también pandas, para «Resultados del
+grupo»); hace falta una conexión a internet. Si falla la instalación,
 corregí el problema y volvé a ejecutar el lanzador: reintentará la instalación.
 También se puede ejecutar `TPS.bat` por su ruta absoluta desde otro directorio:
 `data` y `annotations` siempre se resuelven junto al proyecto.

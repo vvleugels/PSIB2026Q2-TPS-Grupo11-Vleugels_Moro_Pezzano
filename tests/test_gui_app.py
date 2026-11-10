@@ -393,6 +393,18 @@ class GuiTests(unittest.TestCase):
             self.assertFalse(a.screening_pending)
         self.assertEqual(a.patient.get(), 'sub-02')
 
+    def test_space_bar_restores_the_zoom(self):
+        from types import SimpleNamespace
+        self.select()
+        a = self.app
+        home = a.ax.get_xlim(), a.ax.get_ylim()
+        a.ax.set_xlim(2, 4); a.ax.set_ylim(-10, 10)
+        self.assertEqual(a.space_restore(SimpleNamespace(widget=a.root)), 'break')
+        self.assertEqual((a.ax.get_xlim(), a.ax.get_ylim()), home)
+        a.ax.set_xlim(2, 4)
+        self.assertIsNone(a.space_restore(SimpleNamespace(widget=a.note_entry)))   # typing a note
+        self.assertEqual(a.ax.get_xlim(), (2, 4))
+
     def test_filter_applies_in_every_display_mode(self):
         """Regression: in «Todos apilados» the filter failed (channel limit of 8)."""
         from tps.core.processing import FilterConfig

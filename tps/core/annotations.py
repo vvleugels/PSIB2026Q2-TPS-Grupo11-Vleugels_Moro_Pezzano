@@ -55,12 +55,32 @@ def source_identity(recording, data_dir):
     return dict(files=files, sfreq=float(recording.sfreq), n_times=int(recording.raw.n_times))
 
 
+
+def same_source(saved, current):
+    """True when two source identities describe the same recording.
+
+    Compares the files' relative paths and sizes, the sampling rate and the number of samples.
+    The modification time is recorded but not compared: it differs on every computer that
+    downloads the data, so annotations and ICA revisions shared through the repository would
+    otherwise be blocked everywhere except where they were made."""
+    def key(identity):
+        files = sorted((f['path'], f['size']) for f in identity.get('files', []))
+        return files, float(identity.get('sfreq', 0)), int(identity.get('n_times', 0))
+    try:
+        return key(saved) == key(current)
+    except (TypeError, KeyError, ValueError, AttributeError):
+        return False
+
+
 class AnnotationStore:
     def __init__(self, directory, recording, data_dir):
         self.recording = recording
         self.data_dir = Path(data_dir)
         self.path = Path(directory) / f'{recording.study.path.stem}.json'
         self.identity = source_identity(recording, data_dir)
+        # Identity written to the file: the one already saved there when it describes the same
+        # recording (another computer's modification times), so saving does not rewrite it.
+        self.stored_identity = self.identity
         self.epochs = make_epochs(recording.raw.n_times, recording.sfreq)
         self.records = [dict(index=e.index, first=e.first, last=e.last,
                              partial=e.partial, state=STATES[0], reason='', note='',
@@ -84,7 +104,7 @@ class AnnotationStore:
             content = self.path.read_bytes()
             self.digest = self.checksum(content)
             saved = json.loads(content)
-            if saved['version'] != 1 or saved['source'] != self.identity:
+            if saved['version'] != 1 or not same_source(saved['source'], self.identity):
                 raise ValueError('La versión o identidad del registro cambió.')
             records = saved['epochs']
             if len(records) != len(self.records):
@@ -139,6 +159,7 @@ class AnnotationStore:
                 datetime.fromisoformat(value['marked_at'])
             self.records = records
             self.bad_channels = marks
+            self.stored_identity = saved['source']
         except (OSError, ValueError, KeyError, TypeError, OverflowError) as exc:
             self.blocked = f'Anotaciones protegidas: {exc} Archivo: {self.path.name}'
 
@@ -217,7 +238,7 @@ class AnnotationStore:
         if (self.checksum(content) if content is not None else None) != self.digest:
             self.blocked = 'El archivo de anotaciones cambió externamente. No se sobrescribirá.'
             raise ValueError(self.blocked)
-        content = dict(version=1, source=self.identity, epoch_seconds=5, epochs=self.records)
+        content = dict(version=1, source=self.stored_identity, epoch_seconds=5, epochs=self.records)
         if self.bad_channels:   # written only when used, so files without marks stay as before
             content['bad_channels'] = self.bad_channels
         payload = json.dumps(content, ensure_ascii=False, indent=2).encode('utf-8')

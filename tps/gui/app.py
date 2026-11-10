@@ -286,28 +286,29 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI, BadChannelsUI):
         # Una sola fila: ventana anterior/siguiente, ir a un segundo y herramientas del gráfico.
         controls = ttk.Frame(chart, style='Card.TFrame')
         controls.pack(fill='x', pady=(0, 6))
-        self.previous = ttk.Button(controls, text='◀ Anterior', style='Tool.TButton',
+        self.previous = ttk.Button(controls, text='◀ Anterior', style='Tool.TButton', takefocus=False,
                                    command=lambda: self.navigate(-10))
         self.previous.pack(side='left')
-        self.next = ttk.Button(controls, text='Siguiente ▶', style='Tool.TButton',
+        self.next = ttk.Button(controls, text='Siguiente ▶', style='Tool.TButton', takefocus=False,
                                command=lambda: self.navigate(10))
         self.next.pack(side='left', padx=(4, 0))
         ttk.Label(controls, text='Inicio (s)', style='Card.TLabel').pack(side='left', padx=(12, 5))
         self.start_entry = ttk.Entry(controls, textvariable=self.start_text, width=8)
         self.start_entry.pack(side='left')
         self.start_entry.bind('<Return>', lambda e: self.go())
-        self.go_button = ttk.Button(controls, text='Ir', style='Tool.TButton', width=3, command=self.go)
+        self.go_button = ttk.Button(controls, text='Ir', style='Tool.TButton', width=3, takefocus=False, command=self.go)
         self.go_button.pack(side='left', padx=(4, 0))
         ttk.Separator(controls, orient='vertical').pack(side='left', fill='y', padx=10, pady=2)
         # Zoom and pan are done on the plot itself (no tool buttons): see ReviewUI.plot_press.
-        gestures = ttk.Label(controls, text='Arrastrar o rueda: zoom · Clic der.: mover · Doble clic: restaurar',
+        gestures = ttk.Label(controls, text='Arrastrar o rueda: zoom · Clic der.: mover · Espacio o doble clic: restaurar',
                              style='CardMuted.TLabel')
         gestures.pack(side='left')
         Tooltip(gestures, 'Mantené el clic izquierdo y arrastrá sobre el gráfico para acercar esa zona. '
                           'La rueda del mouse acerca o aleja el tiempo alrededor del cursor (con Ctrl, la '
                           'amplitud). '
                           'Mantené el clic derecho y arrastrá para desplazar la vista. '
-                          'Doble clic vuelve a la ventana completa. Un clic simple elige la época.')
+                          'La barra espaciadora o un doble clic vuelven a la ventana completa. Un clic simple '
+                          'elige la época.')
         self.cursor_text = tk.StringVar()
         ttk.Label(controls, textvariable=self.window_text, style='CardMuted.TLabel').pack(side='right')
         ttk.Label(controls, textvariable=self.cursor_text, style='CardMuted.TLabel',

@@ -58,6 +58,9 @@ class ICAUI:
             text = 'ICA ' + value['revision'][:8] + ' · excluidos: ' + ', '.join(str(i+1) for i in value['excluded_components'])
             if value['excluded_channels']:
                 text += '\nSin corregir: ' + ', '.join(value['excluded_channels'])
+            note = ica.version_note(value)
+            if note:   # e.g. a revision fitted on another computer: applied, but say so
+                text += '\n' + note
         else:
             text = 'ICA desactivada'
         self.ica_status.set(text)
@@ -219,7 +222,7 @@ class ICAUI:
             self.exclusions_text.set(','.join(str(i+1) for i in metadata['excluded_components']))
             self.component_picker.configure(to=self.ica_model.n_components_)
             self.ica_message.set('Se cargó la corrección confirmada. Podés revisar los componentes, cambiar qué se '
-                                 'quita y volver a confirmar, o ajustar de nuevo.')
+                                 'quita y volver a confirmar, o ajustar de nuevo. ' + ica.version_note(metadata))
         except (OSError, ValueError, KeyError) as exc:
             self.ica_model = self.ica_metadata = None
             if not isinstance(exc, ValueError) or 'falta una ICA confirmada' not in str(exc):

@@ -1,0 +1,31 @@
+# Exact versions the program was tested with (Python 3.12 or newer). TPS.bat / TPS.sh install
+# this file, so every computer gets the same numbers and behaviour. On an older Python they fall
+# back to the ranges in requirements-analysis.txt. Regenerate after upgrading on purpose.
+mne==1.13.2
+numpy==2.5.4
+scipy==1.18.1
+matplotlib==3.11.2
+pandas==3.1.1
+pillow==13.0.0
+# Their dependencies
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.68.0
+kiwisolver==1.5.1
+pyparsing==3.3.3
+python-dateutil==4.0.0
+packaging==26.3
+tzdata==2026.6
+decorator==5.3.1
+jinja2==3.1.6
+markupsafe==3.0.4
+lazy-loader==0.6
+pooch==1.9.0
+platformdirs==4.14.3
+requests==2.34.2
+certifi==2026.10.23
+charset-normalizer==3.5.2
+idna==3.20
+urllib3==2.8.0
+tqdm==4.70.1
+colorama==0.4.6; platform_system == "Windows"
