@@ -1,110 +1,121 @@
-# Materials and Methods (draft)
+# Materiales y métodos (borrador)
 
-> Draft generated from the code and `tps/config.py`. Every number below is taken from the
-> configuration or the dataset files; items marked **TODO** must be checked or completed by the
-> authors before submission. No clinical claims are made: the analysis describes group-level
-> spectral differences only.
+> Borrador generado a partir del código y de `tps/config.py`. Cada número de este documento sale
+> de la configuración o de los archivos del dataset; los puntos marcados **TODO** deben ser
+> revisados o completados por los autores antes de la entrega. No se hacen afirmaciones clínicas:
+> el análisis describe solo diferencias espectrales a nivel de grupo.
+>
+> Describe la ejecución por defecto (pasabanda 0,2–45 Hz, sin ICA). TODO: si los resultados
+> finales se calculan con otro filtrado o con la opción «Filtrado activo + ICA confirmada»,
+> actualizar las secciones de preprocesamiento (los valores usados quedan en
+> `results/config_used.json`).
 
 ## Dataset
 
-We used the publicly available "A Resting-state EEG Dataset for Sleep Deprivation" (OpenNeuro
-ds004902, version 1.0.8, doi:10.18112/openneuro.ds004902.v1.0.8; data descriptor: Xiang, Fan,
-Bai, Lv & Lei, *Scientific Data* 11, 427, 2024, https://doi.org/10.1038/s41597-024-03268-2),
-organised in BIDS 1.8.0 and released under CC0.
+Se usó el dataset público «A Resting-state EEG Dataset for Sleep Deprivation» (OpenNeuro
+ds004902, versión 1.0.8, doi:10.18112/openneuro.ds004902.v1.0.8; descriptor de datos: Xiang, Fan,
+Bai, Lv y Lei, *Scientific Data* 11, 427, 2024, https://doi.org/10.1038/s41597-024-03268-2),
+organizado en BIDS 1.8.0 y publicado bajo licencia CC0.
 
-* **Participants:** 71 (sex and age in `participants.tsv`). TODO: report the sex distribution and
-  mean ± SD age of the analysed sample, and the inclusion criteria from the data descriptor.
-* **Design:** within-subject. Each participant was recorded after a night of normal sleep (NS,
-  `ses-1`) and after sleep deprivation (SD, `ses-2`). Session numbers do not reflect time order:
-  the order was counterbalanced and is given in the `SessionOrder` column of `participants.tsv`
-  (NS→SD or SD→NS). TODO: describe the sleep-deprivation protocol (duration of wakefulness,
-  supervision, time between sessions) from the data descriptor.
-* **Recordings:** 5-min (300 s) resting-state EEG with eyes open for all participants; a subgroup
-  (38 participants) also has eyes-closed recordings. TODO: confirm whether the eyes-closed condition
-  is described as "partially" available in the descriptor, and the instructions given.
-* **Acquisition (from the BIDS sidecars):** Brain Products GmbH system, 61 EEG electrodes in the
-  10-10 layout, sampling rate 500 Hz, online reference FCz, power-line frequency 50 Hz,
-  impedances below 5 kΩ (dataset README). TODO: amplifier model, ground electrode and online
-  filters (the sidecar reports `SoftwareFilters: n/a`).
+* **Participantes:** 71 (sexo y edad en `participants.tsv`). TODO: informar la distribución por
+  sexo y la edad media ± DE de la muestra analizada, y los criterios de inclusión del descriptor.
+* **Diseño:** intrasujeto. Cada participante se registró tras una noche de sueño normal (NS,
+  `ses-1`) y tras privación del sueño (SD, `ses-2`). El número de sesión no refleja el orden
+  temporal: el orden se contrabalanceó y figura en la columna `SessionOrder` de `participants.tsv`
+  (NS→SD o SD→NS). TODO: describir el protocolo de privación del sueño (duración de la vigilia,
+  supervisión, tiempo entre sesiones) según el descriptor.
+* **Registros:** EEG en reposo de 5 min (300 s) con ojos abiertos para todos los participantes;
+  un subgrupo (38 participantes) tiene además registros con ojos cerrados. TODO: confirmar si el
+  descriptor presenta la condición de ojos cerrados como disponible «parcialmente», y las
+  instrucciones dadas.
+* **Adquisición (según los archivos BIDS):** sistema Brain Products GmbH, 61 electrodos EEG en
+  disposición 10-10, frecuencia de muestreo 500 Hz, referencia en línea FCz, frecuencia de red
+  50 Hz, impedancias menores a 5 kΩ (README del dataset). TODO: modelo de amplificador, electrodo
+  de tierra y filtros en línea (el archivo indica `SoftwareFilters: n/a`).
 
-## Preprocessing
+## Preprocesamiento
 
-Processing was done in Python with MNE-Python, NumPy and SciPy (`tps/pipeline/batch.py`; versions are
-saved in `results/config_used.json`. TODO: copy the exact versions here). Original files were
-never modified; the data were analysed in the original FCz reference, without re-referencing,
-interpolation, ICA or resampling.
+El procesamiento se hizo en Python con MNE-Python, NumPy y SciPy (`tps/pipeline/batch.py`; las
+versiones se guardan en `results/config_used.json`. TODO: copiar aquí las versiones exactas). Los
+archivos originales nunca se modificaron; los datos se analizaron con la referencia original
+FCz, sin re-referenciar, interpolar, aplicar ICA ni remuestrear.
 
-1. **File checks:** recordings whose binary `.fdt` file is shorter than its header requires were
-   excluded. Five recordings were excluded for this reason (EO: sub-01 SD, sub-28 SD, sub-44 SD;
-   EC: sub-03 SD, sub-28 NS).
-2. **Filtering:** each continuous channel was band-pass filtered between 0.2 and 45 Hz before
-   epoching, with a zero-phase (non-causal), one-pass FIR filter (windowed design, `firwin`,
-   Hamming window, 0.0194 passband ripple, 53 dB stopband attenuation). Transition bandwidths
-   were set automatically by MNE: 0.2 Hz at the lower edge (−6 dB at 0.1 Hz) and 11.25 Hz at the
-   upper edge (−6 dB at 50.6 Hz), giving a filter length of 8251 samples (16.5 s). Signal edges
-   were padded with `reflect_limited`. No notch filter was applied; because the upper −6 dB point
-   lies above 50 Hz, line noise is only partly attenuated, which does not affect the analysed
-   bands (≤ 30 Hz).
-3. **Epoching:** the filtered signal was cut into consecutive, non-overlapping 5 s epochs starting
-   at the first sample; the trailing incomplete epoch was discarded (300 s recordings → 60 epochs).
-4. **Artifact screening:** for every epoch and each of the 61 channels, the peak-to-peak amplitude
-   of the filtered signal was compared with fixed limits: > 150 µV (high amplitude) or < 1 µV
-   (flat). These limits are starting values and were **not validated** against visual inspection
-   for this dataset. A channel failing in more than 30 % of the complete epochs of a recording was
-   treated as a bad channel for that recording (excluded from all features and not used to
-   reject epochs). An epoch was rejected for all channels if any remaining channel failed it.
-   Recordings with fewer than 12 clean epochs (60 s) were to be excluded; none reached this limit.
-   Epoch counts were not equalised between sessions.
+1. **Control de archivos:** se excluyeron los registros cuyo archivo binario `.fdt` es más corto
+   de lo que exige su encabezado. Cinco registros se excluyeron por este motivo (OA: sub-01 SD,
+   sub-28 SD, sub-44 SD; OC: sub-03 SD, sub-28 NS).
+2. **Filtrado:** cada canal continuo se filtró con un pasabanda de 0,2 a 45 Hz antes de dividirlo
+   en épocas, con un filtro FIR de fase cero (no causal) y una sola pasada (diseño por ventana,
+   `firwin`, ventana Hamming, rizado en banda de paso de 0,0194, atenuación en banda de rechazo de
+   53 dB). MNE fijó automáticamente los anchos de transición: 0,2 Hz en el borde inferior (−6 dB
+   en 0,1 Hz) y 11,25 Hz en el borde superior (−6 dB en 50,6 Hz), con una longitud de filtro de
+   8251 muestras (16,5 s). Los bordes de la señal se extendieron con `reflect_limited`. No se
+   aplicó filtro notch; como el punto de −6 dB superior queda por encima de 50 Hz, el ruido de
+   línea solo se atenúa en parte, lo que no afecta a las bandas analizadas (≤ 30 Hz).
+3. **Épocas:** la señal filtrada se dividió en épocas consecutivas de 5 s sin solapamiento, desde
+   la primera muestra; la última época incompleta se descartó (registros de 300 s → 60 épocas).
+4. **Barrido de artefactos:** para cada época y cada uno de los 61 canales, la amplitud pico a
+   pico de la señal filtrada se comparó con límites fijos: > 150 µV (amplitud alta) o < 1 µV
+   (señal plana). Estos límites son valores iniciales y **no se validaron** contra inspección
+   visual en este dataset. Un canal que fallaba en más del 30 % de las épocas completas de un
+   registro se consideró canal malo para ese registro (excluido de todas las variables y no usado
+   para rechazar épocas). Una época se rechazó para todos los canales si fallaba en cualquiera de
+   los canales restantes. Los registros con menos de 12 épocas limpias (60 s) se excluirían;
+   ninguno llegó a ese límite. La cantidad de épocas no se igualó entre sesiones.
 
-## Spectral features
+## Variables espectrales
 
-* **Power spectral density:** Welch's method per clean epoch (2 s periodic Hann segments, 50 %
-  overlap, mean of segments, density scaling, mean removed from each segment), giving a
-  0.5 Hz resolution and four segments per epoch. Epoch spectra were averaged per channel and
-  recording, and converted to µV²/Hz.
-* **Band power:** absolute power was obtained by trapezoidal integration of the mean PSD over
-  delta (0.5–4 Hz), theta (4–8 Hz), alpha (8–13 Hz) and beta (13–30 Hz), with linear
-  interpolation at the exact band edges. Relative power was the band power divided by total
-  0.5–30 Hz power (%). The theta/beta ratio was absolute theta divided by absolute beta power.
-* **Regions:** channels were grouped by their 10-10 name into frontal (Fp/AF/F; 16 channels),
-  central (FC/C/CP; 20), temporal (FT/T/TP; 8), parietal (P; 9) and occipital (PO/O; 8). Regional
-  values are the mean of log10 absolute power (and of relative power) over the region's available
-  channels, computed only when at least 50 % of the region's channels were valid. Frontal
-  theta/beta was the mean log10 ratio over frontal channels.
+* **Densidad espectral de potencia:** método de Welch por época limpia (segmentos Hann periódicos
+  de 2 s, 50 % de solapamiento, media de segmentos, escala de densidad, media removida de cada
+  segmento), con una resolución de 0,5 Hz y cuatro segmentos por época. Los espectros de las
+  épocas se promediaron por canal y registro, y se convirtieron a µV²/Hz.
+* **Potencia por bandas:** la potencia absoluta se obtuvo por integración trapezoidal de la PSD
+  media sobre delta (0,5–4 Hz), theta (4–8 Hz), alfa (8–13 Hz) y beta (13–30 Hz), con
+  interpolación lineal en los bordes exactos de cada banda. La potencia relativa fue la potencia
+  de la banda dividida por la potencia total de 0,5–30 Hz (%). El cociente theta/beta fue la
+  potencia absoluta theta dividida por la potencia absoluta beta.
+* **Regiones:** los canales se agruparon según su nombre 10-10 en frontal (Fp/AF/F; 16 canales),
+  central (FC/C/CP; 20), temporal (FT/T/TP; 8), parietal (P; 9) y occipital (PO/O; 8). Los valores
+  regionales son la media del log10 de la potencia absoluta (y de la potencia relativa) sobre los
+  canales disponibles de la región, calculada solo cuando al menos el 50 % de sus canales era
+  válido. Theta/beta frontal fue la media del log10 del cociente sobre los canales frontales.
 
-## Statistical analysis
+## Análisis estadístico
 
-* **Analyses:** eyes open was the primary analysis (all participants with both sessions); eyes
-  closed was secondary (only participants with both eyes-closed sessions). The two conditions were
-  never pooled. Participants missing one session for a given condition were excluded from that
-  analysis only.
-* **Paired comparisons:** for each band × region, the within-subject difference SD − NS of log10
-  power was tested with the Wilcoxon signed-rank test (two-sided, zero differences discarded).
-  A paired t-test on the same log10 values served as a sensitivity analysis. Effect sizes:
-  matched-pairs rank-biserial correlation and Cohen's d_z (mean difference / SD of differences),
-  with the 95 % confidence interval of the mean difference (t distribution). The same tests were
-  applied to relative power.
-* **Multiple comparisons:** Benjamini–Hochberg false discovery rate across the 20 band × region
-  tests, separately for each eye condition; both corrected and uncorrected p-values are reported.
-  The frontal theta/beta ratio was a single pre-specified test per eye condition (uncorrected).
-* **Session order:** the SD − NS differences of participants who completed NS first and those
-  who completed SD first were compared with the Mann–Whitney U test (FDR across cells).
-* **Electrode-level analysis:** per band and eye condition, SD − NS differences of log10 power at
-  each electrode were tested with a cluster-based permutation test
-  (`mne.stats.permutation_cluster_1samp_test`; two-tailed; cluster-forming threshold at the t
-  value for p < .05 with n − 1 degrees of freedom; 5000 sign-flip permutations; cluster mass =
-  sum of t; spatial adjacency by Delaunay triangulation of the dataset's electrode positions).
-  A channel missing for a participant (bad channel in either session) entered as a zero
-  difference, a conservative choice.
-* **Hypotheses:** H1–H4 were specified before inspecting the results (`docs/hypotheses.md`).
-  TODO: confirm the date the hypotheses were fixed and add the verified references.
-* **Significance level:** α = 0.05 (two-sided).
+* **Análisis:** ojos abiertos fue el análisis principal (todos los participantes con ambas
+  sesiones); ojos cerrados fue el secundario (solo participantes con ambas sesiones de ojos
+  cerrados). Las dos condiciones nunca se combinaron. Los participantes a los que les faltaba una
+  sesión en una condición se excluyeron solo de ese análisis.
+* **Comparaciones pareadas:** para cada banda × región, la diferencia intrasujeto SD − NS del
+  log10 de la potencia se evaluó con la prueba de rangos con signo de Wilcoxon (a dos colas,
+  descartando diferencias nulas). Una prueba t pareada sobre los mismos valores log10 sirvió como
+  análisis de sensibilidad. Tamaños del efecto: correlación biserial de rangos para muestras
+  pareadas y d_z de Cohen (diferencia media / DE de las diferencias), con el intervalo de
+  confianza del 95 % de la diferencia media (distribución t). Las mismas pruebas se aplicaron a la
+  potencia relativa.
+* **Comparaciones múltiples:** tasa de falsos descubrimientos de Benjamini–Hochberg sobre las 20
+  pruebas banda × región, por separado para cada condición de ojos; se informan los p corregidos y
+  sin corregir. El cociente theta/beta frontal fue una única prueba preespecificada por condición
+  de ojos (sin corregir).
+* **Orden de sesión:** las diferencias SD − NS de los participantes que hicieron primero NS y de
+  los que hicieron primero SD se compararon con la prueba U de Mann–Whitney (FDR entre celdas).
+* **Análisis por electrodo:** por banda y condición de ojos, las diferencias SD − NS del log10 de
+  la potencia en cada electrodo se evaluaron con una prueba de permutación basada en clusters
+  (`mne.stats.permutation_cluster_1samp_test`; a dos colas; umbral de formación de clusters en el
+  valor t para p < 0,05 con n − 1 grados de libertad; 5000 permutaciones por cambio de signo;
+  masa del cluster = suma de t; adyacencia espacial por triangulación de Delaunay de las
+  posiciones de electrodos del dataset). Un canal faltante para un participante (canal malo en
+  cualquiera de las sesiones) se tomó como diferencia cero, una elección conservadora.
+* **Hipótesis:** H1–H4 se especificaron antes de inspeccionar los resultados
+  (`docs/hypotheses.md`). TODO: confirmar la fecha en que se fijaron las hipótesis y agregar las
+  referencias verificadas.
+* **Nivel de significación:** α = 0,05 (a dos colas).
 
-## TODO summary
+## Resumen de TODO
 
-* Sample description (sex, age, inclusion criteria) and the sleep-deprivation protocol.
-* Amplifier model, ground electrode and online filters.
-* Exact software versions (from `results/config_used.json` and `requirements*.txt`).
-* Verified references for H1–H4 (`docs/hypotheses.md`).
-* Justification references for the 150 µV / 1 µV limits, the 30 % bad-channel rule and the 12-epoch
-  minimum, or a statement that they are pragmatic choices.
+* Descripción de la muestra (sexo, edad, criterios de inclusión) y protocolo de privación del sueño.
+* Modelo de amplificador, electrodo de tierra y filtros en línea.
+* Versiones exactas del software (de `results/config_used.json` y `requirements*.txt`).
+* Referencias verificadas para H1–H4 (`docs/hypotheses.md`).
+* Referencias que justifiquen los límites de 150 µV / 1 µV, la regla del 30 % para canales malos
+  y el mínimo de 12 épocas, o una aclaración de que son decisiones pragmáticas.
+* Si los resultados finales usan otro filtrado o ICA confirmada, actualizar el preprocesamiento.

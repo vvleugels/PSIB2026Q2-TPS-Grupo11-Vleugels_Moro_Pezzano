@@ -1,4 +1,4 @@
-> La aplicación principal ahora ofrece ICA con confirmación manual y epochs de 5 s
+> La aplicación principal ahora ofrece ICA con confirmación manual y épocas de 5 s
 > (ver README). Este documento describe el piloto independiente de 4 s y su protocolo
 > de validación; sus revisiones y aprobación automática no se transfieren a la GUI.
 > Ambos flujos comparten el motor de ajuste Infomax y sus controles de convergencia.
@@ -8,12 +8,12 @@
 ## Estado y alcance
 
 La primera etapa está implementada como motor y visor **experimentales separados**
-de `gui.py`. La aplicación habitual conserva su procesamiento actual y sus epochs
-de 5 segundos. La integración del diseño de `docs/design.md` requiere primero
+de `gui.py`. La aplicación habitual conserva su procesamiento actual y sus épocas
+de 5 segundos. Integrarlo a la aplicación (según la nota de diseño original, hoy en el historial de git) requiere primero
 revisión humana de calibración, congelamiento del perfil y evaluación independiente.
 No hay aceptación automática habilitada ni un perfil aprobado para uso definitivo.
 
-El piloto implementa epochs de 4 segundos; copias continuas de 0,2–45 Hz y 1–45 Hz;
+El piloto implementa épocas de 4 segundos; copias continuas de 0,2–45 Hz y 1–45 Hz;
 ICA Infomax extendida; reglas explicables; confirmación de componentes y reparaciones;
 referencia promedio fija por registro y revisiones versionadas. No utiliza
 ICLabel, AutoReject, redes neuronales ni clasificadores entrenados.
@@ -52,37 +52,37 @@ explícita; no impiden la revisión de señales.
 
 ## Recorrido de revisión
 
-1. **Revisión ciega:** observar original y filtrada, marcar cada canal/epoch como
-   fisiológico o con artefacto y agregar notas. El botón de epoch fisiológica marca
+1. **Revisión ciega:** observar original y filtrada, marcar cada canal/época como
+   fisiológico o con artefacto y agregar notas. El botón de época fisiológica marca
    todos sus canales mediante una acción manual. La ventana muestra 12 segundos,
-   la cuadrícula 4 segundos y el espectro la epoch seleccionada. Las parciales
+   la cuadrícula 4 segundos y el espectro la época seleccionada. Las parciales
    son visibles, pero no entran en ICA, estadísticas de validación ni espectros.
 2. **Cerrar revisión ciega:** requiere etiquetas para todos los canales de todas
-   las epochs completas. Bloquea estas etiquetas y revela las sugerencias. No
+   las épocas completas. Bloquea estas etiquetas y revela las sugerencias. No
    confundir cerrar esta revisión con aprobar el perfil.
 3. **Calidad inicial:** confirmar nombres de electrodos persistentemente malos y
-   números de epochs globalmente inutilizables. Las listas no se rellenan con
+   números de épocas globalmente inutilizables. Las listas no se rellenan con
    exclusiones automáticas. Ajustar el perfil solo en calibración.
 4. **ICA:** confirmar esas decisiones y ajustar. Se excluyen del ajuste las
-   epochs globales, parciales y con problemas no resueltos en los canales usados.
+   épocas globales, parciales y con problemas no resueltos en los canales usados.
    Una etiqueta manual fisiológica permite revisar una sugerencia estadística;
-   una etiqueta de artefacto impide usar esa epoch en el ajuste. Se muestran mapa,
+   una etiqueta de artefacto impide usar esa época en el ajuste. Se muestran mapa,
    señal, espectro, curtosis, potencia rápida y correlaciones frontales por componente.
    La ausencia de mapa se explica si falta geometría. Correlación frontal no es EOG.
 5. **Reparaciones:** escribir los componentes a excluir, solicitar propuestas y
-   elegir los números de las epochs a reparar. La confirmación conjunta aplica
+   elegir los números de las épocas a reparar. La confirmación conjunta aplica
    únicamente esas selecciones. Se cuentan los canales persistentemente interpolados
    dentro del límite de reparación local. Una reparación no equivale a aceptación.
 6. **Revisión final:** comparar filtrada y limpia con la misma referencia promedio,
    revisar nuevamente y guardar etiquetas finales. La referencia usa un conjunto
-   fijo de canales sin problemas residuales en todas las epochs utilizables. Un
+   fijo de canales sin problemas residuales en todas las épocas utilizables. Un
    canal localmente inutilizable queda fuera de esa referencia para todo el registro;
-   no rechaza automáticamente los otros canales ni toda la epoch.
+   no rechaza automáticamente los otros canales ni toda la época.
 7. **Informe:** exportar evaluaciones y el informe desde el visor o la CLI. Los
    destinos de exportación deben ser nuevos para no sobrescribir originales ni
    revisiones. Los resultados siguen siendo experimentales.
 
-Las listas de epochs/componentes de la interfaz empiezan en **1**; las estructuras
+Las listas de épocas/componentes de la interfaz empiezan en **1**; las estructuras
 internas y los JSON usan índices desde **0**. Los canales se identifican por nombre.
 Los cálculos corren fuera del hilo de Tk. Cancelar un ajuste o limpieza solicita
 descartar el cálculo antes de publicar el resultado; no interrumpe internamente
@@ -102,10 +102,10 @@ una iteración de MNE. Cerrar espera ese punto seguro.
 - FIR continuo: los mismos parámetros Hamming, fase cero, `firwin`, transiciones
   y longitud automáticas y padding `reflect_limited` del filtro actual. Se valida
   su longitud antes de ejecutarlo; no se concatenan intervalos antes de filtrar.
-- Indicadores por canal/epoch: pico a pico en µV, varianza, muestras no finitas,
+- Indicadores por canal/época: pico a pico en µV, varianza, muestras no finitas,
   potencia de 30–45 Hz dividida por potencia de 1–45 Hz. Welch utiliza segmentos
   de 2 segundos y solapamiento de 50 %.
-- Desviación robusta: `0,67448975 × (valor − mediana) / MAD`, por canal sobre epochs
+- Desviación robusta: `0,67448975 × (valor − mediana) / MAD`, por canal sobre épocas
   completas. Se aplica al logaritmo natural de la varianza y a la proporción de
   potencia rápida. MAD cero o menos de tres observaciones finitas dejan el indicador
   no evaluable; eso nunca cuenta como aceptación automática segura.
@@ -121,9 +121,9 @@ una iteración de MNE. Cerrar espera ese punto seguro.
 
 Los parámetros no están validados. El informe compara avisos y posibles aceptaciones
 con tus etiquetas; separa indicadores no evaluables y pendientes. Los cambios de PSD
-y potencia por bandas se calculan en epochs originalmente etiquetadas como fisiológicas,
+y potencia por bandas se calculan en épocas originalmente etiquetadas como fisiológicas,
 aplicando a ambas señales exactamente la misma referencia final. Incluye pruebas de
-interpolación ocultando Cz, Pz y Oz cuando hay geometría y epochs con todos los donantes
+interpolación ocultando Cz, Pz y Oz cuando hay geometría y épocas con todos los donantes
 etiquetados como sanos. La muestra pequeña y un único revisor limitan las conclusiones.
 
 ## Congelar y evaluar
@@ -170,7 +170,7 @@ completa, incluidos manifiesto de muestra, perfiles congelados y artefactos FIF.
 ## Hallazgos de la verificación inicial del dataset
 
 Los 12 registros previstos fueron accesibles: 61 canales EEG, 500 Hz, 300 segundos,
-referencia FCz y 75 epochs completas por registro. No se necesitaron sustituciones.
+referencia FCz y 75 épocas completas por registro. No se necesitaron sustituciones.
 Sin embargo, las posiciones en los `.set` son NaN para todos los canales. Existen
 archivos `electrodes.tsv`, pero no `coordsystem.json` que documente sus unidades y
 sistema de coordenadas. Un objeto de montaje de MNE con 61 nombres **no garantiza**

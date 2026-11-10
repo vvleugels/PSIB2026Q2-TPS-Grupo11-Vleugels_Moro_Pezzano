@@ -9,12 +9,10 @@ archivos EEG originales nunca se modifican.
 
 | Documento | Contenido |
 |---|---|
-| [docs/batch.md](docs/batch.md) | extracción por lotes: pasos, opciones y salidas |
-| [docs/analysis.md](docs/analysis.md) | regiones, estadística SD vs NS y clusters |
+| [docs/pipeline.md](docs/pipeline.md) | método del análisis de grupo: lote, regiones, estadística y clusters |
 | [docs/hypotheses.md](docs/hypotheses.md) | hipótesis H1–H4 (referencias pendientes, TODO) |
 | [docs/methods_draft.md](docs/methods_draft.md) | borrador de Materiales y Métodos |
 | [docs/validation.md](docs/validation.md) | piloto de limpieza y validación (`validate_eeg.py`), independiente de la GUI |
-| [docs/design.md](docs/design.md) | nota de diseño original (histórica) |
 
 ## Instalación y ejecución
 
@@ -386,6 +384,9 @@ clínica. «Aceptada» en el barrido automático significa «dentro de los lími
 amplitud», no inspección visual. El paso 3 también escribe `results/report.md`: un solo
 documento con todas las tablas, las hipótesis y las figuras con sus leyendas (botón
 **Abrir informe** en **Proceso**).
+
+El detalle del método (orden de cada paso, umbrales, pruebas y limitaciones) está en
+[docs/pipeline.md](docs/pipeline.md).
 
 Salidas en `results/` (no se versionan; se regeneran con los comandos anteriores):
 

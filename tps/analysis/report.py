@@ -82,7 +82,7 @@ def build_report(results_dir: Path) -> str:
         f'Generated {datetime.now():%Y-%m-%d %H:%M} from `{results_dir.name}/` by `python -m tps.analysis.figures`.',
         'Eyes open is the primary analysis and eyes closed the secondary; they are never pooled.',
         'Group-level spectral differences only; no clinical interpretation. «Accepted» epochs only',
-        'mean «within the amplitude limits», not visual inspection. Details: `docs/analysis.md`.',
+        'mean «within the amplitude limits», not visual inspection. Details: `docs/pipeline.md`.',
         '',
         '## Region mapping', '', md_table(region_table()), '',
     ]

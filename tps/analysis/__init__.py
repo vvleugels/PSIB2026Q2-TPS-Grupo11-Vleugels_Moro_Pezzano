@@ -1,1 +1,1 @@
-"""Group-level region features and SD vs NS statistics; see docs/analysis.md."""
+"""Group-level region features and SD vs NS statistics; see docs/pipeline.md."""
