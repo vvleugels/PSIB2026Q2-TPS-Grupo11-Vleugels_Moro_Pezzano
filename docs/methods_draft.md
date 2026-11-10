@@ -56,9 +56,15 @@ FCz, sin re-referenciar, interpolar, aplicar ICA ni remuestrear.
 4. **Barrido de artefactos:** para cada época y cada uno de los 61 canales, la amplitud pico a
    pico de la señal filtrada se comparó con límites fijos: > 150 µV (amplitud alta) o < 1 µV
    (señal plana). Estos límites son valores iniciales y **no se validaron** contra inspección
-   visual en este dataset. Un canal que fallaba en más del 30 % de las épocas completas de un
-   registro se consideró canal malo para ese registro (excluido de todas las variables y no usado
-   para rechazar épocas). Una época se rechazó para todos los canales si fallaba en cualquiera de
+   visual en este dataset. Un canal se consideró malo para un registro (excluido de todas las
+   variables, sin interpolar y no usado para rechazar épocas) si fallaba en más del 30 % de las
+   épocas completas, si se había marcado a mano tras inspección visual, o si cumplía alguno de
+   estos criterios sobre el registro completo, adaptados de PREP (Bigdely-Shamlo et al., 2015) y
+   EEGLAB clean_rawdata: variación menor a 1 µV durante al menos 5 s; z robusto > 5 de su desvío
+   robusto respecto de los demás canales; percentil 98 de su correlación absoluta con los demás
+   canales < 0,4 en más del 20 % de las ventanas de 1 s; o z robusto > 5 de la potencia relativa
+   sobre 45 Hz. TODO: informar cuántos canales excluyó cada criterio (columna `criterion` de
+   `exclusions.csv`) y verificar la referencia de PREP. Una época se rechazó para todos los canales si fallaba en cualquiera de
    los canales restantes. Los registros con menos de 12 épocas limpias (60 s) se excluirían;
    ninguno llegó a ese límite. La cantidad de épocas no se igualó entre sesiones.
 
@@ -116,6 +122,6 @@ FCz, sin re-referenciar, interpolar, aplicar ICA ni remuestrear.
 * Modelo de amplificador, electrodo de tierra y filtros en línea.
 * Versiones exactas del software (de `results/config_used.json` y `requirements*.txt`).
 * Referencias verificadas para H1–H4 (`docs/hypotheses.md`).
-* Referencias que justifiquen los límites de 150 µV / 1 µV, la regla del 30 % para canales malos
+* Referencias que justifiquen los límites de 150 µV / 1 µV, la regla del 30 % y los criterios automáticos para canales malos
   y el mínimo de 12 épocas, o una aclaración de que son decisiones pragmáticas.
 * Si los resultados finales usan otro filtrado o ICA confirmada, actualizar el preprocesamiento.

@@ -26,6 +26,7 @@ import numpy as np
 
 from tps import config
 from tps.core.annotations import make_epochs
+from tps.core.badchannels import find_bad_channels
 from tps.core.data import Recording, Study, annex_placeholder, discover, open_recording
 from tps.core.processing import FilterConfig
 from tps.core.screening import scan_recording
@@ -36,9 +37,9 @@ log = logging.getLogger('batch')
 FEATURE_COLUMNS = ['sub', 'ses', 'condition', 'eyes', 'channel', 'band', 'abs_power_uV2',
                    'rel_power_pct', 'n_epochs_used', 'n_epochs_rejected']
 THETA_BETA_COLUMNS = ['sub', 'ses', 'condition', 'eyes', 'channel', 'ratio']
-EXCLUSION_COLUMNS = ['sub', 'ses', 'condition', 'eyes', 'level', 'channel', 'epoch', 'reason']
+EXCLUSION_COLUMNS = ['sub', 'ses', 'condition', 'eyes', 'level', 'channel', 'epoch', 'criterion', 'reason']
 # Bumped whenever the per-recording output format changes, so old caches are recomputed.
-CACHE_FORMAT = 3   # ICA provenance and source-specific cache selections
+CACHE_FORMAT = 4   # 4: bad-channel criteria and manual marks; 3: ICA provenance
 # PSD bins exported to psd_channels.csv: up to the filter's upper cutoff, where the spectrum
 # is still meaningful (0.5 Hz resolution with 2 s Welch segments).
 PSD_MAX_HZ = config.FILTER.high
@@ -57,8 +58,10 @@ def labels(study: Study) -> dict:
                 eyes=config.EYES.get(study.task, study.task))
 
 
-def exclusion(study: Study, level: str, reason: str, channel: str = '', epoch: str = '') -> dict:
-    return {**labels(study), 'level': level, 'channel': channel, 'epoch': epoch, 'reason': reason}
+def exclusion(study: Study, level: str, reason: str, channel: str = '', epoch: str = '',
+              criterion: str = '') -> dict:
+    return {**labels(study), 'level': level, 'channel': channel, 'epoch': epoch,
+            'criterion': criterion, 'reason': reason}
 
 
 # ----------------------------------------------------------------------------- inventory
@@ -130,8 +133,11 @@ class EpochDecision:
     partial: list        # trailing incomplete epochs (never used)
 
 
-def decide_epochs(recording: Recording, scan: dict) -> EpochDecision:
-    """Turn per-channel screening findings into bad channels and rejected epochs."""
+def decide_epochs(recording: Recording, scan: dict, known_bad: dict | None = None) -> EpochDecision:
+    """Turn per-channel screening findings into bad channels and rejected epochs.
+
+    known_bad: {channel: reason} already bad for the whole recording (manual marks and the
+    automatic criteria of tps/core/badchannels.py); they never reject epochs."""
     epochs = make_epochs(recording.raw.n_times, recording.sfreq)
     complete = [e for e in epochs if not e.partial]
     partial = [e for e in epochs if e.partial]
@@ -140,11 +146,11 @@ def decide_epochs(recording: Recording, scan: dict) -> EpochDecision:
     for epoch in complete:
         for issue in findings.get(epoch.index, []):
             flagged[issue['channel']] = flagged.get(issue['channel'], 0) + 1
-    bad = {}
+    bad = dict(known_bad or {})
     limit = config.BAD_CHANNEL_MAX_FRACTION
     if limit is not None and complete:
         for channel, count in flagged.items():
-            if count / len(complete) > limit:
+            if channel not in bad and count / len(complete) > limit:
                 bad[channel] = (f'flagged in {count}/{len(complete)} complete epochs '
                                 f'(> {limit:.0%}); treated as a bad channel')
     used, rejected = [], {}
@@ -163,7 +169,8 @@ def decide_epochs(recording: Recording, scan: dict) -> EpochDecision:
     return EpochDecision(used, rejected, bad, partial)
 
 
-def decide_epochs_per_channel(recording: Recording, scan: dict) -> tuple[dict, dict, list]:
+def decide_epochs_per_channel(recording: Recording, scan: dict, known_bad: dict | None = None
+                              ) -> tuple[dict, dict, list]:
     """Per-channel rejection: each channel keeps the complete epochs in which it passed.
 
     Returns ({channel: [epochs]}, {channel: reason} for channels below MIN_CHANNEL_EPOCHS,
@@ -174,8 +181,10 @@ def decide_epochs_per_channel(recording: Recording, scan: dict) -> tuple[dict, d
     for epoch in complete:
         for issue in scan['findings'].get(epoch.index, []):
             failed[issue['channel']].add(epoch.index)
-    kept, excluded = {}, {}
+    kept, excluded = {}, dict(known_bad or {})
     for channel in recording.channels:
+        if channel in excluded:
+            continue
         own = [e for e in complete if e.index not in failed[channel]]
         if len(own) < config.MIN_CHANNEL_EPOCHS:
             excluded[channel] = (f'only {len(own)}/{len(complete)} clean epochs for this channel '
@@ -202,8 +211,24 @@ def channel_psd(recording: Recording, channel: str, epochs: list, effective: dic
     return frequencies, mean * 1e12
 
 
+def known_bad_channels(recording: Recording, filtering: FilterConfig, manual: dict | None
+                       ) -> tuple[dict, dict]:
+    """({channel: reason}, {channel: criterion}) of manual marks plus the automatic criteria."""
+    reasons, criteria = {}, {}
+    for channel, reason in (manual or {}).items():
+        if channel in recording.channels:
+            reasons[channel] = 'marked manually' + (f': {reason}' if reason else '')
+            criteria[channel] = 'manual'
+    if config.BAD_CHANNELS is not None:
+        for channel, found in find_bad_channels(recording, filtering, config.BAD_CHANNELS).items():
+            if channel not in reasons:
+                reasons[channel] = found['reason']
+                criteria[channel] = found['criterion']
+    return reasons, criteria
+
+
 def process_recording(recording: Recording, rejection_mode: str | None = None,
-                      filtering: FilterConfig | None = None) -> dict:
+                      filtering: FilterConfig | None = None, manual_bad: dict | None = None) -> dict:
     """Screen, epoch and compute band powers for every good channel of one open recording.
 
     Returns a JSON-serialisable dict with feature rows, theta/beta rows, exclusions and a summary.
@@ -216,12 +241,14 @@ def process_recording(recording: Recording, rejection_mode: str | None = None,
     effective = config.SPECTRAL.effective(recording.sfreq)
     # Screening runs on the filtered signal over ALL EEG channels.
     scan = scan_recording(recording, recording.channels, config.SCREENING, filtering)
+    known, criteria = known_bad_channels(recording, filtering, manual_bad)
     if (rejection_mode or config.REJECTION_MODE) == 'per_channel':
-        return process_per_channel(recording, scan, effective, filtering)
-    decision = decide_epochs(recording, scan)
+        return process_per_channel(recording, scan, effective, filtering, known, criteria)
+    decision = decide_epochs(recording, scan, known)
     exclusions = [exclusion(study, 'epoch', 'incomplete final epoch (only complete 5 s epochs are used)',
                             epoch=str(e.index + 1)) for e in decision.partial]
-    exclusions += [exclusion(study, 'channel', reason, channel=channel)
+    exclusions += [exclusion(study, 'channel', reason, channel=channel,
+                             criterion=criteria.get(channel, 'peak_to_peak'))
                    for channel, reason in sorted(decision.bad_channels.items())]
     epochs_by_index = {e.index: e for e in make_epochs(recording.raw.n_times, recording.sfreq)}
     for index, reason in sorted(decision.rejected.items()):
@@ -283,14 +310,18 @@ def channel_features(recording: Recording, channel: str, epochs: list, effective
 
 
 def process_per_channel(recording: Recording, scan: dict, effective: dict,
-                        filtering: FilterConfig | None = None) -> dict:
+                        filtering: FilterConfig | None = None, known: dict | None = None,
+                        criteria: dict | None = None) -> dict:
     """Per-channel rejection: n_epochs_used / n_epochs_rejected are per channel in the outputs."""
     study = recording.study
-    kept, excluded, partial = decide_epochs_per_channel(recording, scan)
+    kept, excluded, partial = decide_epochs_per_channel(recording, scan, known)
+    criteria = criteria or {}
     complete = len([e for e in make_epochs(recording.raw.n_times, recording.sfreq) if not e.partial])
     exclusions = [exclusion(study, 'epoch', 'incomplete final epoch (only complete 5 s epochs are used)',
                             epoch=str(e.index + 1)) for e in partial]
-    exclusions += [exclusion(study, 'channel', reason, channel=channel) for channel, reason in sorted(excluded.items())]
+    exclusions += [exclusion(study, 'channel', reason, channel=channel,
+                             criterion=criteria.get(channel, 'peak_to_peak'))
+                   for channel, reason in sorted(excluded.items())]
     used = sorted(len(epochs) for epochs in kept.values())
     median_used = used[len(used) // 2] if used else 0
     summary = dict(**labels(study), file=study.path.name, n_channels=len(recording.channels),
@@ -339,7 +370,8 @@ def run_one(study: Study, cache_dir: Path, digest: str, selection=None, data_dir
                 if selection is not None:
                     from tps.core.ica import apply_snapshot
                     apply_snapshot(recording, data_dir, annotations_dir, selection)
-                result = process_recording(recording, rejection_mode, filtering)
+                result = process_recording(recording, rejection_mode, filtering,
+                                           (selection or {}).get('bad_channels'))
                 from tps.core.ica import context
                 result['ica'] = context(recording)
             except Exception as exc:   # non-finite samples, filter too long, ...

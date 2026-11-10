@@ -65,6 +65,9 @@ class AnnotationStore:
         self.records = [dict(index=e.index, first=e.first, last=e.last,
                              partial=e.partial, state=STATES[0], reason='', note='',
                              reviewed_at=None, channels=[], filter=None) for e in self.epochs]
+        # Channels marked bad by hand: {channel: {'reason': str, 'marked_at': iso}}. Optional
+        # key of the same version-1 file, so older files load unchanged.
+        self.bad_channels = {}
         self.dirty = False
         self.blocked = ''
         self.digest = None
@@ -126,7 +129,16 @@ class AnnotationStore:
                             or actual['reviewed_at'] is None or actual['state'] == STATES[2]):
                         raise ValueError('Contexto del barrido automático inválido.')
                     ScreeningConfig(screening['high_uv'], screening['flat_uv']).validate()
+            marks = saved.get('bad_channels', {})
+            if not isinstance(marks, dict) or any(
+                    c not in self.recording.channels or not isinstance(v, dict)
+                    or not isinstance(v.get('reason'), str) or len(v['reason']) > 200
+                    for c, v in marks.items()):
+                raise ValueError('Canales malos inválidos.')
+            for value in marks.values():
+                datetime.fromisoformat(value['marked_at'])
             self.records = records
+            self.bad_channels = marks
         except (OSError, ValueError, KeyError, TypeError, OverflowError) as exc:
             self.blocked = f'Anotaciones protegidas: {exc} Archivo: {self.path.name}'
 
@@ -146,6 +158,21 @@ class AnnotationStore:
         else:
             self.records[index]['screening'] = dict(screening)
         self.dirty = True
+
+    def mark_bad_channel(self, channel, reason=''):
+        """Mark a channel as bad for the whole recording (manual decision, saved with save())."""
+        if self.blocked:
+            raise ValueError(self.blocked)
+        if channel not in self.recording.channels or len(reason) > 200:
+            raise ValueError('Canal inválido (el motivo admite hasta 200 caracteres).')
+        self.bad_channels[channel] = dict(reason=reason, marked_at=datetime.now(timezone.utc).isoformat())
+        self.dirty = True
+
+    def unmark_bad_channel(self, channel):
+        if self.blocked:
+            raise ValueError(self.blocked)
+        if self.bad_channels.pop(channel, None) is not None:
+            self.dirty = True
 
     def apply_screening(self, result):
         """Accept eligible epochs and recheck prior automatic decisions as a batch.
@@ -190,8 +217,10 @@ class AnnotationStore:
         if (self.checksum(content) if content is not None else None) != self.digest:
             self.blocked = 'El archivo de anotaciones cambió externamente. No se sobrescribirá.'
             raise ValueError(self.blocked)
-        payload = json.dumps(dict(version=1, source=self.identity, epoch_seconds=5,
-                                  epochs=self.records), ensure_ascii=False, indent=2).encode('utf-8')
+        content = dict(version=1, source=self.identity, epoch_seconds=5, epochs=self.records)
+        if self.bad_channels:   # written only when used, so files without marks stay as before
+            content['bad_channels'] = self.bad_channels
+        payload = json.dumps(content, ensure_ascii=False, indent=2).encode('utf-8')
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary = None
         try:

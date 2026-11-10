@@ -34,7 +34,7 @@ HEADINGS = {
     'sub': 'Participante', 'ses': 'Sesión', 'condition': 'Condición', 'eyes': 'Ojos',
     'analysis': 'Análisis', 'measure': 'Medida', 'band': 'Banda', 'region': 'Región',
     'channel': 'Electrodo', 'channels': 'Electrodos', 'epoch': 'Época', 'level': 'Nivel',
-    'reason': 'Motivo', 'n': 'n', 'mean_ns': 'Media NS', 'mean_sd': 'Media SD',
+    'reason': 'Motivo', 'criterion': 'Criterio', 'n': 'n', 'mean_ns': 'Media NS', 'mean_sd': 'Media SD',
     'mean_diff': 'Dif. media SD−NS', 'median_diff': 'Dif. mediana', 'ci95_low': 'IC95 inf.',
     'ci95_high': 'IC95 sup.', 'cohens_dz': 'd_z', 'rank_biserial': 'r biserial',
     'wilcoxon_W': 'W', 'p_wilcoxon': 'p Wilcoxon', 'p_fdr_wilcoxon': 'p FDR Wilcoxon',

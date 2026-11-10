@@ -60,15 +60,7 @@ def _p_label(p: float) -> str:
 
 
 # --------------------------------------------------------------------------- topomaps
-def standard_info(channels: list[str]):
-    """mne.Info with an MNE standard 10-05 montage that contains the dataset's channel names."""
-    import mne
-    info = mne.create_info(channels, 500.0, 'eeg')   # sfreq is irrelevant for a topomap
-    available = mne.channels.get_builtin_montages()
-    # 'standard_1005' was renamed 'colin27_1005' in recent MNE; use whichever exists.
-    name = 'colin27_1005' if 'colin27_1005' in available else 'standard_1005'
-    info.set_montage(mne.channels.make_standard_montage(name))
-    return info
+from tps.core.spectral import standard_info   # shared with the explorer (no pandas there)
 
 
 # 'absolute': log10 absolute power (µV²); 'relative': relative power (% of 0.5-30 Hz).

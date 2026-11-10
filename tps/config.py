@@ -6,8 +6,10 @@ the GUI uses, so batch results and GUI results are computed identically.
 """
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 
+from tps.core.badchannels import BadChannelConfig
 from tps.core.processing import FilterConfig
 from tps.core.screening import ScreeningConfig
 from tps.core.spectral import SpectralConfig
@@ -46,6 +48,14 @@ SCREENING = ScreeningConfig(high_uv=150.0, flat_uv=1.0)
 # Set to None to reproduce the strict GUI rule (any flagged channel rejects the epoch).
 BAD_CHANNEL_MAX_FRACTION: float | None = 0.30
 
+# Automatic bad-channel criteria over the whole recording (tps/core/badchannels.py), in
+# addition to the peak-to-peak rule above: flat signal, abnormal amplitude, low correlation
+# with the other channels and high-frequency noise. Defaults follow PREP / EEGLAB
+# clean_rawdata; they are starting values, NOT validated for ds004902. Channels marked by
+# hand in the explorer (annotations) are always added. Set to None to use only the
+# peak-to-peak rule and the manual marks.
+BAD_CHANNELS: BadChannelConfig | None = BadChannelConfig()
+
 # Minimum clean epochs per recording: 12 epochs = 60 s of clean EEG (20 % of a 300 s
 # recording). With 2 s / 50 % Welch this averages 48 segments per channel. Resting-state
 # band-power reliability studies report that ~40-60 s of artifact-free data is enough
@@ -82,6 +92,7 @@ def as_dict() -> dict:
                        measure='peak-to-peak per channel and epoch, on the filtered signal',
                        validated=False),
         bad_channel_max_fraction=BAD_CHANNEL_MAX_FRACTION,
+        bad_channel_criteria=None if BAD_CHANNELS is None else asdict(BAD_CHANNELS),
         min_clean_epochs=MIN_CLEAN_EPOCHS,
         sessions=SESSIONS,
         eyes=EYES,

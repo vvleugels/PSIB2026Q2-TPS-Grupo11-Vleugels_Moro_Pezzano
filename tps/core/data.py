@@ -105,9 +105,11 @@ class Recording:
             self.signal_raw.close()
         self.raw.close()
 
-    def read_channels(self, channels, start, config=FilterConfig(), seconds=10):
-        if not channels or len(channels) > 8 or any(c not in self.channels for c in channels):
-            raise ValueError('Seleccioná entre 1 y 8 electrodos del registro.')
+    def read_channels(self, channels, start, config=FilterConfig(), seconds=10, limit=8):
+        """Window of several channels; limit=None allows every channel (stacked view)."""
+        if (not channels or (limit is not None and len(channels) > limit)
+                or any(c not in self.channels for c in channels)):
+            raise ValueError(f'Seleccioná entre 1 y {limit} electrodos del registro.')
         if not config.active:
             return self.read_window(tuple(channels), start, seconds)
         if not math.isfinite(start) or not 0 <= start < self.duration:
@@ -115,7 +117,11 @@ class Recording:
         self.filter.prepare(config)
         first = min(round(start * self.sfreq), self.raw.n_times - 1)
         last = min(first + round(seconds * self.sfreq), self.raw.n_times)
-        values = np.stack([self.filter.channel(c, config)[first:last] for c in channels])
+        if len(channels) > 1:   # one block read + filter per 16 channels instead of one per channel
+            cache = self.filter.prefetch(channels, config)
+            values = np.stack([cache[c][first:last] for c in channels])
+        else:
+            values = np.stack([self.filter.channel(c, config)[first:last] for c in channels])
         return Segment(np.arange(first, last) / self.sfreq, values * 1e6,
                        first / self.sfreq, last / self.sfreq, tuple(channels))
 

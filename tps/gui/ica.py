@@ -284,7 +284,7 @@ class ICAUI:
             return
         try:
             excluded = self.checked_ica()
-            channels = self.visible_channels() or [self.recording.channels[0]]
+            channels = self.visible_channels()[:8] or [self.recording.channels[0]]
             recording, config, model = self.recording, self.config, self.ica_model
             start = round(self.start * recording.sfreq)
             stop = min(recording.raw.n_times, start + round(10 * recording.sfreq))

@@ -7,7 +7,10 @@ from matplotlib.figure import Figure
 
 from tps.gui.theme import BG, CARD, IRIS, IRIS_LIGHT, TEXT, style_dialog
 from tps.core.processing import FilterConfig
-from tps.core.spectral import SpectralConfig, select_studies, run_analysis, plot_result, export_result
+from tps.core.spectral import (SpectralConfig, select_studies, run_analysis, plot_result, export_result,
+                               channel_spectra, plot_channel_spectra, export_channel_spectra)
+
+ALL_CHANNELS = 'Todos los canales'
 
 
 # Tabla de bandas: (id, encabezado, ancho). Al comparar NS/SD, cada banda ocupa una fila
@@ -54,7 +57,7 @@ class SpectralUI:
         controls = ttk.Frame(parent, style='Card.TFrame', padding=(0, 0, 0, 0))
         controls.pack(fill='x')
         mode = ttk.Combobox(controls, textvariable=self.spectral_mode,
-                            values=('Estudio actual', 'Comparar NS/SD'), state='readonly', width=22)
+                            values=('Estudio actual', 'Comparar NS/SD', ALL_CHANNELS), state='readonly', width=22)
         mode.pack(side='left')
         mode.bind('<<ComboboxSelected>>', lambda e: self.invalidate_spectrum())
         self.calculate_button = ttk.Button(controls, text='Calcular', style='Accent.TButton',
@@ -95,6 +98,7 @@ class SpectralUI:
         ttk.Checkbutton(export_bar, text='Incluir gráfico PNG', variable=self.export_png,
                         style='Card.TCheckbutton').pack(side='left', padx=8)
         table_frame = ttk.Frame(parent, style='Card.TFrame', padding=(0, 6, 0, 0))
+        self.band_table_frame = table_frame
         table_frame.pack(side='bottom', fill='x')
         columns = ('session', 'band', 'range', 'absolute', 'relative')
         self.band_table = ttk.Treeview(table_frame, columns=columns, show='headings', height=4)
@@ -109,6 +113,7 @@ class SpectralUI:
         self.spectral_toolbar.configure(background='white')
         self.spectral_toolbar.pack(side='bottom', fill='x')
         self.spectral_canvas.get_tk_widget().pack(fill='both', expand=True)
+        self.spectral_canvas.mpl_connect('pick_event', self.spectrum_picked)
         self.invalidate_spectrum('Seleccioná un estudio y un electrodo.')
 
     def set_band_columns(self, columns):
@@ -236,6 +241,9 @@ class SpectralUI:
         if self.store.blocked:
             self.spectral_message.set(self.store.blocked)
             return
+        if self.spectral_mode.get() == ALL_CHANNELS:
+            self.calculate_channel_spectra()
+            return
         try:
             studies = select_studies(self.recording.study, self.inventory,
                                      self.spectral_mode.get() == 'Comparar NS/SD')
@@ -277,8 +285,83 @@ class SpectralUI:
                 self.spectral_message.set(str(exc))
         self.submit(work, done, on_error=failed)
 
+    def calculate_channel_spectra(self):
+        """Every channel of the current study over the same épocas (EEGLAB «channel spectra and maps»)."""
+        try:
+            self.spectral_config.effective(self.recording.sfreq)
+        except ValueError as exc:
+            self.invalidate_spectrum(str(exc))
+            return
+        self.invalidate()
+        self.invalidate_spectrum('Calculando Welch de todos los canales…')
+        revision = self.spectral_revision
+        recording, store = self.recording, self.store
+        config, filtering, include = self.spectral_config, self.config, self.include_unreviewed.get()
+        self.spectral_pending = True
+
+        def done(result):
+            self.spectral_pending = False
+            if revision != self.spectral_revision:
+                return
+            self.spectral_result = result
+            self.spectral_message.set(('Exploratorio · Incluye épocas no revisadas' if include
+                                       else 'Resultado basado únicamente en épocas aceptadas')
+                                      + ' · Clic en una curva para ver su canal')
+            self.status.set(f"Espectros de {len(result['channels'])} canales listos")
+            self.render_spectral_result()
+
+        def failed(exc):
+            self.spectral_pending = False
+            if revision == self.spectral_revision:
+                self.spectral_message.set(str(exc))
+
+        self.submit(lambda: channel_spectra(recording, filtering, config, store, include), done, on_error=failed)
+
+    def spectrum_picked(self, event):
+        channel = event.artist.get_gid() if hasattr(event.artist, 'get_gid') else None
+        if channel and self.spectral_result is not None and self.spectral_result.get('kind') == 'channels':
+            bad = self.bad_channel_set() if hasattr(self, 'bad_channel_set') else set()
+            notes = []
+            if channel in self.spectral_result['outliers']:
+                notes.append('atípico en 30–45 Hz')
+            if channel in bad:
+                notes.append('canal malo')
+            self.status.set(f'Curva: {channel}' + (f" ({', '.join(notes)})" if notes else ''))
+
+    def show_band_table(self, visible):
+        """The band table belongs to the single-channel modes; «Todos los canales» uses its space for maps."""
+        frame = self.band_table_frame
+        if visible and not frame.winfo_manager():
+            frame.pack(side='bottom', fill='x', before=self.spectral_canvas.get_tk_widget())
+        elif not visible and frame.winfo_manager():
+            frame.pack_forget()
+
+    def render_channel_spectra(self):
+        result = self.spectral_result
+        self.show_band_table(False)
+        count = result['counts']
+        lines = [f"{result['condition']}: {count['used']} épocas / {count['seconds']:g} s por canal · "
+                 f"Artefactos: {count['artifacts']} · No revisadas: {count['pending']} · "
+                 f"Referencia: {result['reference']}"]
+        lines.extend(result['warnings'])
+        lines.append('Atípicos en 30–45 Hz (z robusto > 3): ' + (', '.join(result['outliers']) or 'ninguno'))
+        bad = sorted(self.bad_channel_set()) if hasattr(self, 'bad_channel_set') else []
+        lines.append('Canales malos (marcados o detectados): ' + (', '.join(bad) or 'ninguno'))
+        if result['skipped']:
+            lines.append('Sin analizar (muestras no finitas): ' + ', '.join(result['skipped']))
+        lines.append('Mapas: log10 de la potencia absoluta por banda, posiciones estándar 10-05.')
+        filtering = result['filter']
+        lines.append('Filtrado: ' + FilterConfig(
+            filtering['enabled'], filtering['low'], filtering['high'], filtering.get('notch')).label)
+        self.set_spectral_summary('\n'.join(lines))
+        self.draw_spectrum()
+
     def render_spectral_result(self):
         result = self.spectral_result
+        if result.get('kind') == 'channels':
+            self.render_channel_spectra()
+            return
+        self.show_band_table(True)
         self.fill_band_table(result['sessions'])
         lines = []
         for session in result['sessions']:
@@ -312,7 +395,11 @@ class SpectralUI:
                 self.spectral_toolbar.pan()
             else:
                 self.spectral_toolbar.zoom()
-        plot_result(self.spectral_figure, self.spectral_result, self.spectral_db.get())
+        if self.spectral_result.get('kind') == 'channels':
+            bad = self.bad_channel_set() if hasattr(self, 'bad_channel_set') else set()
+            plot_channel_spectra(self.spectral_figure, self.spectral_result, self.spectral_db.get(), bad)
+        else:
+            plot_result(self.spectral_figure, self.spectral_result, self.spectral_db.get())
         self.spectral_toolbar.update()
         self.spectral_toolbar.push_current()
         self.spectral_canvas.draw_idle()
@@ -324,6 +411,11 @@ class SpectralUI:
         if not parent:
             return
         result, png, db = self.spectral_result, self.export_png.get(), self.spectral_db.get()
+        if result.get('kind') == 'channels':
+            self.submit(lambda: export_channel_spectra(result, parent),
+                        lambda path: self.status.set(f'Resultados exportados: {path}'),
+                        on_error=lambda exc: self.status.set(f'No se pudo exportar: {exc}'))
+            return
         self.submit(lambda: export_result(result, parent, png, db),
                     lambda path: self.status.set(f'Resultados exportados: {path}'),
                     on_error=lambda exc: self.status.set(f'No se pudo exportar: {exc}'))

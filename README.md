@@ -92,9 +92,33 @@ lote significa «dentro de los límites de amplitud», no inspección visual.
 5. El encabezado identifica **Original** o **Filtrada · X–Y Hz**. La configuración
    se conserva durante la sesión de la aplicación. Un filtro inválido o demasiado
    largo para el registro no reemplaza la vista anterior.
-6. **Varios electrodos** está apagado por defecto. Al activarlo permite elegir entre
-   1 y 8 canales, en paneles con tiempo compartido y desplazamiento vertical.
-   Al desactivarlo se vuelve al electrodo individual.
+6. **Vista** (tarjeta «Registro») elige cómo se muestra la señal:
+   - **Un electrodo** (por defecto).
+   - **Varios (hasta 8)**: de 1 a 8 canales en paneles con tiempo compartido.
+   - **Todos apilados**: los 61 canales en un solo gráfico con una escala común en µV
+     (como el *eegplot* de EEGLAB). Cada traza se centra en su mediana, así un canal plano
+     o ruidoso se distingue enseguida. **Escala** − / + cambia los µV entre trazas y
+     **Canales** elige cuántos entran en pantalla (el resto se ve desplazando el gráfico).
+     Al pasar el cursor se ve el canal y su valor; **un clic en el nombre de un canal lo
+     marca o desmarca como malo**. Los canales malos se dibujan en gris con el nombre en rojo.
+
+### Canales malos
+
+La tarjeta **Canales malos** reúne dos fuentes:
+
+- **Detectar canales malos** busca en todo el registro, con el filtrado del explorador,
+  canales con señal plana (< 1 µV durante ≥ 5 s), amplitud anómala (z robusto > 5 de su
+  desvío robusto), baja correlación con los demás canales (< 0,4 en más del 20 % de las
+  ventanas de 1 s) o ruido de alta frecuencia (z robusto > 5 de la potencia sobre 45 Hz, sin
+  pasabanda). Son los criterios de EEGLAB (clean_rawdata, pop_rejchan) y PREP, reimplementados
+  en `tps/core/badchannels.py`; los umbrales están en `tps/config.py` y **no están validados**
+  para este dataset. Cada canal indica su motivo.
+- **Marcar / desmarcar electrodo actual** (o un clic en su nombre en la vista apilada) lo
+  marca a mano, con un **Motivo** opcional. Se guarda en las anotaciones del estudio.
+
+El análisis de grupo excluye ambos (además de la regla de pico a pico en más del 30 % de las
+épocas) y anota el criterio en `exclusions.csv`. El barrido de posibles artefactos ignora los
+canales marcados a mano, para no rechazar épocas por un canal que ya se sabe malo.
 
 ### Implementación del filtro
 
@@ -288,8 +312,16 @@ la revisión; no se reemplaza silenciosamente un archivo anterior.
 
 ## Análisis espectral
 
-En la pestaña **Análisis espectral**, elegir **Estudio actual** o **Comparar NS/SD**
-y pulsar **Calcular**. Se usa el electrodo individual seleccionado; la lista
+En la pestaña **Análisis espectral**, elegir **Estudio actual**, **Comparar NS/SD** o
+**Todos los canales** y pulsar **Calcular**.
+
+**Todos los canales** (como «Channel spectra and maps» de EEGLAB) calcula la PSD de cada
+canal con las mismas épocas: las curvas se superponen con la mediana en negrita, y los
+canales malos o atípicos en 30–45 Hz (z robusto > 3) aparecen en rojo con su nombre; un clic
+en una curva muestra su canal. Debajo, mapas topográficos del log10 de la potencia por banda
+(posiciones estándar 10-05). **Exportar resultados** guarda la PSD y las bandas de cada canal.
+
+En los otros dos modos Se usa el electrodo individual seleccionado; la lista
 multicanal pertenece únicamente a la vista temporal. NS/SD compara el mismo
 participante, electrodo y condición de ojos, sin mezclar ojos abiertos y cerrados.
 Se requiere igual frecuencia de muestreo y al menos una época elegible por sesión.
@@ -415,7 +447,8 @@ validate_eeg.py     piloto de validación (docs/validation.md)
 tps/
   config.py         configuración compartida: filtro, épocas, Welch, bandas, umbrales, mínimos
   core/             procesamiento sin interfaz: datos BIDS, filtros, épocas y anotaciones,
-                    barrido, Welch y bandas, ICA (revisiones e Infomax), utilidades JSON
+                    barrido, canales malos, Welch y bandas, ICA (revisiones e Infomax),
+                    utilidades JSON
   gui/              ventanas Tk: app, tema, revisión, barrido, espectro, ICA,
                     «Resultados del grupo» y ejecución de los pasos en segundo plano
   pipeline/         lote (batch.py) y ajuste de ICA en un proceso aparte (ica_worker.py)

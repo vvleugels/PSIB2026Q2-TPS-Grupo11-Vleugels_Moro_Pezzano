@@ -11,6 +11,7 @@ from matplotlib.figure import Figure
 from PIL import Image, ImageTk
 
 from tps.gui.ica import ICAUI
+from tps.gui.badchannels import BadChannelsUI
 from tps.core.data import discover, open_recording
 from tps.core.annotations import AnnotationStore, STATES
 from tps.gui.review import ReviewUI
@@ -47,7 +48,7 @@ class Toolbar(NavigationToolbar2Tk):
             super().set_message(s)
 
 
-class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
+class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI, BadChannelsUI):
     def __init__(self, root, data_dir, annotations_dir=None, results_dir=None):
         self.root = root
         self.data_dir = Path(data_dir)
@@ -78,6 +79,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
         self.init_review()
         self.init_spectral()
         self.init_screening()
+        self.init_bad_channels()
         # Group results live next to data/ (results/), like annotations/.
         self.init_results(Path(results_dir) if results_dir else self.data_dir.parent / 'results', PROJECT)
         root.title('PSIB — Explorador EEG')
@@ -203,6 +205,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
 
         self.build_ica(body)
         self.build_screening(body)
+        self.build_bad_channels(body)
         self.build_batch_card(body)
         self.build_epoch_list(body)
 
@@ -308,6 +311,8 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
         self.plot_window = self.plot_view.create_window(0, 0, window=self.canvas.get_tk_widget(), anchor='nw')
         self.plot_view.bind('<Configure>', self.resize_plot)
         self.canvas.mpl_connect('button_press_event', self.plot_clicked)
+        self.canvas.mpl_connect('pick_event', self.stacked_pick)
+        self.canvas.mpl_connect('motion_notify_event', self.stacked_hover)
         self.build_spectral(spectral, Toolbar)
         self.build_results(group)
 
@@ -318,7 +323,9 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
                              'cada una tiene registros con ojos abiertos y cerrados.'),
             (self.channel_box, 'Electrodo cuya señal se muestra. Cambiarlo conserva el tiempo '
                                'y la época seleccionada.'),
-            (self.multi_toggle, 'Muestra de 1 a 8 electrodos a la vez, en paneles con tiempo compartido.'),
+            (self.multi_toggle, 'Un electrodo; varios (hasta 8) en paneles con tiempo compartido; o todos '
+                                'apilados en un solo gráfico con una escala común, como en EEGLAB. En la '
+                                'vista apilada, un clic en el nombre de un canal lo marca como malo.'),
             (self.next_button, 'Abre la herramienta del primer paso pendiente.'),
             (self.config_button, 'Activa el filtrado pasabanda FIR y ajusta sus cortes '
                                  '(por defecto apagado, 0,2–45 Hz).'),
@@ -753,8 +760,10 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
         # draw_segment then only updates the lines (faster ◀/▶, no blank flash).
         if self.displayed is None or self.displayed.channels != tuple(channels):
             self.clear_plot('Cargando señal…')
-        self.status.set(f'Leyendo {", ".join(channels)} desde {start:g} s…')
-        self.submit(lambda: recording.read_channels(channels, start, config), self.segment_loaded)
+        names = ', '.join(channels) if len(channels) <= 8 else f'{len(channels)} electrodos'
+        self.status.set(f'Leyendo {names} desde {start:g} s…')
+        limit = None if self.stacked else 8
+        self.submit(lambda: recording.read_channels(channels, start, config, limit=limit), self.segment_loaded)
 
     def reset_toolbar(self):
         if self.toolbar.mode:
@@ -820,6 +829,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI):
         self.update_reason()
         self.update_spectral_controls()
         self.update_screening_controls()
+        self.update_bad_controls()
         self.refresh_guide()
 
     def navigate(self, delta):

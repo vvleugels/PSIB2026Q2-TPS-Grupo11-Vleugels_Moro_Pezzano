@@ -226,6 +226,151 @@ def run_analysis(studies, channel, filter_config, config, data_dir, annotations_
                               scipy=scipy.__version__, mne=mne.__version__))
 
 
+def standard_info(channels):
+    """mne.Info with an MNE standard 10-05 montage that contains the dataset's channel names."""
+    info = mne.create_info(list(channels), 500.0, 'eeg')   # sfreq is irrelevant for a topomap
+    available = mne.channels.get_builtin_montages()
+    # 'standard_1005' was renamed 'colin27_1005' in recent MNE; use whichever exists.
+    name = 'colin27_1005' if 'colin27_1005' in available else 'standard_1005'
+    info.set_montage(mne.channels.make_standard_montage(name))
+    return info
+
+
+def montage_channels(channels):
+    """The channels that have a position in the standard 10-05 montage, in the given order."""
+    available = mne.channels.get_builtin_montages()
+    name = 'colin27_1005' if 'colin27_1005' in available else 'standard_1005'
+    known = set(mne.channels.make_standard_montage(name).ch_names)
+    return [c for c in channels if c in known]
+
+
+OUTLIER_Z = 3.0   # robust z of high-frequency (30-45 Hz) log power above which a channel is highlighted
+
+
+def channel_spectra(recording, filter_config, config, store, include_unreviewed=False):
+    """Welch PSD of every EEG channel over the same eligible épocas (EEGLAB «channel spectra»).
+
+    Reuses analyze_recording per channel, so the numbers equal the single-channel analysis.
+    Channels whose mean log power in 30-45 Hz is a robust outlier (z > OUTLIER_Z) are listed
+    in 'outliers'; channels that cannot be analysed (non-finite samples) in 'skipped'."""
+    from tps.core.badchannels import robust_z
+    if filter_config.active:
+        recording.filter.prefetch(recording.channels, filter_config)   # one block filter pass
+    sessions, skipped = [], []
+    for channel in recording.channels:
+        try:
+            sessions.append(analyze_recording(recording, channel, filter_config, config, store,
+                                              include_unreviewed))
+        except ValueError as exc:
+            if 'no finitas' not in str(exc):
+                raise   # no eligible épocas, dirty annotations…: the same for every channel
+            skipped.append(channel)
+    if not sessions:
+        raise ValueError('Ningún canal se pudo analizar.')
+    frequencies = sessions[0]['frequencies']
+    psd = np.array([s['psd_uv2_hz'] for s in sessions])
+    upper = min(45.0, filter_config.high if filter_config.enabled else 45.0)
+    band = (frequencies >= 30) & (frequencies <= upper)
+    outliers = []
+    if band.any() and len(sessions) >= 5:
+        z = robust_z(np.log10(np.clip(psd[:, band], 1e-12, None)).mean(axis=1))
+        outliers = [s['channel'] for s, value in zip(sessions, z) if value > OUTLIER_Z]
+    first = sessions[0]
+    return dict(kind='channels', created_at=datetime.now(timezone.utc).isoformat(),
+                exploratory=include_unreviewed, filter=filter_config.context(),
+                spectral=asdict(config), participant=first['participant'], session=first['session'],
+                condition=first['condition'], task=first['task'], eyes=first['eyes'],
+                channels=[s['channel'] for s in sessions], frequencies=frequencies, psd_uv2_hz=psd,
+                bands={s['channel']: s['bands'] for s in sessions}, counts=first['counts'],
+                warnings=first['warnings'], effective=first['effective'], reference=first['reference'],
+                ica=first['ica'], outliers=outliers, skipped=skipped,
+                versions=dict(python=platform.python_version(), numpy=np.__version__,
+                              scipy=scipy.__version__, mne=mne.__version__))
+
+
+def plot_channel_spectra(figure, result, db=True, bad=()):
+    """All channels' PSD (median in bold, bad / outlier channels in red) and band-power maps."""
+    figure.clear()
+    grid = figure.add_gridspec(2, len(BANDS), height_ratios=(1.5, 1))
+    ax = figure.add_subplot(grid[0, :])
+    frequencies = result['frequencies']
+    psd = result['psd_uv2_hz']
+    values = psd_db(psd) if db else psd
+    flagged = set(result['outliers']) | set(bad)
+    for channel, row in zip(result['channels'], values):
+        red = channel in flagged
+        line, = ax.plot(frequencies, row, color='#c0392b' if red else '#7fb3b8',
+                        linewidth=1.1 if red else .6, alpha=1 if red else .7, zorder=3 if red else 2,
+                        picker=4)
+        line.set_gid(channel)
+    median = psd_db(np.median(psd, axis=0)) if db else np.median(psd, axis=0)
+    ax.plot(frequencies, median, color='#0a3d42', linewidth=2.2, label='Mediana de los canales', zorder=4)
+    filtering = result['filter']
+    upper = filtering['high'] + 5 if filtering['enabled'] else max(45, result['spectral']['edges'][-1])
+    ax.set_xlim(0, min(upper, frequencies[-1]))
+    # y range from the analysed band only: the filter's stopband (tens of dB lower) would
+    # otherwise flatten every curve.
+    passband = (frequencies >= result['spectral']['edges'][0]) & (
+        frequencies <= (filtering['high'] if filtering['enabled'] else upper))
+    if passband.any():
+        shown = values[:, passband]
+        low, high = np.nanpercentile(shown, 0.5), np.nanmax(shown)
+        pad = .08 * (high - low) if high > low else 1
+        if db:
+            ax.set_ylim(low - pad, high + pad)
+        else:
+            ax.set_yscale('log')
+            ax.set_ylim(max(low, 1e-6) / 1.5, high * 1.5)
+        # Names of the red curves, at each curve's strongest point inside the passband.
+        for channel, row in zip(result['channels'], values):
+            if channel in flagged:
+                k = np.flatnonzero(passband)[int(np.nanargmax(row[passband]))]
+                ax.annotate(channel, (frequencies[k], row[k]), fontsize=8, color='#c0392b',
+                            xytext=(0, 4), textcoords='offset points', ha='center')
+    ax.set_xlabel('Frecuencia (Hz)')
+    ax.set_ylabel('PSD (dB)\nre 1 µV²/Hz' if db else 'PSD (µV²/Hz)')
+    ax.set_title(f"{result['participant']} · {result['eyes']} · {result['condition']} · "
+                 f"{len(result['channels'])} canales" + (' · Exploratorio' if result['exploratory'] else ''),
+                 fontsize=10)
+    ax.grid(alpha=.2)
+    ax.legend(fontsize=8, loc='upper right')
+    # Band-power maps: log10 absolute power per channel (standard 10-05 positions).
+    placed = montage_channels(result['channels'])
+    if len(placed) >= 4:
+        info = standard_info(placed)
+        for column, (index, name) in enumerate(zip(range(len(BANDS)), BANDS)):
+            ax_map = figure.add_subplot(grid[1, column])
+            data = np.array([np.log10(max(result['bands'][c][index]['absolute_uv2'], 1e-12)) for c in placed])
+            mne.viz.plot_topomap(data, info, axes=ax_map, show=False, cmap='viridis', contours=0,
+                                 sensors=True)
+            low, high = result['spectral']['edges'][index], result['spectral']['edges'][index + 1]
+            ax_map.set_title(f'{name.capitalize()} {low:g}–{high:g} Hz\nlog10 µV²', fontsize=8)
+    return ax
+
+
+def export_channel_spectra(result, parent):
+    """A new directory with the per-channel PSD and band powers (never overwrites)."""
+    safe = re.sub(r'[^a-zA-Z0-9_-]', '_', f"{result['participant']}_{result['task']}_canales")
+    stamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+    directory = Path(parent) / f'{safe}_{stamp}'
+    directory.mkdir(parents=False, exist_ok=False)
+    with open(directory / 'psd_canales.csv', 'w', newline='', encoding='utf-8') as stream:
+        writer = csv.writer(stream)
+        writer.writerow(['canal'] + [f'{f:g}' for f in result['frequencies']])
+        for channel, row in zip(result['channels'], result['psd_uv2_hz']):
+            writer.writerow([channel] + [f'{v:.6g}' for v in row])
+    with open(directory / 'bandas_canales.csv', 'w', newline='', encoding='utf-8') as stream:
+        writer = csv.writer(stream)
+        writer.writerow(['canal', 'banda', 'potencia_uV2', 'relativa_pct', 'atipico_30_45Hz'])
+        for channel in result['channels']:
+            for name, band in zip(BANDS, result['bands'][channel]):
+                relative = band['relative_percent']
+                writer.writerow([channel, name, f"{band['absolute_uv2']:.6g}",
+                                 '' if relative is None else f'{relative:.4g}',
+                                 channel in result['outliers']])
+    return directory
+
+
 def plot_result(figure, result, db=True):
     figure.clear()
     ax = figure.add_subplot(111)

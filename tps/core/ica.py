@@ -166,6 +166,15 @@ def context(recording):
         'revision', 'model_sha256', 'excluded_components', 'excluded_channels')}
 
 
+def manual_bad_channels(recording, data_dir, annotations_dir):
+    """{channel: reason} marked by hand in the explorer; {} without a valid annotation file."""
+    from tps.core.annotations import AnnotationStore
+    store = AnnotationStore(annotations_dir, recording, data_dir)
+    if store.blocked:
+        return {}
+    return {channel: value['reason'] for channel, value in sorted(store.bad_channels.items())}
+
+
 def snapshot(studies, data_dir, annotations_dir, mode):
     """Immutable input selection, including explicit failures; never silently fall back."""
     if mode not in ('original', 'confirmed'):
@@ -177,6 +186,7 @@ def snapshot(studies, data_dir, annotations_dir, mode):
             recording = open_recording(study)
             try:
                 value = dict(source=source_identity(recording, data_dir), mode=mode)
+                value['bad_channels'] = manual_bad_channels(recording, data_dir, annotations_dir)
                 if mode == 'confirmed':
                     _, metadata = read_revision(annotations_dir, study)
                     validate_revision(recording, data_dir, metadata)

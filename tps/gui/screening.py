@@ -93,8 +93,10 @@ class ScreeningUI:
             config = ScreeningConfig(float(self.screening_high.get().replace(',', '.')),
                                      float(self.screening_flat.get().replace(',', '.')))
             config.validate()
-            channels = tuple(self.recording.channels if self.screening_all.get()
-                             else self.visible_channels())
+            # Channels marked bad by hand never reject épocas, as in the group batch.
+            skip = set(self.store.bad_channels) if self.store else set()
+            channels = tuple(c for c in (self.recording.channels if self.screening_all.get()
+                                         else self.visible_channels()) if c not in skip)
             if not channels:
                 raise ValueError('Elegí al menos un electrodo o activá todos los EEG.')
         except ValueError as exc:

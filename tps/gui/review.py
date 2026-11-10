@@ -10,6 +10,11 @@ from tps.core.processing import FilterConfig
 from tps.gui.theme import BORDER, IRIS, TEXT, style_dialog
 
 COLORS = {'Sin revisar': '#edf1f2', 'Aceptada': '#d5eee2', 'Con artefactos': '#f9d8d5'}
+DISPLAY_MODES = ('Un electrodo', 'Varios (hasta 8)', 'Todos apilados')
+STACK_PAGES = ('Todos', '32', '16')   # channels visible at once; the rest via the plot scrollbar
+TRACE = '#0e7c86'
+BAD_TRACE = '#b8c2c4'
+BAD_LABEL = '#a12b25'
 
 
 class ReviewUI:
@@ -22,6 +27,12 @@ class ReviewUI:
         self.active_patient = ''
         self.active_study_index = -1
         self.multi = tk.BooleanVar(value=False)
+        # Display: one electrode, up to 8 in panels, or every channel stacked in one plot (eegplot-like).
+        self.display_mode = tk.StringVar(value=DISPLAY_MODES[0])
+        self.stacked = False
+        self.stack_scale = 80.0          # µV between neighbouring traces
+        self.stack_scale_text = tk.StringVar(value='80')
+        self.stack_page = tk.StringVar(value='32')
         self.signal_label = tk.StringVar(value='Original')
         self.save_label = tk.StringVar(value='Sin estudio')
         self.count_label = tk.StringVar(value='')
@@ -38,10 +49,28 @@ class ReviewUI:
         self.note.trace_add('write', lambda *args: self.editor_changed(debounce=True))
 
     def build_multi_selector(self, selection):
-        self.multi_toggle = ttk.Checkbutton(selection, text='Varios electrodos (hasta 8)',
-                                            variable=self.multi, style='Card.TCheckbutton',
-                                            command=self.toggle_multi)
-        self.multi_toggle.pack(anchor='w', pady=(8, 0))
+        row = ttk.Frame(selection, style='Card.TFrame')
+        row.pack(fill='x', pady=(8, 0))
+        ttk.Label(row, text='Vista', style='Card.TLabel').pack(side='left')
+        self.multi_toggle = ttk.Combobox(row, textvariable=self.display_mode, values=DISPLAY_MODES,
+                                         state='readonly', width=18)
+        self.multi_toggle.pack(side='right')
+        self.multi_toggle.bind('<<ComboboxSelected>>', lambda e: self.display_mode_changed())
+        # Stacked view options: scale between traces and channels per screen.
+        self.stack_frame = ttk.Frame(selection, style='Card.TFrame')
+        ttk.Label(self.stack_frame, text='Escala (µV)', style='Card.TLabel').pack(side='left')
+        ttk.Button(self.stack_frame, text='−', width=2, style='Tool.TButton',
+                   command=lambda: self.zoom_stack(.8)).pack(side='left', padx=(6, 2))
+        scale_entry = ttk.Entry(self.stack_frame, textvariable=self.stack_scale_text, width=5, justify='center')
+        scale_entry.pack(side='left')
+        scale_entry.bind('<Return>', lambda e: self.set_stack_scale())
+        ttk.Button(self.stack_frame, text='+', width=2, style='Tool.TButton',
+                   command=lambda: self.zoom_stack(1.25)).pack(side='left', padx=(2, 0))
+        page = ttk.Combobox(self.stack_frame, textvariable=self.stack_page, values=STACK_PAGES,
+                            state='readonly', width=6)
+        page.pack(side='right')
+        page.bind('<<ComboboxSelected>>', lambda e: (self.resize_plot(), self.canvas.draw_idle()))
+        ttk.Label(self.stack_frame, text='Canales', style='Card.TLabel').pack(side='right', padx=(0, 4))
         self.multi_frame = ttk.Frame(selection, style='Card.TFrame')
         self.channel_list = tk.Listbox(self.multi_frame, selectmode='multiple', exportselection=False,
                                        height=5, relief='flat', highlightthickness=1,
@@ -194,11 +223,48 @@ class ReviewUI:
             f'No se aplicó el filtro: {exc} Se conserva {self.config.label.lower()}.'))
 
     def visible_channels(self):
+        if self.stacked and self.recording is not None:
+            return list(self.recording.channels)
         if self.multi.get():
             return [self.channel_list.get(i) for i in self.channel_list.curselection()]
         return [self.channel.get()] if self.channel.get() else []
 
+    def display_mode_changed(self):
+        mode = self.display_mode.get()
+        self.stacked = mode == DISPLAY_MODES[2]
+        self.multi.set(mode == DISPLAY_MODES[1])
+        if self.stacked:
+            self.stack_frame.pack(fill='x', pady=(6, 0), after=self.multi_toggle.master)
+        else:
+            self.stack_frame.pack_forget()
+        self.toggle_multi()
+
+    def zoom_stack(self, factor):
+        self.stack_scale = min(5000.0, max(1.0, self.stack_scale * factor))
+        self.stack_scale_text.set(f'{self.stack_scale:.3g}')
+        self.restack()
+
+    def set_stack_scale(self):
+        try:
+            value = float(self.stack_scale_text.get().replace(',', '.'))
+            if not 0 < value <= 5000:
+                raise ValueError
+        except ValueError:
+            self.stack_scale_text.set(f'{self.stack_scale:.3g}')
+            self.status.set('La escala debe ser un número de µV entre 0 y 5000.')
+            return
+        self.stack_scale = value
+        self.restack()
+
+    def restack(self):
+        if self.stacked and self.displayed is not None:
+            self.draw_stacked(self.displayed, rebuild=True)
+
     def toggle_multi(self):
+        if self.multi.get() and self.display_mode.get() != DISPLAY_MODES[1]:
+            self.display_mode.set(DISPLAY_MODES[1])   # set from code (tests): keep the selector in sync
+            self.stacked = False
+            self.stack_frame.pack_forget()
         if self.multi.get():
             self.multi_frame.pack(fill='x', pady=6)
             self.channel_list.selection_clear(0, 'end')
@@ -236,6 +302,7 @@ class ReviewUI:
         self.note.set('')
         self.reason.set('')
         self.clear_screening()
+        self.clear_bad_channels()
 
     def review_loaded(self, recording):
         self.store = recording.annotations
@@ -255,6 +322,7 @@ class ReviewUI:
             self.status.set('El nuevo muestreo requiere otros cortes. Filtrado desactivado.')
         self.signal_label.set(self.config.label)
         self.update_screening_signal()
+        self.refresh_bad_channels()
 
     def refresh_epochs(self):
         if not self.store:
@@ -494,6 +562,9 @@ class ReviewUI:
         width = max(200, self.plot_view.winfo_width() - 2)
         count = max(1, len(self.figure.axes))
         height = max(self.plot_view.winfo_height(), 190 * count if count > 1 else 80)
+        if self.stacked and self.displayed is not None and self.stack_page.get() != 'Todos':
+            per_screen = int(self.stack_page.get())
+            height = max(height, int(self.plot_view.winfo_height() * len(self.displayed.channels) / per_screen))
         self.plot_view.itemconfigure(self.plot_window, width=width, height=height)
         self.plot_view.configure(scrollregion=(0, 0, width, height))
 
@@ -504,7 +575,96 @@ class ReviewUI:
         pad = .15 * (high - low) if high > low else max(abs(high), 1.0) * .15
         return low - pad, high + pad
 
+    def draw_stacked(self, segment, rebuild=False):
+        """Every channel in one axes, offset by a common µV scale (like EEGLAB's eegplot).
+
+        Each trace is centred on its median, so DC offsets do not hide amplitude differences;
+        a flat or very noisy electrode stands out at a glance. Clicking a channel name marks
+        it as bad; clicking inside the plot still selects the época."""
+        previous = self.displayed
+        self.displayed = segment
+        names = segment.channels
+        spacing = self.stack_scale
+        offsets = spacing * np.arange(len(names))[::-1]
+        values = segment.values_uv - np.median(segment.values_uv, axis=1, keepdims=True)
+        lines = getattr(self, 'segment_lines', [])
+        reuse = (not rebuild and previous is not None and previous.channels == names
+                 and len(lines) == len(names) and len(self.figure.axes) == 1
+                 and getattr(self, 'stack_drawn', None) == (names, spacing))
+        if reuse:
+            for line, row, offset in zip(lines, values, offsets):
+                line.set_data(segment.times, row + offset)
+            self.ax.set_xlim(segment.start, segment.stop)
+        else:
+            self.figure.clear()
+            self.epoch_artists = []
+            self.segment_lines = []
+            ax = self.ax = self.figure.add_subplot(111)
+            for row, offset in zip(values, offsets):
+                line, = ax.plot(segment.times, row + offset, color=TRACE, linewidth=.6)
+                line.get_path().should_simplify = False
+                self.segment_lines.append(line)
+            ax.set_xlim(segment.start, segment.stop)
+            ax.set_ylim(-1.5 * spacing, offsets[0] + 1.5 * spacing)
+            ax.set_yticks(offsets)
+            ax.set_yticklabels(names, fontsize=7)
+            for label in ax.get_yticklabels():
+                label.set_picker(True)
+            ax.set_xlabel('Tiempo desde el inicio (s)')
+            ax.set_ylabel(f'{spacing:.3g} µV entre trazas')
+            ax.xaxis.set_major_locator(MultipleLocator(5))
+            ax.grid(axis='x', color='#bdccce', linewidth=.8)
+            for spine in ax.spines.values():
+                spine.set_color('#d9e1e2')
+            self.stack_drawn = (names, spacing)
+            self.resize_plot()
+        self.stack_offsets = offsets
+        self.style_stacked(draw=False)
+        self.reset_toolbar()
+        self.toolbar.push_current()
+        self.draw_overlays()
+
+    def style_stacked(self, draw=True):
+        """Grey traces and red names for bad channels (manual marks and the last detection)."""
+        if not self.stacked or self.displayed is None or len(self.figure.axes) != 1:
+            return
+        bad = self.bad_channel_set() if hasattr(self, 'bad_channel_set') else set()
+        manual = set(self.store.bad_channels) if self.store else set()
+        for line, name in zip(self.segment_lines, self.displayed.channels):
+            line.set_color(BAD_TRACE if name in bad else TRACE)
+        for label in self.ax.get_yticklabels():
+            name = label.get_text()
+            label.set_color(BAD_LABEL if name in bad else TEXT)
+            label.set_fontweight('bold' if name in manual else 'normal')
+        if draw:
+            self.canvas.draw_idle()
+
+    def stacked_pick(self, event):
+        """Click on a channel name in the stacked view: mark / unmark it as bad."""
+        if not self.stacked or self.busy or self.toolbar.mode:
+            return
+        name = getattr(event.artist, 'get_text', lambda: '')()
+        if self.displayed is not None and name in self.displayed.channels:
+            self.toggle_bad_channel(name)
+
+    def stacked_hover(self, event):
+        """Name and value of the trace under the cursor in the stacked view."""
+        if (not self.stacked or self.displayed is None or event.inaxes is not self.ax
+                or event.xdata is None or event.ydata is None):
+            return
+        offsets = getattr(self, 'stack_offsets', None)
+        if offsets is None or not len(offsets):
+            return
+        index = int(np.clip(np.round((offsets[0] - event.ydata) / self.stack_scale), 0, len(offsets) - 1))
+        segment = self.displayed
+        sample = int(np.clip(np.searchsorted(segment.times, event.xdata), 0, len(segment.times) - 1))
+        value = segment.values_uv[index, sample] - np.median(segment.values_uv[index])
+        self.cursor_text.set(f'{segment.channels[index]} · {event.xdata:.2f} s · {value:+.1f} µV')
+
     def draw_segment(self, segment):
+        if self.stacked and len(segment.channels) > 1:
+            self.draw_stacked(segment)
+            return
         previous = self.displayed
         self.displayed = segment
         lines = getattr(self, 'segment_lines', [])

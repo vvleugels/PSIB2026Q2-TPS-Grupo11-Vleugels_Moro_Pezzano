@@ -42,10 +42,24 @@ Para cada registro:
    incompleta se descarta.
 5. Se barren **los 61 canales EEG** sobre la señal filtrada: un canal falla en una época si su
    amplitud pico a pico es > 150 µV (alta) o < 1 µV (plana).
-6. **Canales malos:** un canal que falla en más del 30 % de las épocas completas se considera
-   malo para ese registro: no genera filas de potencia y no rechaza épocas. Si no, un solo
-   electrodo ruidoso (por ejemplo TP9 en sub-01 ses-1, que falla en 31/60 épocas) descartaría
-   la mitad del registro para todos los canales.
+6. **Canales malos:** un canal es malo para ese registro si cumple cualquiera de estos criterios
+   (columna `criterion` de `exclusions.csv`):
+   - `manual`: marcado a mano en el explorador (anotaciones del estudio);
+   - `flat`: varía menos de 1 µV durante al menos 5 s;
+   - `deviation`: z robusto > 5 de su desvío robusto (IQR / 1,349) frente a los demás canales;
+   - `correlation`: el percentil 98 de su correlación absoluta con los demás canales es < 0,4
+     en más del 20 % de las ventanas de 1 s (PREP usa 1 % porque luego interpola; EEGLAB
+     clean_rawdata, 50 %);
+   - `high_frequency`: z robusto > 5 del log10 de la potencia sobre 45 Hz respecto de 1–45 Hz,
+     medido sin pasabanda para que el ruido de línea y el EMG sigan visibles;
+   - `peak_to_peak`: falla el barrido en más del 30 % de las épocas completas.
+
+   Los criterios automáticos (`tps/core/badchannels.py`, umbrales en `config.BAD_CHANNELS`)
+   reimplementan las ideas de EEGLAB (clean_rawdata, pop_rejchan) y PREP; **no están validados**
+   para este dataset. Un canal malo no genera filas de potencia, no rechaza épocas y **no se
+   interpola**. Si no se excluyera, un solo electrodo ruidoso (por ejemplo TP9 en sub-01 ses-1,
+   que falla en 31/60 épocas) descartaría la mitad del registro para todos los canales. Las marcas
+   manuales se leen al iniciar el lote; cambiarlas invalida solo la caché de ese registro.
 7. **El rechazo de épocas es global** por defecto: una época se rechaza si falla en cualquiera
    de los canales restantes, así todos los canales de un registro usan las mismas épocas. Con
    `--rejection-mode per_channel` cada canal conserva sus propias épocas limpias y se excluye
