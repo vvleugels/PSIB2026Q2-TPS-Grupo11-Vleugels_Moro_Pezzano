@@ -284,64 +284,73 @@ def hypothesis_summary(region_stats: pd.DataFrame, tbr_stats: pd.DataFrame, out_
 
 # ----------------------------------------------------------------------------- captions
 def captions(inputs: dict, summary: pd.DataFrame | None) -> dict[str, str]:
-    """Figure captions with the actual sample sizes, in the same order as the figures."""
+    """Figure captions (in Spanish, as shown in the GUI) with the actual sample sizes."""
     perms = ''
     clusters = inputs.get('clusters')
     if clusters is not None and len(clusters) and 'n_permutations' in clusters:
-        perms = f" ({int(clusters['n_permutations'].iloc[0])} sign-flip permutations)"
+        perms = f" ({int(clusters['n_permutations'].iloc[0])} permutaciones por cambio de signo)"
     low, high = config.SPECTRAL.edges[0], config.SPECTRAL.edges[-1]
+    eyes_es = {'open': 'Ojos abiertos (análisis principal)', 'closed': 'Ojos cerrados (análisis secundario)'}
     text = {}
     for eyes in ('open', 'closed'):
         text[f'topomap_{eyes}'] = (
-            f'{EYES_TITLE[eyes]}. Mean within-participant difference SD − NS of log10 absolute band '
-            f'power (µV²) at each electrode, averaged over participants with both sessions. Red: higher '
-            f'power after SD; blue: lower. One symmetric colour scale for all bands. White dots mark '
-            f'electrodes in clusters with p < .05 in the cluster-based permutation test{perms}. '
-            'Electrode positions: MNE standard 10-05 montage.')
+            f'{eyes_es[eyes]}. Diferencia media dentro de cada participante, SD − NS, del log10 de la '
+            f'potencia absoluta por banda (µV²) en cada electrodo, promediada sobre los participantes con '
+            f'ambas sesiones. Rojo: más potencia tras la privación de sueño; azul: menos. Una misma escala '
+            f'de color simétrica para todas las bandas. Los puntos blancos marcan electrodos de clusters con '
+            f'p < 0,05 en la prueba de permutación por clusters{perms}. Posiciones de los electrodos: '
+            'montaje estándar 10-05 de MNE.')
         text[f'psd_regions_{eyes}'] = (
-            f'{EYES_TITLE[eyes]}. Group-average power spectral density per region for NS (teal) and SD '
-            f'(rose): geometric mean over participants of the region-averaged Welch PSD (2 s Hann, 50 % '
-            f'overlap, 0.5 Hz resolution). Shaded areas: 95 % confidence interval of the mean (t-based, on '
-            f'log10 PSD, only for n ≥ 2; n = 1 is shown without an interval). Dashed lines: band edges ({", ".join(f"{e:g}" for e in config.SPECTRAL.edges)} Hz). '
-            'Only participants with both sessions and at least half of the region\'s channels are included.')
+            f'{eyes_es[eyes]}. Densidad espectral de potencia promedio del grupo por región, para NS '
+            f'(verde azulado) y SD (rosa): media geométrica entre participantes de la PSD de Welch promediada '
+            f'en la región (segmentos Hann de 2 s, 50 % de solapamiento, resolución de 0,5 Hz). Zonas '
+            f'sombreadas: intervalo de confianza del 95 % de la media (basado en t, sobre el log10 de la PSD; '
+            f'solo con n ≥ 2). Líneas punteadas: límites de las bandas '
+            f'({", ".join(f"{e:g}" for e in config.SPECTRAL.edges)} Hz). Solo participantes con ambas '
+            'sesiones y al menos la mitad de los canales de la región.')
         text[f'paired_{eyes}'] = (
-            f'{EYES_TITLE[eyes]}. Mean log10 absolute power (µV²) per band and region. Grey lines: one '
-            'participant (NS → SD); coloured points: individual values; black: group mean ± 95 % CI. '
-            'Panel titles give n and the BH-FDR-corrected Wilcoxon signed-rank p (20 tests per eye condition).')
+            f'{eyes_es[eyes]}. Media del log10 de la potencia absoluta (µV²) por banda y región. Líneas '
+            'grises: un participante (NS → SD); puntos de color: valores individuales; negro: media del grupo '
+            '± IC 95 %. Los títulos de cada panel indican n y el p de Wilcoxon de rangos con signo corregido '
+            'por BH-FDR (20 pruebas por condición de ojos).')
         text[f'topomap_relative_{eyes}'] = (
-            f'{EYES_TITLE[eyes]}. Mean within-participant difference SD − NS of relative band power '
-            f'(percentage points of total {low:g}–{high:g} Hz power) at each electrode. Red: larger share '
-            'after SD; blue: smaller. The cluster test was run on absolute log10 power, so no electrodes are marked.')
+            f'{eyes_es[eyes]}. Diferencia media dentro de cada participante, SD − NS, de la potencia relativa '
+            f'por banda (puntos porcentuales del total de {low:g}–{high:g} Hz) en cada electrodo. Rojo: mayor '
+            'proporción tras la privación de sueño; azul: menor. La prueba de clusters se hizo sobre el log10 '
+            'de la potencia absoluta, por eso no hay electrodos marcados.')
         text[f'paired_relative_{eyes}'] = (
-            f'{EYES_TITLE[eyes]}. Mean relative power (% of total {low:g}–{high:g} Hz power) per band and '
-            'region. Grey lines: one participant (NS → SD); black: group mean ± 95 % CI. Panel titles give n '
-            'and the BH-FDR-corrected Wilcoxon signed-rank p for relative power.')
+            f'{eyes_es[eyes]}. Potencia relativa media (% del total de {low:g}–{high:g} Hz) por banda y región. '
+            'Líneas grises: un participante (NS → SD); negro: media del grupo ± IC 95 %. Los títulos de cada '
+            'panel indican n y el p de Wilcoxon corregido por BH-FDR para la potencia relativa.')
     text['theta_beta'] = (
-        'Frontal theta/beta ratio (mean log10 ratio over frontal channels) for NS (teal) and SD (rose), '
-        'eyes open (primary) and eyes closed (secondary). Violins: distribution; grey lines: one '
-        'participant; titles: n and Wilcoxon signed-rank p (single pre-specified test, uncorrected).')
+        'Cociente theta/beta frontal (media del log10 del cociente en los canales frontales) para NS (verde '
+        'azulado) y SD (rosa), con ojos abiertos (principal) y ojos cerrados (secundario). Violines: '
+        'distribución; líneas grises: un participante; títulos: n y p de Wilcoxon de rangos con signo (una '
+        'única prueba preespecificada, sin corregir).')
     text['hypothesis_summary'] = (
-        f'Hypotheses H1–H4 (docs/hypotheses.md) against the observed paired effects. Expected and '
-        f'observed direction of SD − NS, corrected p (BH-FDR across 20 band × region tests; H3 single '
-        f'test), rank-biserial r and Cohen\'s dz. "supported" = expected sign and p < .05. Relative power '
-        f'is relative to {low:g}–{high:g} Hz. Group-level spectral differences only.')
+        f'Hipótesis H1–H4 (docs/hypotheses.md) frente a los efectos pareados observados: dirección esperada '
+        f'y observada de SD − NS, p corregido (BH-FDR sobre 20 pruebas banda × región; H3, prueba única), '
+        f'r biserial de rangos y d_z de Cohen. «Apoyada» = signo esperado y p < 0,05. La potencia relativa '
+        f'se calcula respecto de {low:g}–{high:g} Hz. Solo diferencias espectrales a nivel de grupo.')
     processing = inputs.get('processing')
     if processing and 'filter' in processing:
         from tps.core.processing import FilterConfig
         used = processing['filter']
-        label = FilterConfig(used['enabled'], used['low'], used['high'], used.get('notch')).label
-        detail = ' Processing: ' + label + (' + confirmed ICA.' if processing.get('ica_mode') == 'confirmed' else '; no ICA.')
+        config_used = FilterConfig(used['enabled'], used['low'], used['high'], used.get('notch'))
+        label = 'sin filtrar' if not config_used.active else config_used.label.removeprefix('Filtrada · ')
+        detail = (' Procesamiento: ' + label
+                  + (' + ICA confirmada.' if processing.get('ica_mode') == 'confirmed' else '; sin ICA.'))
         text = {key: value + detail for key, value in text.items()}
     return text
 
 
 def write_captions(text: dict[str, str], out_dir: Path) -> Path:
-    lines = ['# Figure captions', '',
-             'Generated by `python -m tps.analysis.figures`. Group-level spectral differences only; '
-             'no clinical interpretation.', '']
+    lines = ['# Leyendas de las figuras', '',
+             'Generadas por `python -m tps.analysis.figures`. Solo diferencias espectrales a nivel de grupo, '
+             'sin interpretación clínica.', '']
     for name, caption in text.items():
         file = f'{name}.md / .csv' if name == 'hypothesis_summary' else f'{name}.png'
-        lines += [f'## {name}', '', f'File: `{file}`', '', caption, '']
+        lines += [f'## {name}', '', f'Archivo: `{file}`', '', caption, '']
     path = out_dir / 'captions.md'
     path.write_text('\n'.join(lines), encoding='utf-8')
     return path

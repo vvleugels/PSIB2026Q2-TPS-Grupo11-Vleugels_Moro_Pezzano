@@ -51,10 +51,20 @@ BAND_SYMBOLS = {'delta': 'δ', 'theta': 'θ', 'alpha': 'α', 'beta': 'β'}
 ALL = 'Todos'
 
 
+# exclusions.csv keeps English codes (the code reads them); the GUI shows them in Spanish.
+LEVEL_ES = {'recording': 'registro', 'channel': 'canal', 'epoch': 'época', 'pair': 'par NS/SD'}
+CRITERION_ES = {'manual': 'manual', 'flat': 'plana', 'deviation': 'amplitud', 'correlation': 'correlación',
+                'high_frequency': 'alta frecuencia', 'peak_to_peak': 'pico a pico', 'non_finite': 'no finitos'}
+
+
 def display_value(column: str, text: str) -> str:
     """Cell text for the GUI: Spanish words for known values, rounded numbers."""
     if column in ('eyes', 'analysis', 'expected', 'observed', 'agreement') and text in VALUE_ES:
         return VALUE_ES[text]
+    if column == 'level' and text in LEVEL_ES:
+        return LEVEL_ES[text]
+    if column == 'criterion' and text in CRITERION_ES:
+        return CRITERION_ES[text]
     return fmt(column, text)
 
 
@@ -248,7 +258,7 @@ class ResultsUI:
         box.pack(side='left', padx=6)
         box.bind('<<ComboboxSelected>>', lambda e: self.fill_hypotheses())
         ttk.Button(bar, text='Abrir hypotheses.md',
-                   command=lambda: self.open_results_path(self.project_dir / 'analysis' / 'hypotheses.md')
+                   command=lambda: self.open_results_path(self.project_dir / 'docs' / 'hypotheses.md')
                    ).pack(side='right')
         note = tk.Frame(page, background=IRIS_LIGHT)
         note.pack(fill='x', pady=(0, 8))

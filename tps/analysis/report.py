@@ -73,7 +73,7 @@ def captions(figures_dir: Path) -> dict[str, str]:
     out = {}
     for block in path.read_text(encoding='utf-8').split('\n## ')[1:]:
         name, _, body = block.partition('\n')
-        lines = [line for line in body.strip().splitlines() if not line.startswith('File:')]
+        lines = [line for line in body.strip().splitlines() if not line.startswith(('File:', 'Archivo:'))]
         out[name.strip()] = '\n'.join(lines).strip()
     return out
 

@@ -209,7 +209,7 @@ class Results:
         out = {}
         for block in re.split(r'^## ', text, flags=re.M)[1:]:
             name, _, body = block.partition('\n')
-            body = re.sub(r'^File: `[^`]*`\s*', '', body.strip())
+            body = re.sub(r'^(File|Archivo): `[^`]*`\s*', '', body.strip())
             out[name.strip()] = body.strip()
         return out
 
