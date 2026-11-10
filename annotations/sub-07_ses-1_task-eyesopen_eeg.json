@@ -1,0 +1,2722 @@
+{
+  "version": 1,
+  "source": {
+    "files": [
+      {
+        "path": "sub-07/ses-1/eeg/sub-07_ses-1_task-eyesopen_eeg.fdt",
+        "size": 36600000,
+        "mtime_ns": 1793567890141845442
+      },
+      {
+        "path": "sub-07/ses-1/eeg/sub-07_ses-1_task-eyesopen_eeg.json",
+        "size": 650,
+        "mtime_ns": 1793567734000000000
+      },
+      {
+        "path": "sub-07/ses-1/eeg/sub-07_ses-1_task-eyesopen_eeg.set",
+        "size": 198726,
+        "mtime_ns": 1793567879258812563
+      }
+    ],
+    "sfreq": 500.0,
+    "n_times": 150000
+  },
+  "epoch_seconds": 5,
+  "epochs": [
+    {
+      "index": 0,
+      "first": 0,
+      "last": 2500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T23:08:37.969187+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      }
+    },
+    {
+      "index": 1,
+      "first": 2500,
+      "last": 5000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499865+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 2,
+      "first": 5000,
+      "last": 7500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499874+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 3,
+      "first": 7500,
+      "last": 10000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499882+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 4,
+      "first": 10000,
+      "last": 12500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499888+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 5,
+      "first": 12500,
+      "last": 15000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499894+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 6,
+      "first": 15000,
+      "last": 17500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499900+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 7,
+      "first": 17500,
+      "last": 20000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499907+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 8,
+      "first": 20000,
+      "last": 22500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499912+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 9,
+      "first": 22500,
+      "last": 25000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499918+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 10,
+      "first": 25000,
+      "last": 27500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499924+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 11,
+      "first": 27500,
+      "last": 30000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499929+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 12,
+      "first": 30000,
+      "last": 32500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499935+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 13,
+      "first": 32500,
+      "last": 35000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499941+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 14,
+      "first": 35000,
+      "last": 37500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499948+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 15,
+      "first": 37500,
+      "last": 40000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499954+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 16,
+      "first": 40000,
+      "last": 42500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499961+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 17,
+      "first": 42500,
+      "last": 45000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499967+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 18,
+      "first": 45000,
+      "last": 47500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499972+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 19,
+      "first": 47500,
+      "last": 50000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499978+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 20,
+      "first": 50000,
+      "last": 52500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499984+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 21,
+      "first": 52500,
+      "last": 55000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499990+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 22,
+      "first": 55000,
+      "last": 57500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.499995+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 23,
+      "first": 57500,
+      "last": 60000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500001+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 24,
+      "first": 60000,
+      "last": 62500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500006+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 25,
+      "first": 62500,
+      "last": 65000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500011+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 26,
+      "first": 65000,
+      "last": 67500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500017+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 27,
+      "first": 67500,
+      "last": 70000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500024+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 28,
+      "first": 70000,
+      "last": 72500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500034+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 29,
+      "first": 72500,
+      "last": 75000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500040+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 30,
+      "first": 75000,
+      "last": 77500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500047+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 31,
+      "first": 77500,
+      "last": 80000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500053+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 32,
+      "first": 80000,
+      "last": 82500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500058+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 33,
+      "first": 82500,
+      "last": 85000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500063+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 34,
+      "first": 85000,
+      "last": 87500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500068+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 35,
+      "first": 87500,
+      "last": 90000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500073+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 36,
+      "first": 90000,
+      "last": 92500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500079+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 37,
+      "first": 92500,
+      "last": 95000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500085+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 38,
+      "first": 95000,
+      "last": 97500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500092+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 39,
+      "first": 97500,
+      "last": 100000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500098+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 40,
+      "first": 100000,
+      "last": 102500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500104+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 41,
+      "first": 102500,
+      "last": 105000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500110+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 42,
+      "first": 105000,
+      "last": 107500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500115+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 43,
+      "first": 107500,
+      "last": 110000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500120+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 44,
+      "first": 110000,
+      "last": 112500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500126+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 45,
+      "first": 112500,
+      "last": 115000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500131+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 46,
+      "first": 115000,
+      "last": 117500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500137+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 47,
+      "first": 117500,
+      "last": 120000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500143+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 48,
+      "first": 120000,
+      "last": 122500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500148+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 49,
+      "first": 122500,
+      "last": 125000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500153+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 50,
+      "first": 125000,
+      "last": 127500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500158+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 51,
+      "first": 127500,
+      "last": 130000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500163+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 52,
+      "first": 130000,
+      "last": 132500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500169+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 53,
+      "first": 132500,
+      "last": 135000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500175+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 54,
+      "first": 135000,
+      "last": 137500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500181+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 55,
+      "first": 137500,
+      "last": 140000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500186+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 56,
+      "first": 140000,
+      "last": 142500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500192+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 57,
+      "first": 142500,
+      "last": 145000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500197+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 58,
+      "first": 145000,
+      "last": 147500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500203+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 59,
+      "first": 147500,
+      "last": 150000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T22:52:03.500208+00:00",
+      "channels": [
+        "Fp1"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.5,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "ica": {
+        "revision": "a91d4f77035f4ab2972f758b7e51d9ff",
+        "model_sha256": "0186c78fc5d022b95f438de84ec9355de96ce9773aebba28a55d1342daf843ae",
+        "excluded_components": [
+          0
+        ],
+        "excluded_channels": []
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    }
+  ]
+}

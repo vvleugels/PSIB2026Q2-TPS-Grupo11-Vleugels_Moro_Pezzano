@@ -1,0 +1,2247 @@
+{
+  "version": 1,
+  "source": {
+    "files": [
+      {
+        "path": "sub-49/ses-1/eeg/sub-49_ses-1_task-eyesopen_eeg.fdt",
+        "size": 36600000,
+        "mtime_ns": 1793568116655591787
+      },
+      {
+        "path": "sub-49/ses-1/eeg/sub-49_ses-1_task-eyesopen_eeg.json",
+        "size": 650,
+        "mtime_ns": 1793567735000000000
+      },
+      {
+        "path": "sub-49/ses-1/eeg/sub-49_ses-1_task-eyesopen_eeg.set",
+        "size": 199535,
+        "mtime_ns": 1793568105398552285
+      }
+    ],
+    "sfreq": 500.0,
+    "n_times": 150000
+  },
+  "epoch_seconds": 5,
+  "epochs": [
+    {
+      "index": 0,
+      "first": 0,
+      "last": 2500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170917+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 1,
+      "first": 2500,
+      "last": 5000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170934+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 2,
+      "first": 5000,
+      "last": 7500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170942+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 3,
+      "first": 7500,
+      "last": 10000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170947+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 4,
+      "first": 10000,
+      "last": 12500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170952+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 5,
+      "first": 12500,
+      "last": 15000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170957+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 6,
+      "first": 15000,
+      "last": 17500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170961+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 7,
+      "first": 17500,
+      "last": 20000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170965+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 8,
+      "first": 20000,
+      "last": 22500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170969+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 9,
+      "first": 22500,
+      "last": 25000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170974+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 10,
+      "first": 25000,
+      "last": 27500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170978+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 11,
+      "first": 27500,
+      "last": 30000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170983+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 12,
+      "first": 30000,
+      "last": 32500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170987+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 13,
+      "first": 32500,
+      "last": 35000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170991+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 14,
+      "first": 35000,
+      "last": 37500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.170996+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 15,
+      "first": 37500,
+      "last": 40000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171000+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 16,
+      "first": 40000,
+      "last": 42500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171004+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 17,
+      "first": 42500,
+      "last": 45000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171008+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 18,
+      "first": 45000,
+      "last": 47500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171013+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 19,
+      "first": 47500,
+      "last": 50000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171018+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 20,
+      "first": 50000,
+      "last": 52500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171022+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 21,
+      "first": 52500,
+      "last": 55000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171033+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 22,
+      "first": 55000,
+      "last": 57500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171040+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 23,
+      "first": 57500,
+      "last": 60000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171045+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 24,
+      "first": 60000,
+      "last": 62500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171050+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 25,
+      "first": 62500,
+      "last": 65000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171054+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 26,
+      "first": 65000,
+      "last": 67500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171058+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 27,
+      "first": 67500,
+      "last": 70000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171062+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 28,
+      "first": 70000,
+      "last": 72500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171066+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 29,
+      "first": 72500,
+      "last": 75000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171070+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 30,
+      "first": 75000,
+      "last": 77500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171074+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 31,
+      "first": 77500,
+      "last": 80000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171078+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 32,
+      "first": 80000,
+      "last": 82500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171082+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 33,
+      "first": 82500,
+      "last": 85000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171086+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 34,
+      "first": 85000,
+      "last": 87500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171091+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 35,
+      "first": 87500,
+      "last": 90000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171095+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 36,
+      "first": 90000,
+      "last": 92500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171099+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 37,
+      "first": 92500,
+      "last": 95000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171103+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 38,
+      "first": 95000,
+      "last": 97500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171108+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 39,
+      "first": 97500,
+      "last": 100000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171112+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 40,
+      "first": 100000,
+      "last": 102500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171116+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 41,
+      "first": 102500,
+      "last": 105000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171120+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 42,
+      "first": 105000,
+      "last": 107500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171124+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 43,
+      "first": 107500,
+      "last": 110000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171128+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 44,
+      "first": 110000,
+      "last": 112500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171132+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 45,
+      "first": 112500,
+      "last": 115000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171136+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 46,
+      "first": 115000,
+      "last": 117500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171140+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 47,
+      "first": 117500,
+      "last": 120000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171144+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 48,
+      "first": 120000,
+      "last": 122500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171148+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 49,
+      "first": 122500,
+      "last": 125000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171153+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 50,
+      "first": 125000,
+      "last": 127500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171157+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 51,
+      "first": 127500,
+      "last": 130000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171161+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 52,
+      "first": 130000,
+      "last": 132500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171165+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 53,
+      "first": 132500,
+      "last": 135000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171168+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 54,
+      "first": 135000,
+      "last": 137500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171172+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 55,
+      "first": 137500,
+      "last": 140000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171176+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 56,
+      "first": 140000,
+      "last": 142500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171180+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 57,
+      "first": 142500,
+      "last": 145000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171184+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 58,
+      "first": 145000,
+      "last": 147500,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171187+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    },
+    {
+      "index": 59,
+      "first": 147500,
+      "last": 150000,
+      "partial": false,
+      "state": "Aceptada",
+      "reason": "",
+      "note": "",
+      "reviewed_at": "2026-11-09T15:38:26.171191+00:00",
+      "channels": [
+        "Fz"
+      ],
+      "filter": {
+        "enabled": true,
+        "low": 0.2,
+        "high": 45.0,
+        "notch": 50.0,
+        "method": "fir",
+        "phase": "zero",
+        "fir_window": "hamming",
+        "fir_design": "firwin",
+        "filter_length": "auto",
+        "l_trans_bandwidth": "auto",
+        "h_trans_bandwidth": "auto",
+        "pad": "reflect_limited",
+        "mne_version": "1.13.2",
+        "notch_method": "iirnotch",
+        "notch_q": 30.0,
+        "notch_phase": "zero",
+        "filter_order": "bandpass_then_notch"
+      },
+      "screening": {
+        "method": "peak_to_peak",
+        "high_uv": 150.0,
+        "flat_uv": 1.0
+      }
+    }
+  ]
+}
