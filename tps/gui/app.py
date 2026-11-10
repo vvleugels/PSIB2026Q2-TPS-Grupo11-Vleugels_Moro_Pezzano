@@ -300,10 +300,12 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI, BadChannelsUI):
         self.go_button.pack(side='left', padx=(4, 0))
         ttk.Separator(controls, orient='vertical').pack(side='left', fill='y', padx=10, pady=2)
         # Zoom and pan are done on the plot itself (no tool buttons): see ReviewUI.plot_press.
-        gestures = ttk.Label(controls, text='Arrastrar: zoom · Clic der.: mover · Doble clic: restaurar',
+        gestures = ttk.Label(controls, text='Arrastrar o rueda: zoom · Clic der.: mover · Doble clic: restaurar',
                              style='CardMuted.TLabel')
         gestures.pack(side='left')
         Tooltip(gestures, 'Mantené el clic izquierdo y arrastrá sobre el gráfico para acercar esa zona. '
+                          'La rueda del mouse acerca o aleja el tiempo alrededor del cursor (con Ctrl, la '
+                          'amplitud). '
                           'Mantené el clic derecho y arrastrá para desplazar la vista. '
                           'Doble clic vuelve a la ventana completa. Un clic simple elige la época.')
         self.cursor_text = tk.StringVar()
@@ -329,6 +331,7 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI, BadChannelsUI):
         self.canvas.mpl_connect('button_press_event', self.plot_press)
         self.canvas.mpl_connect('motion_notify_event', self.plot_motion)
         self.canvas.mpl_connect('button_release_event', self.plot_release)
+        self.canvas.mpl_connect('scroll_event', self.plot_scroll)
         self.canvas.mpl_connect('pick_event', self.stacked_pick)
         self.canvas.mpl_connect('motion_notify_event', self.stacked_hover)
         self.build_spectral(spectral, Toolbar)

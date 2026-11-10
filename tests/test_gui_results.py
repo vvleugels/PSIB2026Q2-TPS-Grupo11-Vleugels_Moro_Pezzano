@@ -57,7 +57,7 @@ def build_results(folder: Path) -> None:
         dict(sub='sub-07', ses='ses-2', condition='SD', eyes='open', level='recording', channel='', epoch='',
              reason='cannot read recording: Archivo EEG incompleto'),
     ])
-    run_all(folder, folder, clusters=False)
+    run_all(folder)
     make_all(folder)
 
 
@@ -78,14 +78,18 @@ class ResultsDataTests(unittest.TestCase):
         status = results.status()
         self.assertTrue(all(s.done for s in status.values()))
         self.assertIn('1 excluidos', status['batch'].detail)
-        self.assertIn('stats_region_log_power', results.available_tables())
+        self.assertIn('stats_summary_open', results.available_tables())
+        self.assertNotIn('stats_summary_closed', results.available_tables())   # no eyes-closed data here
+        row = results.table('stats_summary_open')[0]
+        self.assertEqual(list(row)[:3], ['band', 'region', 'n'])
+        self.assertIn(' a ', row['ci95_pct'])
         self.assertIn('exclusions', results.available_tables())
         names = [p.stem for p in results.figure_list()]
-        # Eyes open only here (no EC data): absolute, then relative topomaps, then PSDs.
-        self.assertEqual(names[:3], ['topomap_open', 'topomap_relative_open', 'psd_regions_open'])
+        # Eyes open only here (no EC data): the Cz spectrum, then the NS/SD topomaps.
+        self.assertEqual(names, ['psd_cz_open', 'topomaps_open'])
         captions = results.captions()
-        self.assertIn('topomap_open', captions)
-        self.assertFalse(captions['topomap_open'].startswith('File:'))
+        self.assertIn('topomaps_open', captions)
+        self.assertFalse(captions['topomaps_open'].startswith('Archivo:'))
         self.assertEqual(len(results.hypothesis_rows()) > 0, True)
 
     def test_missing_folder_is_empty_not_an_error(self):
@@ -129,7 +133,9 @@ class ResultsDataTests(unittest.TestCase):
         self.assertEqual(len(filter_rows(rows, eyes='open', band=None)), 2)
         self.assertEqual(len(filter_rows(rows, region='frontal')), 3)   # missing column ignored
         self.assertEqual([r['p'] for r in sort_rows(rows, 'p')], ['0.01', '0.2', ''])
-        self.assertEqual(fmt('p_fdr_wilcoxon', '0.00001'), '< 0.001')
+        self.assertEqual(fmt('p', '0.00001'), '< 0.001')
+        self.assertEqual(fmt('change_pct', '25.89'), '+25.9')
+        self.assertEqual(fmt('mean_ns_db', '14.93'), '14.9')
         self.assertEqual(fmt('n', '57.0'), '57')
         self.assertEqual(fmt('excluded', 'True'), 'Sí')
         self.assertEqual(fmt('sub', 'sub-01'), 'sub-01')
@@ -144,8 +150,9 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(batch[batch.index('--eyes') + 1], 'closed')
         self.assertEqual(batch[batch.index('--jobs') + 1], '3')
         self.assertNotIn('--eyes', command('batch', Options(), out))
-        stats = command('stats', Options(permutations=200), out)
-        self.assertEqual(stats[stats.index('--permutations') + 1], '200')
+        stats = command('stats', Options(), out)
+        self.assertEqual(stats[1:3], ['-m', 'tps.analysis.stats'])
+        self.assertNotIn('--permutations', stats)
         self.assertIn('tps.analysis.figures', command('figures', Options(), out))
         from tps.core.processing import FilterConfig
         # The explorer's filter goes to the batch explicitly.

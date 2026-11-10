@@ -3,7 +3,6 @@ import tkinter as tk
 from tkinter import ttk
 
 from tps.core.screening import ScreeningConfig, scan_recording
-from tps.core.processing import FilterConfig
 from tps.gui.theme import autowrap
 
 
@@ -14,12 +13,10 @@ class ScreeningUI:
         self.screening_high = tk.StringVar(value='150')
         self.screening_flat = tk.StringVar(value='1')
         self.screening_all = tk.BooleanVar(value=True)
-        self.screening_use_filter = tk.BooleanVar(value=True)
         self.screening_signal = tk.StringVar(value='Original · Filtrado desactivado')
         self.screening_summary = tk.StringVar(value='Sin barrido. Acepta las épocas sin avisos.')
         self.screening_detail = tk.StringVar(value='')
-        for variable in (self.screening_high, self.screening_flat, self.screening_all,
-                         self.screening_use_filter):
+        for variable in (self.screening_high, self.screening_flat, self.screening_all):
             variable.trace_add('write', self.clear_screening)
 
     def build_screening(self, parent):
@@ -30,12 +27,13 @@ class ScreeningUI:
                                'automáticos. Conserva las decisiones manuales.')
         intro.pack(fill='x', pady=(2, 6))
         autowrap(intro)
-        self.screening_filter_button = ttk.Checkbutton(
-            card, text='Usar el filtro activo', variable=self.screening_use_filter,
-            style='Card.TCheckbutton')
-        self.screening_filter_button.pack(anchor='w')
-        ttk.Label(card, textvariable=self.screening_signal, style='CardMuted.TLabel',
-                  wraplength=280).pack(anchor='w')
+        # Always on the signal shown in the explorer (the «Filtrado» panel), never a different one.
+        row = ttk.Frame(card, style='Card.TFrame')
+        row.pack(fill='x')
+        ttk.Label(row, text='Señal:', style='CardMuted.TLabel').pack(side='left')
+        signal = ttk.Label(row, textvariable=self.screening_signal, style='CardMuted.TLabel')
+        signal.pack(side='left', fill='x', expand=True, padx=(4, 0))
+        autowrap(signal)
         row = ttk.Frame(card, style='Card.TFrame')
         row.pack(fill='x', pady=6)
         self.screening_entries = []
@@ -80,10 +78,8 @@ class ScreeningUI:
             self.update_controls()
 
     def update_screening_signal(self):
-        filtering = self.config if self.screening_use_filter.get() else FilterConfig()
-        self.screening_signal.set(filtering.label if filtering.active else
-                                  ('Original · Filtrado desactivado' if self.screening_use_filter.get()
-                                   else 'Original · Sin filtrar'))
+        filtering = self.config
+        self.screening_signal.set(filtering.label if filtering.active else 'Original · Filtrado desactivado')
         if self.recording and self.recording.ica_context:
             self.screening_signal.set(self.screening_signal.get().replace('Original', 'Sin pasabanda/notch') +
                                       ' · ICA ' + self.recording.ica_context['revision'][:8])
@@ -107,7 +103,7 @@ class ScreeningUI:
         self.clear_screening()
         self.invalidate()
         recording = self.recording
-        filtering = self.config if self.screening_use_filter.get() else FilterConfig()
+        filtering = self.config   # the active filter, as shown in the plot
         self.screening_pending = True
         self.screening_summary.set(f'Buscando: {filtering.label}…')
 
@@ -186,7 +182,7 @@ class ScreeningUI:
     def update_screening_controls(self):
         enabled = self.recording is not None and bool(self.visible_channels()) and not self.busy
         self.screening_button.configure(state='normal' if enabled else 'disabled')
-        for widget in self.screening_entries + [self.screening_all_button, self.screening_filter_button]:
+        for widget in self.screening_entries + [self.screening_all_button]:
             widget.configure(state='normal' if not self.busy else 'disabled')
         has_suspects = enabled and self.screening_result and self.screening_result['findings']
         for button in self.screening_nav:

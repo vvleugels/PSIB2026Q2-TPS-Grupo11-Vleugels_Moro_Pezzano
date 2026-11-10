@@ -397,7 +397,6 @@ class GuiTests(unittest.TestCase):
         from tps.core.processing import FilterConfig
         self.select()
         a = self.app
-        self.assertTrue(a.screening_use_filter.get())
         self.assertIn('Filtrado desactivado', a.screening_signal.get())
         a.screening_all.set(False)
         filtering = FilterConfig(True, 2, 30)
@@ -414,14 +413,7 @@ class GuiTests(unittest.TestCase):
         self.assertIsNone(a.screening_result)
         self.assertEqual(a.screening_signal.get(), a.config.label)
         self.assertEqual(a.epoch_tree.item('0')['values'][-1], '')
-        a.screening_use_filter.set(False)
-        a.start_screening(); self.wait_ready()
-        original = a.screening_result
-        self.assertFalse(original['filter'].enabled)
-        self.assertIn('Original', a.screening_summary.get())
-        a.apply_config(FilterConfig(True, 4, 20)); self.wait_ready()
-        self.assertIs(a.screening_result, original)
-        self.assertEqual(a.screening_signal.get(), 'Original · Sin filtrar')
+        self.assertFalse(hasattr(a, 'screening_use_filter'))   # always the active filter
 
     def test_screening_autosave_failure_keeps_batch_in_memory_and_allows_retry(self):
         import json

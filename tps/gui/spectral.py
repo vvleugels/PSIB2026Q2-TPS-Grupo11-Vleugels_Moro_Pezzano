@@ -35,7 +35,7 @@ class SpectralUI:
         self.spectral_pending = False
         self.spectral_mode = tk.StringVar(value='Estudio actual')
         self.include_unreviewed = tk.BooleanVar(value=False)
-        self.spectral_db = tk.BooleanVar(value=True)
+        self.spectral_db = tk.BooleanVar(value=False)   # linear µV²/Hz by default
         self.export_png = tk.BooleanVar(value=False)
         self.spectral_message = tk.StringVar(value='Seleccioná un estudio y un electrodo.')
 

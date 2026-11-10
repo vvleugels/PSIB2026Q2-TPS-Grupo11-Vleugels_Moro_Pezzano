@@ -15,46 +15,31 @@ import re
 
 # Tables the GUI can browse: file stem -> Spanish label (order = selector order).
 TABLES = {
-    'stats_region_log_power': 'Potencia por región (log10), SD vs NS',
-    'stats_region_rel_power': 'Potencia relativa por región, SD vs NS',
-    'stats_relative_vs_absolute': 'Relativa vs absoluta por región',
-    'stats_region_log_power_min20': 'Potencia por región, solo registros con ≥ 20 épocas',
-    'stats_frontal_theta_beta': 'Theta/beta frontal, SD vs NS',
-    'stats_session_order': 'Control del orden de sesión',
-    'stats_epochs': 'Épocas usadas por sesión',
-    'stats_participants': 'Participantes incluidos',
-    'cluster_results': 'Clusters por electrodo',
+    'stats_summary_open': 'Resumen SD vs NS · ojos abiertos',
+    'stats_summary_closed': 'Avanzado · resumen ojos cerrados',
     'exclusions': 'Exclusiones del lote',
     'recordings_summary': 'Resumen por registro',
     'features_region': 'Potencia por región y participante',
     'channel_regions': 'Canales por región',
 }
+# Table views: one CSV shown per eye condition, with the CI in one column.
+VIEWS = {'stats_summary_open': ('stats_summary', 'open'), 'stats_summary_closed': ('stats_summary', 'closed')}
+SUMMARY_VIEW_COLUMNS = ('band', 'region', 'n', 'mean_ns_db', 'mean_sd_db', 'change_db', 'change_pct',
+                        'ci95_pct', 'p', 'significant')
 # Readable Spanish column headings; unknown columns keep their own name.
 HEADINGS = {
     'sub': 'Participante', 'ses': 'Sesión', 'condition': 'Condición', 'eyes': 'Ojos',
-    'analysis': 'Análisis', 'measure': 'Medida', 'band': 'Banda', 'region': 'Región',
+    'analysis': 'Análisis', 'band': 'Banda', 'region': 'Región',
     'channel': 'Electrodo', 'channels': 'Electrodos', 'epoch': 'Época', 'level': 'Nivel',
-    'reason': 'Motivo', 'criterion': 'Criterio', 'n': 'n', 'mean_ns': 'Media NS', 'mean_sd': 'Media SD',
-    'mean_diff': 'Dif. media SD−NS', 'median_diff': 'Dif. mediana', 'ci95_low': 'IC95 inf.',
-    'ci95_high': 'IC95 sup.', 'cohens_dz': 'd_z', 'rank_biserial': 'r biserial',
-    'wilcoxon_W': 'W', 'p_wilcoxon': 'p Wilcoxon', 'p_fdr_wilcoxon': 'p FDR Wilcoxon',
-    't': 't', 'p_ttest': 'p t', 'p_fdr_ttest': 'p FDR t', 'included': 'Incluido',
+    'reason': 'Motivo', 'criterion': 'Criterio', 'n': 'n',
+    'mean_ns_db': 'Media NS (dB)', 'mean_sd_db': 'Media SD (dB)', 'change_db': 'Cambio (dB)',
+    'change_pct': 'Cambio (%)', 'ci95_pct': 'IC 95 % (%)', 'p': 'p', 'significant': 'Significativo',
     'excluded': 'Excluido', 'n_epochs_used': 'Épocas usadas', 'n_epochs_rejected': 'Épocas rechazadas',
     'n_epochs_complete': 'Épocas completas', 'n_bad_channels': 'Canales malos', 'n_channels': 'Canales',
-    'file': 'Archivo', 'log10_power': 'log10 potencia', 'rel_power_pct': 'Potencia rel. (%)',
-    'sign': 'Signo', 't_sum': 'Suma t', 'p_cluster': 'p cluster', 'significant': 'Significativo',
-    'n_subjects': 'Participantes', 'cluster': 'Cluster', 'p_mannwhitney': 'p Mann-Whitney',
-    'p_fdr_mannwhitney': 'p FDR', 'n_ns_first': 'n NS primero', 'n_sd_first': 'n SD primero',
-    'hypothesis': 'Hipótesis', 'expected': 'Esperado', 'observed': 'Observado',
-    'p_corrected': 'p corregido', 'agreement': 'Acuerdo', 'largest_region': 'Región mayor efecto',
-    'mean_diff_absolute': 'Dif. media absoluta (log10)', 'mean_diff_relative': 'Dif. media relativa (pp)',
-    'p_fdr_wilcoxon_absolute': 'p FDR absoluta', 'p_fdr_wilcoxon_relative': 'p FDR relativa',
-    'significant_absolute': 'Signif. absoluta', 'significant_relative': 'Signif. relativa',
-    'same_direction': 'Mismo sentido', 'min_clean_epochs': 'Mín. épocas',
-    'n_absolute': 'n absoluta', 'n_relative': 'n relativa',
-    'rank_biserial_absolute': 'r biserial absoluta', 'rank_biserial_relative': 'r biserial relativa',
-    'cohens_dz_absolute': 'd_z absoluta', 'cohens_dz_relative': 'd_z relativa',
-    'p_wilcoxon_absolute': 'p Wilcoxon absoluta', 'p_wilcoxon_relative': 'p Wilcoxon relativa',
+    'n_channels_region': 'Canales de la región', 'file': 'Archivo', 'log10_power': 'log10 potencia',
+    'rel_power_pct': 'Potencia rel. (%)', 'processing_mode': 'Señal', 'ica_revision': 'Revisión ICA',
+    'filter': 'Filtrado', 'hypothesis': 'Hipótesis', 'expected': 'Esperado', 'observed': 'Observado',
+    'agreement': 'Resultado', 'largest_region': 'Región de mayor cambio',
 }
 FILTER_COLUMNS = ('eyes', 'ses', 'band', 'region', 'sub')
 BANDS = ('delta', 'theta', 'alpha', 'beta')
@@ -85,11 +70,21 @@ def fmt(column: str, text: str) -> str:
     value = number(text)
     if value is None or not re.search(r'\d', text) or column in ('sub', 'ses', 'epoch', 'cluster'):
         return text
-    if column.startswith('p_') or '_p_' in column:   # p-values: 3 decimals, tiny ones as < 0.001
+    if column.endswith(('_db', '_pct')):
+        return f'{value:+.1f}' if column.startswith('change') else f'{value:.1f}'
+    if column == 'p' or column.startswith('p_') or '_p_' in column:   # p-values: 3 decimals, tiny ones as < 0.001
         return '< 0.001' if value < 0.001 else f'{value:.3f}'
     if float(value).is_integer() and abs(value) < 1e6:
         return str(int(value))
     return f'{value:.3g}' if abs(value) < 1e-2 or abs(value) >= 1e4 else f'{value:.3f}'
+
+
+def summary_view_row(row: dict[str, str]) -> dict[str, str]:
+    """A stats_summary row for one eye condition: fixed columns, the 95 % CI in one cell."""
+    low, high = number(row.get('ci95_low_pct', '')), number(row.get('ci95_high_pct', ''))
+    out = {column: row.get(column, '') for column in SUMMARY_VIEW_COLUMNS}
+    out['ci95_pct'] = f'{low:+.1f} a {high:+.1f}' if low is not None and high is not None else ''
+    return out
 
 
 def filter_rows(rows: list[dict], **filters: str | None) -> list[dict]:
@@ -139,15 +134,21 @@ class Results:
         self._cache: dict[str, list[dict]] = {}
 
     def table_path(self, name: str) -> Path:
-        return self.directory / f'{name}.csv'
+        return self.directory / f'{VIEWS.get(name, (name,))[0]}.csv'   # a view opens its CSV
 
     def table(self, name: str) -> list[dict[str, str]]:
         if name not in self._cache:
-            self._cache[name] = read_csv(self.table_path(name))
+            if name in VIEWS:
+                base, eyes = VIEWS[name]
+                self._cache[name] = [summary_view_row(r) for r in read_csv(self.table_path(base))
+                                     if r.get('eyes') == eyes]
+            else:
+                self._cache[name] = read_csv(self.table_path(name))
         return self._cache[name]
 
     def available_tables(self) -> list[str]:
-        return [name for name in TABLES if self.table_path(name).is_file()]
+        return [name for name in TABLES if self.table_path(name).is_file()
+                and (name not in VIEWS or self.table(name))]
 
     # ------------------------------------------------------------------ pipeline state
     def _mtime(self, name: str) -> datetime | None:
@@ -174,11 +175,10 @@ class Results:
         batch = StepStatus(batch_time is not None, batch_time,
                            f'{len(summary)} registros, {excluded} excluidos' if summary else 'Sin resultados',
                            stale=self.config_changed())
-        stats_time = self._mtime('stats_region_log_power.csv')
-        participants = self.table('stats_participants')
-        included = {(r['eyes'], r['sub']) for r in participants if r.get('included') == 'True'}
-        eo = sum(1 for e, _ in included if e == 'open')
-        ec = sum(1 for e, _ in included if e == 'closed')
+        stats_time = self._mtime('stats_summary.csv')
+        summary = self.table('stats_summary')
+        eo, ec = (max((int(number(r['n']) or 0) for r in summary if r.get('eyes') == eyes), default=0)
+                  for eyes in ('open', 'closed'))
         stats = StepStatus(stats_time is not None, stats_time,
                            f'{eo} participantes con ojos abiertos, {ec} con ojos cerrados'
                            if stats_time else 'Sin resultados',
@@ -191,12 +191,10 @@ class Results:
 
     # ----------------------------------------------------------------------- figures
     def figure_list(self) -> list[Path]:
-        """PNG figures in a stable, meaningful order (eyes open first, absolute before relative)."""
+        """PNG figures in a stable order: eyes open first, then eyes closed (advanced)."""
         if not self.figures_dir.is_dir():
             return []
-        order = ['topomap_open', 'topomap_closed', 'topomap_relative_open', 'topomap_relative_closed',
-                 'psd_regions_open', 'psd_regions_closed', 'paired_open', 'paired_closed',
-                 'paired_relative_open', 'paired_relative_closed', 'theta_beta']
+        order = ['psd_cz_open', 'topomaps_open', 'psd_cz_closed', 'topomaps_closed']
         files = {p.stem: p for p in self.figures_dir.glob('*.png')}
         return [files[n] for n in order if n in files] + sorted(p for n, p in files.items() if n not in order)
 

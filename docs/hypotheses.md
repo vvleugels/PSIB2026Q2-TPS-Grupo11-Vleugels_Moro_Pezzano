@@ -7,12 +7,11 @@ figuras y la tabla resumen) es `tps/analysis/hypotheses.py`; hay que mantener am
 * **Medida:** media del log10 de la potencia absoluta por banda y región (`results/features_region.csv`).
 * **Análisis:** ojos abiertos (OA) es el principal y ojos cerrados (OC) el secundario. OA y OC
   nunca se combinan.
-* **Regla de decisión:** una celda de hipótesis queda *apoyada* (`supported`) cuando el efecto
-  tiene el signo esperado y el p de Wilcoxon corregido por BH-FDR es < 0,05 (FDR sobre las 20
-  pruebas banda × región de esa condición de ojos). Un efecto significativo en el sentido
-  contrario se informa como *opuesto* (`opposite`).
-* **Topografía:** «mayor sobre la región X» se verifica según si la región con el mayor
-  |d_z de Cohen| para esa banda es una de las regiones planteadas (`largest_in_expected_regions`).
+* **Regla de decisión:** una celda de hipótesis queda *apoyada* (`supported`) cuando el cambio
+  tiene el signo esperado y el p de la prueba t pareada es < 0,05. Un efecto significativo en el
+  sentido contrario se informa como *opuesto* (`opposite`).
+* **Topografía:** «mayor sobre la región X» se verifica mirando qué región tiene el mayor
+  |cambio %| en esa banda (`largest_region`).
 * **Alcance:** son solo diferencias espectrales a nivel de grupo; no se pretende ninguna
   interpretación clínica.
 
@@ -44,13 +43,13 @@ plausible y se informa tal como se observa.
 
 El cociente entre la potencia theta y beta sobre los canales frontales aumenta tras SD. Se calcula
 como la media del log10(theta/beta) sobre los canales frontales y se prueba una vez por condición
-de ojos, sin corrección FDR.
+de ojos.
 
 * Referencias: TODO (autores, año, DOI), a verificar antes de completarlas.
 
 ## H4: beta (exploratoria)
 
 La potencia beta (13–30 Hz) se examina en todas las regiones sin predicción de dirección. Los
-resultados se informan con corrección FDR, pero se interpretan como exploratorios.
+resultados se interpretan como exploratorios.
 
 * Referencias: TODO (autores, año, DOI), a verificar antes de completarlas.

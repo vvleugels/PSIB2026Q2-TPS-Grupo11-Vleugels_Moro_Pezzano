@@ -28,16 +28,13 @@ VALUE_ES = {
     'none (exploratory)': 'sin predicción', 'supported': 'apoyada', 'opposite': 'opuesta',
     'not significant': 'no significativa', 'exploratory: significant': 'exploratoria: significativa',
     'exploratory: not significant': 'exploratoria: no significativa', 'not tested': 'sin prueba',
+    'alpha': 'alfa',
 }
 FIGURE_NAMES = {
-    'topomap_open': 'Topomapas · ojos abiertos', 'topomap_closed': 'Topomapas · ojos cerrados',
-    'psd_regions_open': 'PSD por región · ojos abiertos', 'psd_regions_closed': 'PSD por región · ojos cerrados',
-    'paired_open': 'Potencia pareada · ojos abiertos', 'paired_closed': 'Potencia pareada · ojos cerrados',
-    'topomap_relative_open': 'Topomapas relativos · ojos abiertos',
-    'topomap_relative_closed': 'Topomapas relativos · ojos cerrados',
-    'paired_relative_open': 'Potencia relativa pareada · ojos abiertos',
-    'paired_relative_closed': 'Potencia relativa pareada · ojos cerrados',
-    'theta_beta': 'Theta/beta frontal',
+    'psd_cz_open': 'Espectro en Cz · ojos abiertos',
+    'topomaps_open': 'Topomapas NS y SD · ojos abiertos',
+    'psd_cz_closed': 'Avanzado · espectro en Cz · ojos cerrados',
+    'topomaps_closed': 'Avanzado · topomapas NS y SD · ojos cerrados',
 }
 
 
@@ -45,10 +42,13 @@ def figure_name(path: Path) -> str:
     return FIGURE_NAMES.get(path.stem, path.stem)
 
 
-HYPOTHESIS_COLUMNS = ('hypothesis', 'eyes', 'band', 'region', 'expected', 'observed', 'n',
-                      'mean_diff', 'p_corrected', 'cohens_dz', 'agreement', 'largest_region')
+HYPOTHESIS_COLUMNS = ('hypothesis', 'band', 'region', 'expected', 'observed', 'n',
+                      'change_pct', 'change_db', 'p', 'agreement')
 BAND_SYMBOLS = {'delta': 'δ', 'theta': 'θ', 'alpha': 'α', 'beta': 'β'}
 ALL = 'Todos'
+# Columns whose Spanish headings or values need more room than the default.
+COLUMN_WIDTHS = {'mean_ns_db': 125, 'mean_sd_db': 125, 'change_db': 115, 'change_pct': 115,
+                 'ci95_pct': 150, 'significant': 120, 'expected': 110, 'observed': 110}
 
 
 # exclusions.csv keeps English codes (the code reads them); the GUI shows them in Spanish.
@@ -59,7 +59,7 @@ CRITERION_ES = {'manual': 'manual', 'flat': 'plana', 'deviation': 'amplitud', 'c
 
 def display_value(column: str, text: str) -> str:
     """Cell text for the GUI: Spanish words for known values, rounded numbers."""
-    if column in ('eyes', 'analysis', 'expected', 'observed', 'agreement') and text in VALUE_ES:
+    if column in ('eyes', 'analysis', 'expected', 'observed', 'agreement', 'band') and text in VALUE_ES:
         return VALUE_ES[text]
     if column == 'level' and text in LEVEL_ES:
         return LEVEL_ES[text]
@@ -107,7 +107,6 @@ class ResultsUI:
         self.run_eyes = tk.StringVar(value='Ambos')
         self.run_jobs = tk.StringVar(value=str(Options().jobs))
         self.run_force = tk.BooleanVar(value=False)
-        self.run_permutations = tk.StringVar(value='5000')
         self.run_filter_description = tk.StringVar(value='')
         self.saved_filter_description = tk.StringVar(value='')
         self.run_progress_text = tk.StringVar(value='')
@@ -115,7 +114,7 @@ class ResultsUI:
         self.results_instruction = tk.StringVar()
         self.step_status = {step: tk.StringVar() for step in STEPS}
         self.step_detail = {step: tk.StringVar() for step in STEPS}
-        self.hypothesis_eyes = tk.StringVar(value=ALL)
+        self.hypothesis_eyes = tk.StringVar(value='Abiertos')
         self.table_choice = tk.StringVar()
         self.table_filters = {column: tk.StringVar(value=ALL) for column in FILTER_COLUMNS}
         self.table_count = tk.StringVar()
@@ -192,12 +191,11 @@ class ResultsUI:
                                                     style='Card.TCheckbutton')
                 self.force_toggle.pack(anchor='w', pady=(4, 0))
             elif step == 'stats':
-                self.permutations_box = ttk.Spinbox(options, from_=100, to=100000, increment=1000,
-                                                    textvariable=self.run_permutations, width=8)
-                self.option_row(options, 'Permutaciones (clusters)', self.permutations_box)
+                ttk.Label(options, text='Por banda y región: cambio SD − NS en % y dB, IC 95 % y prueba t '
+                                        'pareada (mínimo 3 pares).',
+                          style='CardMuted.TLabel', wraplength=260).pack(anchor='w')
             else:
-                ttk.Label(options, text='Figuras descriptivas desde 1 par NS/SD. Pruebas estadísticas: mínimo 3 pares; '
-                                           'con menos pares se muestran sin inferencia.',
+                ttk.Label(options, text='Espectro en Cz y topomapas NS/SD, como las Fig. 4 y 5 del paper.',
                           style='CardMuted.TLabel', wraplength=260).pack(anchor='w')
             button = ttk.Button(inner, text='Ejecutar', command=lambda s=step: self.run_pipeline([s]))
             button.pack(fill='x')
@@ -235,8 +233,8 @@ class ResultsUI:
                                         'lo ya calculado se conserva.')
         Tooltip(self.step_buttons['batch'], 'python -m tps.pipeline.batch: filtra, divide en épocas, '
                                             'aplica el barrido y calcula la potencia de cada registro.')
-        Tooltip(self.step_buttons['stats'], 'python -m tps.analysis.stats: regiones, pruebas pareadas SD vs NS, '
-                                            'FDR, orden de sesión y clusters.')
+        Tooltip(self.step_buttons['stats'], 'python -m tps.analysis.stats: potencia por región y tabla '
+                                            'resumen SD vs NS (cambio en % y dB, prueba t pareada).')
         Tooltip(self.step_buttons['figures'], 'python -m tps.analysis.figures: figuras, leyendas y tabla de hipótesis.')
         Tooltip(self.force_toggle, 'Desactivado: solo procesa los registros nuevos o afectados por '
                                    'un cambio de config.py.')
@@ -253,7 +251,7 @@ class ResultsUI:
         bar = ttk.Frame(page, style='Card.TFrame')
         bar.pack(fill='x', pady=(0, 8))
         ttk.Label(bar, text='Ojos', style='Card.TLabel').pack(side='left')
-        box = ttk.Combobox(bar, textvariable=self.hypothesis_eyes, values=[ALL, 'Abiertos', 'Cerrados'],
+        box = ttk.Combobox(bar, textvariable=self.hypothesis_eyes, values=['Abiertos', 'Cerrados'],
                            state='readonly', width=10)
         box.pack(side='left', padx=6)
         box.bind('<<ComboboxSelected>>', lambda e: self.fill_hypotheses())
@@ -273,9 +271,9 @@ class ResultsUI:
         self.hypothesis_tree.tag_configure('opuesta', background='#f9d8d5')
         self.hypothesis_tree.tag_configure('nosig', foreground=MUTED)
         legend = ttk.Label(page, style='CardMuted.TLabel', text=(
-            'Verde: dirección esperada y p corregido < 0,05 · Rojo: significativa en la dirección '
-            'opuesta · Gris: no significativa. Dif. media en log10 (theta/beta: log10 del cociente). '
-            'Diferencias espectrales a nivel de grupo, sin interpretación clínica.'))
+            'Verde: dirección esperada y p < 0,05 · Rojo: significativa en la dirección opuesta · Gris: no '
+            'significativa. Cambio de la potencia SD − NS en % y dB (theta/beta: del cociente); p de la prueba '
+            't pareada. Diferencias espectrales a nivel de grupo, sin interpretación clínica.'))
         legend.pack(fill='x', pady=(6, 0))
         autowrap(legend)
 
@@ -395,7 +393,7 @@ class ResultsUI:
         tree.pack(fill='both', expand=True)
         for column in columns:
             tree.heading(column, text=HEADINGS.get(column, column))
-            tree.column(column, width=90 if column not in ('agreement', 'largest_region') else 150,
+            tree.column(column, width=COLUMN_WIDTHS.get(column, 90 if column not in ('agreement', 'largest_region') else 150),
                         minwidth=50, stretch=True)
         return tree
 
@@ -554,10 +552,9 @@ class ResultsUI:
             arrow = (' ▼' if self.table_sort[1] else ' ▲') if column == self.table_sort[0] else ''
             tree.heading(column, text=HEADINGS.get(column, column) + arrow,
                          command=lambda c=column: self.show_table(sort=c))
-            width = 260 if column in ('reason', 'channels', 'note', 'file') else 95
+            width = COLUMN_WIDTHS.get(column, 260 if column in ('reason', 'channels', 'note', 'file') else 95)
             tree.column(column, width=width, minwidth=50, stretch=column in ('reason', 'channels'))
-        significant = next((c for c in ('p_fdr_wilcoxon', 'p_fdr_wilcoxon_absolute', 'p_cluster',
-                                        'p_fdr_mannwhitney') if c in columns), None)
+        significant = 'p' if 'p' in columns else None
         for row in shown:
             p = number(row.get(significant, '')) if significant else None
             tag = ('significativa',) if p is not None and p < 0.05 else ()
@@ -673,11 +670,10 @@ class ResultsUI:
     def run_options(self) -> Options:
         try:
             jobs = max(1, int(self.run_jobs.get()))
-            permutations = max(100, int(self.run_permutations.get()))
         except ValueError:
-            raise ValueError('Procesos en paralelo y permutaciones deben ser números enteros.')
+            raise ValueError('Procesos en paralelo debe ser un número entero.')
         return Options(eyes=EYES_OPTIONS.get(self.run_eyes.get()), jobs=jobs, force=self.run_force.get(),
-                       permutations=permutations, ica_mode='confirmed' if self.run_ica.get() == SIGNAL_ICA else 'original',
+                       ica_mode='confirmed' if self.run_ica.get() == SIGNAL_ICA else 'original',
                        filtering=self.config,
                        data_dir=self.data_dir, annotations_dir=self.annotations_dir)
 

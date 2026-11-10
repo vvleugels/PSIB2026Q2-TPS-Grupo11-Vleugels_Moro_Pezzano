@@ -298,7 +298,7 @@ class ReviewUI:
             changed = candidate != self.config
             self.config = candidate
             self.filter_reviewed = True
-            if changed and self.screening_use_filter.get():
+            if changed:   # the screening always uses the active filter
                 self.clear_screening()
             self.update_screening_signal()
             self.signal_label.set(candidate.label)
@@ -515,6 +515,30 @@ class ReviewUI:
             if abs(y - drag['ydata']) > 1e-9:
                 ax.set_ylim(sorted((drag['ydata'], y)))
             self.status.set('Zoom aplicado. Doble clic en el gráfico para volver a la ventana completa.')
+        self.canvas.draw_idle()
+
+    def plot_scroll(self, event):
+        """Mouse wheel on the plot: zoom time around the cursor (Ctrl: amplitude).
+
+        Zooming out stops at the loaded window, so the view never shows empty time."""
+        ax = event.inaxes
+        if self.busy or ax not in self.figure.axes or event.xdata is None:
+            return
+        factor = 0.8 if event.button == 'up' else 1.25
+        homes = dict(zip(self.figure.axes, getattr(self, 'home_limits', [])))
+        (hx0, hx1), (hy0, hy1) = homes.get(ax, (ax.get_xlim(), ax.get_ylim()))
+        if event.key == 'control':
+            low, high = ax.get_ylim()
+            span = min((high - low) * factor, (hy1 - hy0) * 4)
+            centre = event.ydata
+            share = (centre - low) / (high - low) if high > low else .5
+            ax.set_ylim(centre - span * share, centre + span * (1 - share))
+        else:
+            low, high = ax.get_xlim()
+            span = min((high - low) * factor, hx1 - hx0)
+            share = (event.xdata - low) / (high - low) if high > low else .5
+            start = min(max(event.xdata - span * share, hx0), hx1 - span)
+            ax.set_xlim(start, start + span)   # shared x: every panel follows
         self.canvas.draw_idle()
 
     def restore_view(self):

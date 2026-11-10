@@ -9,7 +9,7 @@ archivos EEG originales nunca se modifican.
 
 | Documento | Contenido |
 |---|---|
-| [docs/pipeline.md](docs/pipeline.md) | método del análisis de grupo: lote, regiones, estadística y clusters |
+| [docs/pipeline.md](docs/pipeline.md) | método del análisis de grupo: lote, regiones, tabla resumen y figuras |
 | [docs/hypotheses.md](docs/hypotheses.md) | hipótesis H1–H4 (referencias pendientes, TODO) |
 | [docs/methods_draft.md](docs/methods_draft.md) | borrador de Materiales y Métodos |
 | [docs/validation.md](docs/validation.md) | piloto de limpieza y validación (`validate_eeg.py`), independiente de la GUI |
@@ -54,19 +54,26 @@ sin usar la terminal. Lee y escribe en `results/` (junto a `data/`).
 
 - **Proceso**: tres pasos (1 Potencias por lote, 2 Estadística, 3 Figuras) con su estado
   (listo, sin resultados o desactualizado si cambió `tps/config.py` o un paso anterior), sus
-  opciones (ojos, procesos en paralelo, recalcular todo, permutaciones) y **Ejecutar**.
+  opciones (señal de entrada, ojos, procesos en paralelo, recalcular todo) y **Ejecutar**.
   **Ejecutar todo** los encadena; **Cancelar** detiene el paso en curso (el lote es
   reanudable). Los pasos corren en un proceso aparte: el explorador sigue disponible.
   El registro muestra la salida de cada paso y se abre solo si algo falla.
-- **Hipótesis**: H1–H4 y la tabla de dirección esperada vs observada, p corregido y
-  tamaño del efecto, coloreada por acuerdo (verde apoyada, rojo opuesta, gris no
-  significativa). Las referencias siguen pendientes (TODO).
-- **Tablas**: todas las tablas `stats_*.csv`, clusters, exclusiones y resumen por registro,
-  con filtros por ojos, sesión, banda, región y participante, y orden por columna
-  (clic en el encabezado). Se resaltan las filas con p < 0,05.
-- **Figuras**: topomapas, PSD por región, gráficos pareados y theta/beta con su leyenda
-  (`captions.md`), en versión absoluta y relativa; zoom con los botones o Ctrl + rueda
-  y arrastre para mover.
+- **Hipótesis**: H1–H4 y, por banda y región, la dirección esperada vs observada, el cambio
+  en % y en dB y el p, coloreada por resultado (verde apoyada, rojo opuesta, gris no
+  significativa). Muestra ojos abiertos; ojos cerrados se elige en el selector. Las
+  referencias siguen pendientes (TODO).
+- **Tablas**: el **resumen SD vs NS** (ojos abiertos; ojos cerrados en «Avanzado»), las
+  exclusiones, el resumen por registro, la potencia por región y participante y los canales
+  por región, con filtros y orden por columna. Se resaltan las filas con p < 0,05.
+- **Figuras**: el espectro en Cz y los topomapas NS y SD (como las Fig. 4 y 5 del paper de
+  referencia), con su leyenda; las de ojos cerrados aparecen como «Avanzado». Zoom con los
+  botones o Ctrl + rueda y arrastre para mover.
+
+**Cómo leer el resumen.** Cada fila compara, en los mismos participantes, la potencia absoluta
+de una banda en una región tras privación de sueño (SD) frente a sueño normal (NS):
+**Media NS / SD** en dB (10·log10 µV²), **Cambio (dB)** y **Cambio (%)** de la potencia (media
+geométrica), su **IC 95 %**, el **p** de una prueba t pareada y **Significativo** (p < 0,05).
+Con 20 pruebas por condición de ojos se espera alrededor de un resultado significativo por azar.
 
 En el panel lateral, **Resultado del lote** muestra para el estudio abierto si el lote lo
 incluyó o lo excluyó (y por qué), las épocas usadas y rechazadas, los canales malos y,
@@ -83,8 +90,11 @@ lote significa «dentro de los límites de amplitud», no inspección visual.
 2. Se muestran ventanas de **10 segundos**, amplitud en **µV** y líneas verticales
    cada **5 segundos**. **Anterior**, **Siguiente** e **Inicio (s) → Ir** recorren
    el registro. El inicio acepta punto o coma decimal; la última ventana puede ser parcial.
-3. La barra del gráfico permite zoom, desplazamiento y restauración. Cambiar de
-   electrodo conserva el tiempo y la época seleccionada.
+3. Zoom y desplazamiento se hacen sobre el gráfico: **arrastrar** con el clic izquierdo acerca
+   la zona marcada; la **rueda del mouse** acerca o aleja el tiempo alrededor del cursor (con
+   **Ctrl**, la amplitud) y no se aleja más allá de la ventana; **clic derecho y arrastrar**
+   desplaza; **doble clic** vuelve a la ventana completa. Con un solo electrodo la escala
+   vertical queda fija en ±100 µV. Cambiar de electrodo conserva el tiempo y la época seleccionada.
 4. **⚙ Configurar filtrado**, en la tarjeta **Filtrado** del panel lateral, permite activar el filtrado y ajustar sus cortes. Al iniciar,
    está apagado y los cortes son **0,2–45 Hz**. **Aplicar** valida y prepara el filtro
    en segundo plano; **Cancelar** conserva la configuración anterior. Restablecer
@@ -238,17 +248,14 @@ python -m tps.pipeline.batch --ica-mode confirmed --annotations-dir annotations
 Después de elegir un electrodo, pulsar **Buscar posibles artefactos** en el panel
 lateral. Por defecto recorre todos los canales EEG del estudio; desactivar
 **Todos los electrodos EEG** limita el barrido a los visibles (uno o hasta ocho).
-Se calcula `máximo − mínimo` por canal en cada época de 5 s. Por defecto está
-marcado **Usar el filtro activo**: utiliza la misma configuración de filtrado que
-la vista temporal y el análisis espectral. El FIR se aplica al **canal continuo
+Se calcula `máximo − mínimo` por canal en cada época de 5 s, siempre sobre la señal con
+el **filtro activo** (la misma configuración que la vista temporal y el análisis
+espectral; la tarjeta indica cuál es). El FIR se aplica al **canal continuo
 completo antes de dividirlo en épocas**, aprovechando la caché existente. El panel,
 el resumen y el detalle identifican **Filtrada · X–Y Hz** o **Original**.
 
 Si el filtrado está desactivado en **⚙ Configurar filtrado**, el barrido utiliza el original
-y lo indica explícitamente; esta opción no enciende el filtro automáticamente.
-Desmarcar **Usar el filtro activo** permite revisar siempre la señal original,
-aunque se esté mostrando una señal filtrada. Así se pueden distinguir avisos por
-deriva que disminuyen con el pasabanda de problemas visibles en la adquisición.
+y lo indica explícitamente.
 
 Los límites iniciales, ajustables en µV pico a pico, son **Alta > 150** y
 **Plana < 1**. Son valores de partida, no umbrales validados para este conjunto
@@ -284,10 +291,9 @@ excluidas. Si falla el guardado, los cambios quedan en memoria y se puede reinte
 Los avisos del barrido permanecen en memoria para el estudio; cambiar umbrales,
 alcance o estudio los descarta y exige repetir el barrido. Esto no borra las marcas
 guardadas: se reevalúan al ejecutar el próximo barrido. Las muestras no se modifican.
-Al usar el filtro activo, cambiar sus cortes o encenderlo/apagarlo descarta los
-avisos y exige repetir el barrido. Si una nueva configuración falla, se conservan
-el filtro y los avisos anteriores. En el modo original, cambiar el filtro de
-visualización conserva los avisos: siguen refiriéndose al original y a los canales
+Cambiar los cortes del filtro o encenderlo/apagarlo descarta los avisos y exige
+repetir el barrido. Si una nueva configuración falla, se conservan el filtro y los
+avisos anteriores. Los avisos siguen refiriéndose a los canales
 indicados en el resumen.
 
 ## Anotaciones y protección de datos
@@ -355,8 +361,8 @@ sin relleno de ceros. El diálogo y el resumen muestran los parámetros efectivo
 en muestras y la separación entre frecuencias. El detrend se aplica dentro de
 Welch, sin cambiar las muestras del registro original ni la vista temporal.
 
-La PSD se presenta inicialmente en dB respecto de **1 µV²/Hz** y puede mostrarse
-en escala lineal **µV²/Hz**. La conversión a dB se realiza después del promedio;
+La PSD se presenta inicialmente en escala lineal **µV²/Hz** y **Escala dB** la muestra
+en dB respecto de **1 µV²/Hz**. La conversión a dB se realiza después del promedio;
 los ceros se omiten de la curva logarítmica, sin inventar un piso de potencia.
 
 Las bandas iniciales son delta 0,5–4, theta 4–8, alfa 8–13 y beta 13–30 Hz. Se
@@ -433,15 +439,11 @@ Salidas en `results/` (no se versionan; se regeneran con los comandos anteriores
 | `exclusions.csv`, `recordings_summary.csv` | registros, canales y épocas excluidos, con el motivo |
 | `session_order.csv`, `config_used.json`, `ica_coverage.json` | orden NS/SD; configuración e ICA usadas |
 | `features_region.csv` | log10 de la potencia y potencia relativa por región |
-| `stats_region_log_power.csv`, `stats_region_rel_power.csv` | pruebas pareadas SD vs NS por banda y región |
-| `stats_relative_vs_absolute.csv` | resultados absolutos y relativos lado a lado |
-| `stats_region_log_power_min20.csv` | sensibilidad: solo registros con ≥ 20 épocas limpias |
-| `stats_frontal_theta_beta.csv`, `stats_session_order.csv`, `stats_epochs.csv`, `stats_participants.csv` | theta/beta, orden de sesión, épocas y participantes |
-| `cluster_results.csv`, `stats_cluster_channels.csv` | prueba de clusters por electrodo |
-| `figures/*.png`, `figures/captions.md` | figuras (absolutas y relativas) y sus leyendas |
+| `stats_summary.csv` | resumen SD vs NS por ojos, banda y región: medias y cambio en dB, cambio en %, IC 95 %, p y significativo |
+| `figures/psd_cz_*.png`, `figures/topomaps_*.png`, `figures/captions.md` | espectro en Cz y topomapas NS/SD, y sus leyendas |
 | `channel_regions.csv` | canales de cada región |
-| `report.md` | informe con todas las tablas, hipótesis y figuras |
-| `figures/hypothesis_summary.csv/.md` | hipótesis, dirección esperada y observada, p corregido, tamaño del efecto |
+| `report.md` | informe en español: datos usados, resumen, hipótesis y figuras (ojos cerrados como «Avanzado») |
+| `figures/hypothesis_summary.csv/.md` | hipótesis: dirección esperada y observada, cambio en % y dB, p y resultado |
 
 ## Estructura del código
 

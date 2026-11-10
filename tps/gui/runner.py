@@ -27,7 +27,6 @@ class Options:
     eyes: str | None = None          # None = both, 'open' or 'closed'
     jobs: int = max(1, (os.cpu_count() or 2) // 2)
     force: bool = False
-    permutations: int = 5000
     ica_mode: str = 'original'      # 'confirmed': apply each recording's confirmed ICA first
     filtering: object = None        # FilterConfig of the explorer; None = config.FILTER
     data_dir: Path | None = None
@@ -55,8 +54,7 @@ def command(step: str, options: Options, results_dir: Path) -> list[str]:
             argv.append('--force')
         return argv
     if step == 'stats':
-        return [sys.executable, '-m', 'tps.analysis.stats', '--results-dir', str(results_dir),
-                '--permutations', str(options.permutations)]
+        return [sys.executable, '-m', 'tps.analysis.stats', '--results-dir', str(results_dir)]
     if step == 'figures':
         return [sys.executable, '-m', 'tps.analysis.figures', '--results-dir', str(results_dir)]
     raise ValueError(f'Paso desconocido: {step}')

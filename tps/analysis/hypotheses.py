@@ -30,94 +30,67 @@ class Hypothesis:
     bands: tuple[str, ...]
     regions: tuple[str, ...]            # regions where the effect is expected to be largest
     direction: str | None               # '+' SD > NS, '-' SD < NS, None = no prediction
-    measure: str = 'log10_power'        # or 'log10_frontal_theta_beta'
-    eyes_focus: str = 'both'            # where the effect is expected to be clearest
     exploratory: bool = False
-    note: str = ''
     references: tuple[Reference, ...] = field(default_factory=lambda: (Reference(),))
 
 
 HYPOTHESES: tuple[Hypothesis, ...] = (
-    Hypothesis(
-        'H1', 'Delta and theta power increase after SD, largest over frontal / fronto-central regions.',
-        bands=('delta', 'theta'), regions=('frontal', 'central'), direction=INCREASE,
-        note='Fronto-central sites (FC*) belong to the "central" region in tps/analysis/regions.py.'),
-    Hypothesis(
-        'H2', 'Alpha power decreases after SD, largest over posterior regions; expected clearer '
-              'with eyes closed than eyes open. Prior findings are mixed (both decreases and '
-              'increases of alpha after SD have been reported).',
-        bands=('alpha',), regions=('parietal', 'occipital'), direction=DECREASE, eyes_focus='closed',
-        note='Mixed literature: a null or opposite result is a plausible outcome, not an anomaly.'),
-    Hypothesis(
-        'H3', 'The frontal theta/beta ratio increases after SD.',
-        bands=('theta/beta',), regions=('frontal',), direction=INCREASE,
-        measure='log10_frontal_theta_beta'),
-    Hypothesis(
-        'H4', 'Beta power: exploratory, no directional prediction.',
-        bands=('beta',), regions=tuple(REGIONS), direction=NONE, exploratory=True),
+    Hypothesis('H1', 'La potencia delta y theta aumenta tras SD, con el mayor aumento en las regiones '
+                     'frontal y central (incluye las fronto-centrales FC*).',
+               bands=('delta', 'theta'), regions=('frontal', 'central'), direction=INCREASE),
+    Hypothesis('H2', 'La potencia alfa disminuye tras SD, con la mayor disminución en las regiones '
+                     'posteriores; se espera más clara con ojos cerrados. La literatura está dividida.',
+               bands=('alpha',), regions=('parietal', 'occipital'), direction=DECREASE),
+    Hypothesis('H3', 'El cociente theta/beta frontal aumenta tras SD.',
+               bands=('theta/beta',), regions=('frontal',), direction=INCREASE),
+    Hypothesis('H4', 'Potencia beta: exploratoria, sin predicción de dirección.',
+               bands=('beta',), regions=tuple(REGIONS), direction=NONE, exploratory=True),
 )
 
 
-def direction_of(mean_diff: float) -> str:
-    if pd.isna(mean_diff):
+def direction_of(change: float) -> str:
+    if pd.isna(change):
         return 'n/a'
-    return 'increase' if mean_diff > 0 else 'decrease' if mean_diff < 0 else 'no change'
+    return 'increase' if change > 0 else 'decrease' if change < 0 else 'no change'
 
 
-def agreement(expected: str | None, mean_diff: float, p_corrected: float) -> str:
-    """Compare the observed paired effect with the expected direction.
-
-    'supported' needs both the expected sign and p_corrected < 0.05; a significant effect in
-    the other direction is reported as 'opposite', anything else as 'not significant'."""
-    if pd.isna(p_corrected):
+def agreement(expected: str | None, change: float, p: float) -> str:
+    """'supported' needs the expected sign and p < 0.05; a significant effect in the other
+    direction is 'opposite'; anything else 'not significant'."""
+    if pd.isna(p):
         return 'not tested'
-    significant = p_corrected < ALPHA
+    significant = p < ALPHA
     if expected is None:
         return 'exploratory: ' + ('significant' if significant else 'not significant')
-    sign = '+' if mean_diff > 0 else '-'
     if not significant:
         return 'not significant'
-    return 'supported' if sign == expected else 'opposite'
+    return 'supported' if ('+' if change > 0 else '-') == expected else 'opposite'
 
 
-def evaluate(region_stats: pd.DataFrame, tbr_stats: pd.DataFrame) -> pd.DataFrame:
-    """One row per hypothesis x band x region x eyes with observed effects and agreement.
+def evaluate(summary: pd.DataFrame) -> pd.DataFrame:
+    """One row per hypothesis x eyes x band x region from stats_summary.csv.
 
-    ``largest_region`` tells whether the strongest effect (largest |dz|) of that band is in
-    one of the hypothesised regions, which is the topographic part of H1/H2."""
+    ``largest_region`` is the region with the largest |% change| for that band, to check the
+    topographic part of H1/H2."""
     rows = []
     for h in HYPOTHESES:
         for eyes in ('open', 'closed'):
-            if h.measure == 'log10_frontal_theta_beta':
-                stats_rows = tbr_stats[tbr_stats['eyes'] == eyes]
-                for _, s in stats_rows.iterrows():
-                    # A single pre-specified test per eye condition: its p is not FDR-corrected.
-                    rows.append(_row(h, eyes, 'theta/beta', 'frontal', s, s['p_wilcoxon'],
-                                     'uncorrected (single test)', ''))
-                continue
             for band in h.bands:
-                band_rows = region_stats[(region_stats['eyes'] == eyes) & (region_stats['band'] == band)]
+                band_rows = summary[(summary['eyes'] == eyes) & (summary['band'] == band)]
                 if band_rows.empty:
                     continue
-                strongest = band_rows.loc[band_rows['cohens_dz'].abs().idxmax(), 'region'] \
-                    if band_rows['cohens_dz'].notna().any() else ''
+                changes = band_rows['change_pct'].abs()
+                strongest = band_rows.loc[changes.idxmax(), 'region'] if changes.notna().any() else ''
                 for region in h.regions:
                     s = band_rows[band_rows['region'] == region]
                     if s.empty:
                         continue
-                    rows.append(_row(h, eyes, band, region, s.iloc[0], s.iloc[0]['p_fdr_wilcoxon'],
-                                     'BH-FDR (20 band x region tests)', strongest))
+                    s = s.iloc[0]
+                    rows.append(dict(
+                        hypothesis=h.id, eyes=eyes, band=band, region=region,
+                        expected={'+': 'increase', '-': 'decrease', None: 'none (exploratory)'}[h.direction],
+                        observed=direction_of(s['change_pct']), n=int(s['n']),
+                        change_pct=s['change_pct'], change_db=s['change_db'], p=s['p'],
+                        agreement=agreement(h.direction, s['change_pct'], s['p']),
+                        largest_region=strongest))
     return pd.DataFrame(rows)
-
-
-def _row(h: Hypothesis, eyes: str, band: str, region: str, s: pd.Series, p: float,
-         correction: str, strongest: str) -> dict:
-    expected = {'+': 'increase', '-': 'decrease', None: 'none (exploratory)'}[h.direction]
-    return dict(hypothesis=h.id, eyes=eyes, analysis='primary' if eyes == 'open' else 'secondary',
-                eyes_focus=h.eyes_focus, band=band, region=region, expected=expected,
-                observed=direction_of(s['mean_diff']), n=int(s['n']), mean_diff=s['mean_diff'],
-                ci95_low=s['ci95_low'], ci95_high=s['ci95_high'], p_corrected=p, correction=correction,
-                rank_biserial=s['rank_biserial'], cohens_dz=s['cohens_dz'],
-                agreement=agreement(h.direction, s['mean_diff'], p),
-                largest_region=strongest,
-                largest_in_expected_regions=(strongest in h.regions) if strongest else '')

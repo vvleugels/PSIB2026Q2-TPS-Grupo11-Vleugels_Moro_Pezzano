@@ -92,25 +92,16 @@ FCz, sin re-referenciar, interpolar, aplicar ICA ni remuestrear.
   cerrados). Las dos condiciones nunca se combinaron. Los participantes a los que les faltaba una
   sesión en una condición se excluyeron solo de ese análisis.
 * **Comparaciones pareadas:** para cada banda × región, la diferencia intrasujeto SD − NS del
-  log10 de la potencia se evaluó con la prueba de rangos con signo de Wilcoxon (a dos colas,
-  descartando diferencias nulas). Una prueba t pareada sobre los mismos valores log10 sirvió como
-  análisis de sensibilidad. Tamaños del efecto: correlación biserial de rangos para muestras
-  pareadas y d_z de Cohen (diferencia media / DE de las diferencias), con el intervalo de
-  confianza del 95 % de la diferencia media (distribución t). Las mismas pruebas se aplicaron a la
-  potencia relativa.
-* **Comparaciones múltiples:** tasa de falsos descubrimientos de Benjamini–Hochberg sobre las 20
-  pruebas banda × región, por separado para cada condición de ojos; se informan los p corregidos y
-  sin corregir. El cociente theta/beta frontal fue una única prueba preespecificada por condición
-  de ojos (sin corregir).
-* **Orden de sesión:** las diferencias SD − NS de los participantes que hicieron primero NS y de
-  los que hicieron primero SD se compararon con la prueba U de Mann–Whitney (FDR entre celdas).
-* **Análisis por electrodo:** por banda y condición de ojos, las diferencias SD − NS del log10 de
-  la potencia en cada electrodo se evaluaron con una prueba de permutación basada en clusters
-  (`mne.stats.permutation_cluster_1samp_test`; a dos colas; umbral de formación de clusters en el
-  valor t para p < 0,05 con n − 1 grados de libertad; 5000 permutaciones por cambio de signo;
-  masa del cluster = suma de t; adyacencia espacial por triangulación de Delaunay de las
-  posiciones de electrodos del dataset). Un canal faltante para un participante (canal malo en
-  cualquiera de las sesiones) se tomó como diferencia cero, una elección conservadora.
+  log10 de la potencia absoluta se evaluó con una prueba t pareada a dos colas. El cambio se
+  informa en dB (10 · diferencia media de log10) y como porcentaje de cambio de la potencia
+  ((10^diferencia media − 1) · 100, es decir, el cociente de medias geométricas), con su intervalo
+  de confianza del 95 % (distribución t). El cociente theta/beta frontal se evaluó igual, en una
+  prueba por condición de ojos.
+* **Comparaciones múltiples:** no se aplicó corrección; con 20 pruebas por condición de ojos se
+  espera alrededor de un resultado significativo por azar. TODO: decidir si el informe final
+  aplica una corrección (por ejemplo, Benjamini–Hochberg).
+* **Figuras:** espectro de potencia en Cz en dB (media ± DE) y topografías de potencia por banda
+  para NS y SD, en el formato de las Fig. 4 y 5 de Xiang et al. (2024).
 * **Hipótesis:** H1–H4 se especificaron antes de inspeccionar los resultados
   (`docs/hypotheses.md`). TODO: confirmar la fecha en que se fijaron las hipótesis y agregar las
   referencias verificadas.

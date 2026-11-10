@@ -92,21 +92,18 @@ parpadeos en los registros con ojos abiertos suelen superar 150 µV en los canal
 de interpretar resultados frontales. Sin pasabanda, las derivas lentas también aumentan la
 amplitud pico a pico, así que se marcan más épocas.
 
-## 2. Estadística: regiones y SD vs NS
+## 2. Estadística: resumen SD vs NS
 
 ### Diseño
 
-* **Principal:** ojos abiertos (OA), todos los participantes con ambas sesiones.
-  **Secundario:** ojos cerrados (OC), solo los participantes con ambas sesiones OC.
-  OA y OC nunca se combinan.
-* **Pareado, intrasujeto:** diferencia = SD − NS del mismo participante. Los participantes a
-  los que les falta una sesión (por ejemplo, un registro truncado) quedan fuera de ese análisis
-  y se listan en `stats_participants.csv`.
-* **Se necesitan al menos 3 pares completos** para una prueba o un cluster; con menos, la fila
-  se conserva con la estadística vacía para que el hueco sea visible, y las figuras no tienen
-  nada que mostrar.
-* **La cantidad de épocas no se iguala** entre sesiones; se informa en `stats_epochs.csv`
-  (en OA, SD tiene menos épocas limpias que NS).
+* **Principal:** ojos abiertos (OA), todos los participantes con ambas sesiones, como en el paper
+  de referencia (Xiang et al., 2024). **Secundario** («Avanzado»): ojos cerrados (OC), solo los
+  participantes con ambas sesiones OC. OA y OC nunca se combinan.
+* **Pareado, intrasujeto:** diferencia = SD − NS del mismo participante. Los participantes a los
+  que les falta una sesión (por ejemplo, un registro truncado) quedan fuera de ese análisis.
+* **Se necesitan al menos 3 pares completos** para calcular el p; con menos, la fila conserva los
+  valores descriptivos y el p queda vacío.
+* **La cantidad de épocas no se iguala** entre sesiones (`recordings_summary.csv` la informa).
 
 ### Variables por región (`tps/analysis/regions.py`)
 
@@ -115,47 +112,52 @@ agrupan según su prefijo 10-10: frontal (Fp/AF/F, 16), central (FC/C/CP, 20),
 temporal (FT/T/TP, 8), parietal (P, 9) y occipital (PO/O, 8).
 
 `features_region.csv` contiene, por sujeto, sesión, ojos, banda y región, la **media del log10
-de la potencia absoluta** (log de la media geométrica) y la **media de la potencia relativa**
-sobre los canales de la región, con la cantidad de canales usados. El valor de una región solo
-se calcula si sobrevivió al barrido al menos el **50 % de sus canales**, porque los canales malos
-(sobre todo frontales, por parpadeos) dejarían regiones representadas por pocos electrodos.
+de la potencia absoluta** (log de la media geométrica) sobre los canales de la región, con la
+cantidad de canales usados. El valor de una región solo se calcula si sobrevivió al barrido al
+menos el **50 % de sus canales**, porque los canales malos (sobre todo frontales, por parpadeos)
+dejarían regiones representadas por pocos electrodos.
 
-### Pruebas y correcciones
+### Tabla resumen (`stats_summary.csv`)
 
-* **Prueba principal:** Wilcoxon de rangos con signo sobre SD−NS del log10 de la potencia.
-  **Sensibilidad:** prueba t pareada, y las mismas pruebas restringidas a registros con
-  ≥ 20 épocas limpias.
-* **Tamaños del efecto:** correlación biserial de rangos r = (W+ − W−)/(W+ + W−);
-  d_z de Cohen = media(d)/de(d). El IC 95 % es el intervalo basado en t de la diferencia
-  pareada media (en unidades log10: 0,1 ≈ +26 % de potencia).
-* **Comparaciones múltiples:** BH-FDR sobre las 20 pruebas banda × región, por separado para
-  OA y OC; se informan los p corregidos y sin corregir. La prueba de theta/beta frontal es una
-  única prueba preespecificada por condición de ojos (sin corrección FDR).
-* **Orden de sesión:** diferencia SD−NS en participantes NS→SD vs SD→NS (U de Mann-Whitney, FDR).
-* **Prueba de clusters:** `mne.stats.permutation_cluster_1samp_test` sobre SD−NS del log10 de la
-  potencia por electrodo, a dos colas, umbral de formación de clusters t(n−1) para p < 0,05,
-  5000 permutaciones por cambio de signo (semilla 0), adyacencia a partir de las posiciones del
-  `electrodes.tsv` del propio dataset.
+Una fila por ojos × banda × región (20 por condición de ojos) más una fila de theta/beta frontal
+(H3):
+
+| Columna | Qué es |
+|---|---|
+| `n` | participantes con ambas sesiones |
+| `mean_ns_db`, `mean_sd_db` | 10 · media del log10 de la potencia (dB re 1 µV²), la unidad del paper |
+| `change_db` | 10 · media de (log10 SD − log10 NS) |
+| `change_pct` | (10^media de la diferencia − 1) · 100: cambio de la potencia (media geométrica) |
+| `ci95_low_pct`, `ci95_high_pct` | IC 95 % del cambio en %, desde el IC basado en t de la diferencia log10 |
+| `p` | prueba t pareada (a dos colas) sobre los valores log10 |
+| `significant` | p < 0,05 |
+
+No se corrige por comparaciones múltiples: con 20 pruebas por condición de ojos se espera, por
+azar, alrededor de un resultado «significativo», y así se aclara en el informe.
 
 ## 3. Figuras e informe
 
-Los topomapas (absolutos y relativos), las PSD por región, los gráficos pareados y theta/beta
-frontal se dibujan a partir de las tablas del paso 2; la tabla de hipótesis compara H1–H4
-([hypotheses.md](hypotheses.md)) con los efectos observados. `results/report.md` reúne todas
-las tablas, hipótesis y figuras con sus leyendas.
+Por condición de ojos, con los participantes que tienen ambas sesiones:
+
+* `psd_cz_<ojos>.png`: espectro de potencia en Cz en dB para NS y SD, media ± 1 desvío estándar
+  entre participantes (como la Fig. 4 del paper), a partir de `psd_channels.csv`.
+* `topomaps_<ojos>.png`: potencia por banda en cada electrodo, en dB, NS arriba y SD abajo, con una
+  escala de color por banda compartida por NS y SD (como la Fig. 5 del paper; se agrega delta por
+  H1). La zona central de menor potencia refleja la referencia FCz: el paper re-referencia al
+  promedio y acá se conserva la referencia original.
+
+La tabla de hipótesis compara H1–H4 ([hypotheses.md](hypotheses.md)) con los cambios observados.
+`results/report.md` reúne los datos usados, el resumen de ojos abiertos, las hipótesis, las
+figuras y, como «Avanzado», ojos cerrados.
 
 ## Supuestos y limitaciones
 
 * El barrido es solo por amplitud, no inspección visual (ver arriba).
-* Los canales malos difieren entre registros. En la prueba de clusters, un electrodo faltante se
-  toma como diferencia 0 para ese sujeto, lo cual es conservador (tira hacia la ausencia de
-  efecto); la cantidad está en `n_imputed_zero`. Las regiones frontal y occipital tienen menos
+* Los canales malos difieren entre registros: las regiones frontal y occipital tienen menos
   participantes que la central.
 * Los registros SD tienen menos épocas limpias que los NS. La PSD promedio sigue sin sesgo, pero
   es más ruidosa en SD; por diseño, esto no se igualó.
-* El orden de sesión (contrabalanceado) se controla con una prueba entre grupos, que tiene poca
-  potencia con ~30 participantes por grupo de orden; un resultado no significativo no prueba que
-  no haya efecto de orden.
+* Las sesiones están contrabalanceadas, pero el efecto del orden no se analiza.
 * OC es un subgrupo (~36 pares completos) y es secundario; sus resultados no son independientes
   de los de OA (son los mismos participantes).
 
