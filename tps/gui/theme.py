@@ -118,10 +118,6 @@ def apply_theme(window):
     style.map('TButton', background=[('disabled', '#f0f4f4'), ('active', '#d5e0e2')],
               foreground=[('disabled', '#a2b0b3')])
     style.configure('Tool.TButton', padding=(8, 5))
-    # Herramienta de modo activa (desplazar / zoom del gráfico).
-    style.configure('ToolOn.TButton', padding=(8, 5), background=IRIS_LIGHT, foreground=IRIS_DARK,
-                    bordercolor=IRIS)
-    style.map('ToolOn.TButton', background=[('active', '#c3e4e7')])
     style.configure('Accent.TButton', padding=(18, 8), background=IRIS, foreground='white',
                     font=fonts.bold, bordercolor=IRIS)
     style.map('Accent.TButton', background=[('disabled', '#a9cfd3'), ('active', IRIS_DARK)],
@@ -132,6 +128,8 @@ def apply_theme(window):
               foreground=[('disabled', '#9a8c6a')])
     style.configure('Link.TButton', background=BG, foreground=IRIS, borderwidth=0, padding=(2, 4))
     style.map('Link.TButton', background=[('active', BG)], foreground=[('active', IRIS_DARK)])
+    style.configure('CardLink.TButton', background=CARD, foreground=IRIS, borderwidth=0, padding=(0, 2))
+    style.map('CardLink.TButton', background=[('active', CARD)], foreground=[('active', IRIS_DARK)])
 
     style.configure('TNotebook', background=BG, borderwidth=0)
     style.configure('TNotebook.Tab', padding=(18, 8), background='#e3eaeb', foreground=MUTED)

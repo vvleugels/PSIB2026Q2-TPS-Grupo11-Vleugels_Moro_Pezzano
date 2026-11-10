@@ -195,19 +195,41 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI, BadChannelsUI):
         self.build_multi_selector(selection)
 
         filtering = self.card(body, 'Filtrado')
-        row = ttk.Frame(filtering, style='Card.TFrame')
-        row.pack(fill='x', pady=(4, 0))
-        ttk.Label(row, text='Señal:', style='CardMuted.TLabel').pack(side='left')
-        ttk.Label(row, textvariable=self.signal_label, style='CardBold.TLabel').pack(side='left', padx=(6, 0))
-        self.config_button = ttk.Button(filtering, text='⚙ Configurar filtrado',
+        # A coloured badge says at a glance whether the signal is filtered (teal) or not (amber).
+        self.filter_badge = tk.Label(filtering, anchor='w', padx=8, pady=5, font=self.fonts.bold)
+        self.filter_badge.pack(fill='x', pady=(4, 0))
+        self.filter_hint = ttk.Label(filtering, style='CardMuted.TLabel')
+        self.filter_hint.pack(fill='x', pady=(4, 0))
+        autowrap(self.filter_hint)
+        self.config_button = ttk.Button(filtering, text='⚙ Activar filtrado',
                                         command=self.configuration_dialog)
         self.config_button.pack(fill='x', pady=(6, 0))
+        self.signal_label.trace_add('write', lambda *args: self.refresh_filter_card())
+        self.refresh_filter_card()
 
-        self.build_ica(body)
-        self.build_screening(body)
+        self.build_ica(self.build_screening(body))   # amplitude search and ICA share one card
         self.build_bad_channels(body)
         self.build_batch_card(body)
         self.build_epoch_list(body)
+
+    def refresh_filter_card(self):
+        """Badge, hint and button text of the «Filtrado» card from the explorer's filter."""
+        if not hasattr(self, 'filter_badge'):
+            return
+        from tps.gui.review import filter_state_text
+        from tps.gui.theme import AMBER_LIGHT, IRIS_LIGHT
+        active = self.config.active
+        ica = self.recording is not None and self.recording.ica_context is not None
+        detail = filter_state_text(self.config).removeprefix('Filtrada · ')
+        self.filter_badge.configure(text='✔ Filtrado activo' if active else '○ Sin filtrar',
+                                    background=IRIS_LIGHT if active else AMBER_LIGHT,
+                                    foreground=IRIS_DARK if active else '#8a5a00')
+        self.filter_hint.configure(
+            text=(detail[0].upper() + detail[1:] + '. Se aplica al gráfico, el barrido y el espectro.'
+                  if active else 'El gráfico muestra la señal original. Activá un filtro para quitar '
+                                 'derivas lentas y ruido de línea.')
+                 + (' Con ICA confirmada.' if ica else ''))
+        self.config_button.configure(text='⚙ Cambiar filtrado' if active else '⚙ Activar filtrado')
 
     def build_main(self, main):
         # Franja ámbar: qué hacer ahora.
@@ -277,19 +299,13 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI, BadChannelsUI):
         self.go_button = ttk.Button(controls, text='Ir', style='Tool.TButton', width=3, command=self.go)
         self.go_button.pack(side='left', padx=(4, 0))
         ttk.Separator(controls, orient='vertical').pack(side='left', fill='y', padx=10, pady=2)
-        self.plot_tools = {}
-        for key, text, tip in (('home', '⌂', 'Restaurar la ventana temporal.'),
-                               ('back', '←', 'Volver a la vista anterior.'),
-                               ('forward', '→', 'Avanzar a la vista siguiente.'),
-                               ('pan', '✥ Desplazar', 'Arrastrar para desplazar la vista.'),
-                               ('zoom', '⬚ Zoom', 'Seleccionar un rectángulo para acercar.')):
-            button = ttk.Button(controls, text=text, style='Tool.TButton',
-                                command=lambda k=key: self.plot_tool(k))
-            if len(text) == 1:
-                button.configure(width=3)
-            button.pack(side='left', padx=(0, 4))
-            Tooltip(button, tip)
-            self.plot_tools[key] = button
+        # Zoom and pan are done on the plot itself (no tool buttons): see ReviewUI.plot_press.
+        gestures = ttk.Label(controls, text='Arrastrar: zoom · Clic der.: mover · Doble clic: restaurar',
+                             style='CardMuted.TLabel')
+        gestures.pack(side='left')
+        Tooltip(gestures, 'Mantené el clic izquierdo y arrastrá sobre el gráfico para acercar esa zona. '
+                          'Mantené el clic derecho y arrastrá para desplazar la vista. '
+                          'Doble clic vuelve a la ventana completa. Un clic simple elige la época.')
         self.cursor_text = tk.StringVar()
         ttk.Label(controls, textvariable=self.window_text, style='CardMuted.TLabel').pack(side='right')
         ttk.Label(controls, textvariable=self.cursor_text, style='CardMuted.TLabel',
@@ -310,7 +326,9 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI, BadChannelsUI):
         self.plot_container.pack(fill='both', expand=True)
         self.plot_window = self.plot_view.create_window(0, 0, window=self.canvas.get_tk_widget(), anchor='nw')
         self.plot_view.bind('<Configure>', self.resize_plot)
-        self.canvas.mpl_connect('button_press_event', self.plot_clicked)
+        self.canvas.mpl_connect('button_press_event', self.plot_press)
+        self.canvas.mpl_connect('motion_notify_event', self.plot_motion)
+        self.canvas.mpl_connect('button_release_event', self.plot_release)
         self.canvas.mpl_connect('pick_event', self.stacked_pick)
         self.canvas.mpl_connect('motion_notify_event', self.stacked_hover)
         self.build_spectral(spectral, Toolbar)
@@ -772,17 +790,8 @@ class App(ReviewUI, SpectralUI, ScreeningUI, ResultsUI, ICAUI, BadChannelsUI):
             else:
                 self.toolbar.zoom()
         self.toolbar.update()
-        self.refresh_plot_tools()
-
-    def plot_tool(self, key):
-        """Botón de la fila de controles → acción de la barra de matplotlib oculta."""
-        getattr(self.toolbar, key)()
-        self.refresh_plot_tools()
-
-    def refresh_plot_tools(self):
-        mode = self.toolbar.mode.name if self.toolbar.mode else ''
-        for key in ('pan', 'zoom'):
-            self.plot_tools[key].configure(style='ToolOn.TButton' if mode == key.upper() else 'Tool.TButton')
+        # Limits of the freshly drawn window: a double click on the plot returns to them.
+        self.home_limits = [(ax.get_xlim(), ax.get_ylim()) for ax in self.figure.axes]
 
     def clear_plot(self, message):
         self.displayed = None

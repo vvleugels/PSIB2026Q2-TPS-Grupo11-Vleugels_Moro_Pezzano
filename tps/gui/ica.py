@@ -15,6 +15,7 @@ from scipy.signal import welch
 
 from tps.core import ica
 from tps.core.processing import ContinuousFilter
+from tps.gui.theme import IRIS, IRIS_LIGHT, MUTED, autowrap, card, style_dialog
 
 
 class ICAUI:
@@ -26,7 +27,15 @@ class ICAUI:
         self.ica_after = None
         self.ica_model = None
         self.ica_metadata = None
-        section = self.card(parent, 'ICA')
+        # Lives inside the «Posibles artefactos» card, under the amplitude search.
+        section = parent
+        ttk.Separator(section, orient='horizontal').pack(fill='x', pady=(10, 6))
+        ttk.Label(section, text='Corrección por ICA (opcional)', style='CardBold.TLabel').pack(anchor='w')
+        intro = ttk.Label(section, style='CardMuted.TLabel',
+                          text='Separa la señal en componentes para quitar parpadeos u otros artefactos '
+                               'sin descartar épocas.')
+        intro.pack(fill='x', pady=(0, 4))
+        autowrap(intro)
         self.ica_status = tk.StringVar(value='Sin corrección ICA')
         ttk.Label(section, textvariable=self.ica_status, style='Card.TLabel', wraplength=270).pack(fill='x')
         self.ica_button = ttk.Button(section, text='Ajustar / revisar ICA', command=self.open_ica)
@@ -77,51 +86,129 @@ class ICAUI:
             self.ica_model = self.ica_metadata = None
         elif getattr(self, 'ica_dialog', None):
             self.ica_message.set('Ajuste cancelado; se conserva la corrección confirmada.')
-            self.fit_button.configure(state='normal')
+            self.refresh_ica_dialog()
 
     def open_ica(self):
+        """Guided ICA window: 1 fit, 2 review components, 3 choose what to remove, 4 compare and confirm.
+
+        Steps unlock in order; the plot on the right shows the inspected component or the
+        before/after comparison. Nothing is removed until «Confirmar y aplicar»."""
         if self.busy or not self.recording or not self.flush_autosave():
             return
         if self.ica_dialog:
             self.ica_dialog.lift()
             return
         dialog = self.ica_dialog = tk.Toplevel(self.root)
-        dialog.title('ICA · revisión manual de componentes')
-        dialog.geometry('1050x780')
+        dialog.title('Corrección por ICA · ' + self.recording.study.path.stem)
+        dialog.geometry('1180x820')
+        dialog.minsize(980, 620)
         dialog.transient(self.root)
         dialog.grab_set()
         dialog.protocol('WM_DELETE_WINDOW', lambda: self.cancel_ica(close=True) if not self.busy else None)
+        style_dialog(dialog)
         body = ttk.Frame(dialog, padding=12)
         body.pack(fill='both', expand=True)
-        ttk.Label(body, text='Entrenamiento: 1–45 Hz · épocas de 5 s · Infomax. Conservá ejemplos de parpadeos.\n'
-                  'Estas exclusiones son solo para el ajuste; no cambian las marcas de revisión.').pack(anchor='w')
+        side = ttk.Frame(body, width=340)
+        side.pack(side='left', fill='y', padx=(0, 12))
+        side.pack_propagate(False)
+        self.ica_steps = {}
+
+        def step(number, title, text):
+            outer, inner = card(side, f'{number}  {title}')
+            outer.pack(fill='x', pady=(0, 8))
+            if text:
+                label = ttk.Label(inner, text=text, style='CardMuted.TLabel')
+                label.pack(fill='x', pady=(2, 6))
+                autowrap(label)
+            self.ica_steps[number] = inner
+            return inner
+
+        # 1 · Fit
+        fit = step(1, 'Ajustar', 'Infomax, 1–45 Hz, épocas de 5 s. Tarda hasta un par de minutos.')
+        row = self.fit_row = ttk.Frame(fit, style='Card.TFrame')
+        row.pack(fill='x')
+        self.fit_button = ttk.Button(row, text='Ajustar ICA', style='Accent.TButton', command=self.start_ica)
+        self.fit_button.pack(side='left', fill='x', expand=True)
+        self.fit_cancel = ttk.Button(row, text='Cancelar', command=self.cancel_ica, state='disabled')
+        self.fit_cancel.pack(side='left', padx=(6, 0))
+        self.fit_progress = ttk.Progressbar(fit, mode='indeterminate')
         self.fit_channels = tk.StringVar()
         self.fit_epochs = tk.StringVar()
-        for label, var in [('Canales fuera del ajuste (nombres separados por coma)', self.fit_channels),
+        advanced = ttk.Frame(fit, style='Card.TFrame')
+        toggle = ttk.Button(fit, text='Opciones avanzadas ▸', style='CardLink.TButton')
+
+        def show_advanced():
+            if advanced.winfo_manager():
+                advanced.pack_forget(); toggle.configure(text='Opciones avanzadas ▸')
+            else:
+                advanced.pack(fill='x', after=toggle); toggle.configure(text='Opciones avanzadas ▾')
+        toggle.configure(command=show_advanced)
+        toggle.pack(anchor='w', pady=(4, 0))
+        for label, var in [('Canales fuera del ajuste (nombres, separados por coma)', self.fit_channels),
                            ('Épocas fuera del ajuste (números desde 1, separados por coma)', self.fit_epochs)]:
-            ttk.Label(body, text=label).pack(anchor='w')
-            ttk.Entry(body, textvariable=var).pack(fill='x')
-        row = ttk.Frame(body); row.pack(fill='x', pady=6)
-        self.fit_button = ttk.Button(row, text='Ajustar ICA', command=self.start_ica)
-        self.fit_button.pack(side='left')
-        ttk.Button(row, text='Mapas de componentes', command=self.open_ica_maps).pack(side='left', padx=5)
-        ttk.Button(row, text='Cancelar ajuste', command=self.cancel_ica).pack(side='left', padx=5)
-        self.ica_message = tk.StringVar(value='Ningún componente se elimina automáticamente.')
-        ttk.Label(body, textvariable=self.ica_message, wraplength=990).pack(fill='x')
-        row = ttk.Frame(body); row.pack(fill='x', pady=5)
+            text = ttk.Label(advanced, text=label, style='CardMuted.TLabel')
+            text.pack(fill='x')
+            autowrap(text)
+            ttk.Entry(advanced, textvariable=var).pack(fill='x', pady=(0, 4))
+        note = ttk.Label(advanced, style='CardMuted.TLabel',
+                         text='Solo afectan el ajuste, no las marcas de revisión. Conservá ejemplos de parpadeos.')
+        note.pack(fill='x')
+        autowrap(note)
+
+        # 2 · Review components
+        review = step(2, 'Revisar componentes', 'Los parpadeos suelen ser frontales y de baja frecuencia.')
+        row = ttk.Frame(review, style='Card.TFrame')
+        row.pack(fill='x')
         self.component_number = tk.StringVar(value='1')
-        ttk.Label(row, text='Componente').pack(side='left')
-        self.component_picker = ttk.Spinbox(row, from_=1, to=1, textvariable=self.component_number, width=6)
-        self.component_picker.pack(side='left', padx=5)
-        ttk.Button(row, text='Inspeccionar', command=self.inspect_ica).pack(side='left')
+        self.ica_prev = ttk.Button(row, text='◀', width=3, style='Tool.TButton', command=lambda: self.step_component(-1))
+        self.ica_prev.pack(side='left')
+        self.component_picker = ttk.Spinbox(row, from_=1, to=1, textvariable=self.component_number, width=4,
+                                            command=self.inspect_ica)
+        self.component_picker.pack(side='left', padx=(8, 0))
+        self.component_picker.bind('<Return>', lambda e: self.inspect_ica())
+        self.ica_total = ttk.Label(row, text='de —', style='CardMuted.TLabel')
+        self.ica_total.pack(side='left', padx=(4, 8))
+        self.ica_next = ttk.Button(row, text='▶', width=3, style='Tool.TButton', command=lambda: self.step_component(1))
+        self.ica_next.pack(side='left')
+        self.ica_maps_button = ttk.Button(review, text='Ver mapas de todos los componentes', command=self.open_ica_maps)
+        self.ica_maps_button.pack(fill='x', pady=(6, 0))
+
+        # 3 · Choose what to remove
+        choose = step(3, 'Elegir qué quitar', 'Marcá los que son artefacto (puede ser ninguno).')
         self.exclusions_text = tk.StringVar(value='')
-        ttk.Label(row, text='Excluir componentes (1,2,…)').pack(side='left', padx=8)
-        ttk.Entry(row, textvariable=self.exclusions_text, width=20).pack(side='left')
-        ttk.Button(row, text='Antes / después', command=self.preview_ica).pack(side='left', padx=5)
-        ttk.Button(row, text='Confirmar y aplicar', command=self.confirm_ica).pack(side='left')
-        self.ica_figure = Figure(figsize=(10, 4), dpi=100, layout='constrained')
-        self.ica_canvas = FigureCanvasTkAgg(self.ica_figure, master=body)
+        self.ica_exclude_current = tk.BooleanVar(value=False)
+        self.ica_exclude_button = ttk.Checkbutton(choose, text='Quitar el componente 1', style='Card.TCheckbutton',
+                                                  variable=self.ica_exclude_current, command=self.toggle_current_exclusion)
+        self.ica_exclude_button.pack(anchor='w')
+        row = ttk.Frame(choose, style='Card.TFrame')
+        row.pack(fill='x', pady=(4, 0))
+        ttk.Label(row, text='A quitar:', style='Card.TLabel').pack(side='left')
+        self.ica_exclusions_entry = ttk.Entry(row, textvariable=self.exclusions_text)
+        self.ica_exclusions_entry.pack(side='left', fill='x', expand=True, padx=(6, 0))
+        self.exclusions_text.trace_add('write', lambda *args: self.refresh_ica_dialog())
+
+        # 4 · Compare and confirm
+        apply = step(4, 'Comparar y confirmar', 'Nada se aplica hasta «Confirmar y aplicar».')
+        self.ica_preview_button = ttk.Button(apply, text='Ver antes / después', command=self.preview_ica)
+        self.ica_preview_button.pack(fill='x')
+        self.ica_confirm_button = ttk.Button(apply, text='Confirmar y aplicar', style='Accent.TButton',
+                                             command=self.confirm_ica)
+        self.ica_confirm_button.pack(fill='x', pady=(6, 0))
+
+        # Messages and plot on the right.
+        main = ttk.Frame(body)
+        main.pack(side='left', fill='both', expand=True)
+        note = tk.Frame(main, background=IRIS_LIGHT)
+        note.pack(fill='x', pady=(0, 8))
+        tk.Frame(note, background=IRIS, width=4).pack(side='left', fill='y')
+        self.ica_message = tk.StringVar(value='Paso 1: presioná «Ajustar ICA». Ningún componente se quita automáticamente.')
+        message = ttk.Label(note, textvariable=self.ica_message, style='Info.TLabel', padding=(10, 8))
+        message.pack(side='left', fill='x', expand=True)
+        message.bind('<Configure>', lambda e: message.configure(wraplength=max(e.width - 24, 200)))
+        self.ica_figure = Figure(figsize=(8, 5), dpi=100, layout='constrained')
+        self.ica_canvas = FigureCanvasTkAgg(self.ica_figure, master=main)
         self.ica_canvas.get_tk_widget().pack(fill='both', expand=True)
+        self.ica_placeholder('Ajustá la ICA para ver aquí cada componente.')
         try:
             folder, metadata = ica.read_revision(self.annotations_dir, self.recording.study)
             ica.validate_revision(self.recording, self.data_dir, metadata)
@@ -131,10 +218,72 @@ class ICAUI:
             self.fit_epochs.set(','.join(str(i+1) for i in metadata['excluded_epochs']))
             self.exclusions_text.set(','.join(str(i+1) for i in metadata['excluded_components']))
             self.component_picker.configure(to=self.ica_model.n_components_)
-            self.ica_message.set('Revisión confirmada cargada. Podés inspeccionar o cambiar las exclusiones.')
+            self.ica_message.set('Se cargó la corrección confirmada. Podés revisar los componentes, cambiar qué se '
+                                 'quita y volver a confirmar, o ajustar de nuevo.')
         except (OSError, ValueError, KeyError) as exc:
             self.ica_model = self.ica_metadata = None
+            if not isinstance(exc, ValueError) or 'falta una ICA confirmada' not in str(exc):
+                self.ica_message.set(str(exc))
+        self.refresh_ica_dialog()
+        if self.ica_model is not None:
+            dialog.after_idle(self.inspect_ica)
+
+    def ica_placeholder(self, text):
+        self.ica_figure.clear()
+        ax = self.ica_figure.add_subplot(111)
+        ax.set_axis_off()
+        ax.text(.5, .5, text, ha='center', va='center', color=MUTED, fontsize=12, transform=ax.transAxes)
+        self.ica_canvas.draw_idle()
+
+    def refresh_ica_dialog(self):
+        """Unlock the steps in order and keep the «Quitar este componente» box in sync."""
+        if not getattr(self, 'ica_dialog', None):
+            return
+        fitting = self.ica_job is not None
+        ready = self.ica_model is not None and not fitting
+        self.fit_button.configure(state='disabled' if fitting else 'normal',
+                                  text='Ajustar de nuevo' if self.ica_model is not None else 'Ajustar ICA')
+        self.fit_cancel.configure(state='normal' if fitting else 'disabled')
+        if fitting and not self.fit_progress.winfo_manager():
+            self.fit_progress.pack(fill='x', pady=(6, 0), after=self.fit_row)
+            self.fit_progress.start(12)
+        elif not fitting and self.fit_progress.winfo_manager():
+            self.fit_progress.stop()
+            self.fit_progress.pack_forget()
+        for widget in (self.ica_prev, self.ica_next, self.component_picker, self.ica_maps_button,
+                       self.ica_exclude_button, self.ica_exclusions_entry, self.ica_preview_button,
+                       self.ica_confirm_button):
+            widget.configure(state='normal' if ready else 'disabled')
+        self.ica_total.configure(text=f'de {self.ica_model.n_components_}' if self.ica_model is not None else 'de —')
+        try:
+            k = int(self.component_number.get())
+            chosen = {i + 1 for i in self.ica_indices(self.exclusions_text.get())}
+        except ValueError:
+            return
+        self.ica_exclude_button.configure(text=f'Quitar el componente {k}')
+        self.ica_exclude_current.set(k in chosen)
+
+    def step_component(self, delta):
+        if self.ica_model is None:
+            return
+        try:
+            k = int(self.component_number.get())
+        except ValueError:
+            k = 1
+        self.component_number.set(str(min(self.ica_model.n_components_, max(1, k + delta))))
+        self.inspect_ica()
+
+    def toggle_current_exclusion(self):
+        try:
+            k = int(self.component_number.get())
+            chosen = {i + 1 for i in self.ica_indices(self.exclusions_text.get())}
+        except ValueError as exc:
             self.ica_message.set(str(exc))
+            return
+        chosen = chosen | {k} if self.ica_exclude_current.get() else chosen - {k}
+        self.exclusions_text.set(','.join(str(i) for i in sorted(chosen)))
+        if self.ica_maps is not None and self.ica_maps.winfo_exists() and hasattr(self.ica_maps, 'refresh'):
+            self.ica_maps.refresh()
 
     @staticmethod
     def ica_indices(text):
@@ -162,9 +311,9 @@ class ICAUI:
             self.ica_job = subprocess.Popen([sys.executable, '-m', 'tps.pipeline.ica_worker', str(folder)],
                                             cwd=Path(__file__).resolve().parents[2],
                                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            self.fit_button.configure(state='disabled')
             self.ica_message.set('Ajustando ICA en otro proceso… Podés cancelar el ajuste.')
             self.ica_after = self.root.after(150, self.poll_ica)
+            self.refresh_ica_dialog()
         except (OSError, ValueError) as exc:
             if self.ica_temp is not None and self.ica_job is None:
                 self.ica_temp.cleanup(); self.ica_temp = None
@@ -188,13 +337,16 @@ class ICAUI:
             self.ica_model, self.ica_metadata = model, metadata
             self.exclusions_text.set('')
             self.component_picker.configure(to=model.n_components_)
-            self.ica_message.set(f'{model.n_components_} componentes. Inspeccionalos antes de confirmar exclusiones.')
+            self.component_number.set('1')
+            self.ica_message.set(f'Listo: {model.n_components_} componentes. Paso 2: recorrelos con ◀ ▶ o abrí '
+                                 'los mapas; en el paso 3 marcá los que son artefacto.')
+            self.root.after_idle(self.inspect_ica)
         except (OSError, ValueError, KeyError) as exc:
             self.ica_message.set(str(exc))
         finally:
             self.ica_job = None
             self.ica_temp.cleanup(); self.ica_temp = None
-            self.fit_button.configure(state='normal')
+            self.refresh_ica_dialog()
 
     def checked_ica(self):
         if self.ica_model is None or self.ica_job:
@@ -243,11 +395,19 @@ class ICAUI:
                     raw.close()
             def done(source):
                 self.ica_figure.clear()
-                axes = self.ica_figure.subplots(1, 3)
-                axes[0].plot(np.arange(len(source))/recording.sfreq + start/recording.sfreq, source)
-                axes[0].set(xlabel='Tiempo (s)', title=f'Componente {k+1}')
+                # Wide, short time series on top (like the explorer); spectrum and map below, so no
+                # panel is a tall narrow strip that is hard to read.
+                grid = self.ica_figure.add_gridspec(2, 2, height_ratios=(1, 1.35), width_ratios=(1.5, 1))
+                axes = [self.ica_figure.add_subplot(grid[0, :]), self.ica_figure.add_subplot(grid[1, 0]),
+                        self.ica_figure.add_subplot(grid[1, 1])]
+                axes[0].plot(np.arange(len(source))/recording.sfreq + start/recording.sfreq, source,
+                             linewidth=.7, color='#0e7c86')
+                axes[0].set(xlabel='Tiempo (s)', ylabel='Amplitud (u. a.)', title=f'Componente {k+1} · señal')
+                axes[0].grid(alpha=.25)
                 f, p = welch(source, recording.sfreq, nperseg=min(len(source), round(2*recording.sfreq)))
-                axes[1].semilogy(f, np.maximum(p, np.finfo(float).tiny)); axes[1].set(xlim=(0, 60), title='PSD del componente')
+                axes[1].semilogy(f, np.maximum(p, np.finfo(float).tiny), color='#0e7c86')
+                axes[1].set(xlim=(0, 60), xlabel='Frecuencia (Hz)', ylabel='Potencia (u. a.)', title='Espectro (PSD)')
+                axes[1].grid(alpha=.25)
                 try:
                     from .ica_maps import map_info
                     info, geometry = map_info(model)
@@ -255,7 +415,7 @@ class ICAUI:
                     maximum = np.max(np.abs(values))
                     mne.viz.plot_topomap(values / maximum if maximum else values, info, axes=axes[2],
                                          show=False, cmap='RdBu_r', vlim=(-1, 1), contours=6)
-                    axes[2].set_title(f'Componente {k+1}')
+                    axes[2].set_title('Mapa topográfico')
                     axes[2].text(.5, -.1, '10–20 aproximado' if 'APROXIMADAS' in geometry else 'Geometría del modelo',
                                  transform=axes[2].transAxes, ha='center', fontsize=8)
                 except (ValueError, RuntimeError):
@@ -275,6 +435,7 @@ class ICAUI:
                     f"Correlación frontal: {correlations or 'no disponible'}. "
                     f"Indicadores: {suggestions or 'sin avisos'}; no son una clasificación automática.")
                 self.ica_canvas.draw_idle()
+                self.refresh_ica_dialog()
             self.submit(work, done, on_error=lambda exc: self.ica_message.set(str(exc)))
         except (ValueError, TypeError) as exc:
             self.ica_message.set(str(exc))
@@ -305,7 +466,8 @@ class ICAUI:
                     ax.plot(times, after, label='Después', alpha=.8)
                     ax.set_ylabel(name + ' · µV'); ax.legend(loc='upper right')
                 axes[-1].set_xlabel('Tiempo (s)')
-                self.ica_message.set('Vista previa; todavía no aplicada. ' + config.label)
+                self.ica_message.set('Vista previa (todavía no aplicada): azul antes, naranja después, '
+                                     f'con {config.label.lower()}. Si te convence, presioná «Confirmar y aplicar».')
                 self.ica_canvas.draw_idle()
             self.submit(work, done, on_error=lambda exc: self.ica_message.set(str(exc)))
         except ValueError as exc:
@@ -327,7 +489,8 @@ class ICAUI:
                 return value
             def done(value):
                 self.ica_metadata = value
-                self.ica_message.set('Corrección confirmada y guardada. Las marcas previas conservan su contexto anterior.')
+                self.ica_message.set('Corrección confirmada, guardada y aplicada. Podés cerrar esta ventana; '
+                                     '«Usar ICA confirmada» en el panel lateral la activa o desactiva.')
                 self.ica_changed()
             self.submit(work, done, on_error=lambda exc: self.ica_message.set(str(exc)))
         except ValueError as exc:

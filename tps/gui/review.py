@@ -2,19 +2,32 @@
 import tkinter as tk
 from tkinter import ttk
 
+from types import SimpleNamespace
+
+from matplotlib.patches import Rectangle
 from matplotlib.ticker import MultipleLocator
 import numpy as np
 
 from tps.core.annotations import STATES, REASONS
 from tps.core.processing import FilterConfig
-from tps.gui.theme import BORDER, IRIS, TEXT, style_dialog
+from tps.gui.theme import (AMBER, AMBER_DARK, AMBER_LIGHT, BORDER, ERROR, IRIS, IRIS_DARK,
+                           IRIS_LIGHT, TEXT, style_dialog)
 
 COLORS = {'Sin revisar': '#edf1f2', 'Aceptada': '#d5eee2', 'Con artefactos': '#f9d8d5'}
 DISPLAY_MODES = ('Un electrodo', 'Varios (hasta 8)', 'Todos apilados')
 STACK_PAGES = ('Todos', '32', '16')   # channels visible at once; the rest via the plot scrollbar
 TRACE = '#0e7c86'
+DRAG_PIXELS = 6    # mouse movement below this is a click, not a drag
 BAD_TRACE = '#b8c2c4'
 BAD_LABEL = '#a12b25'
+
+
+def filter_state_text(config) -> str:
+    """Plain-language filter state: 'Sin filtrar' or what is on."""
+    parts = [f'pasabanda {config.low:g}–{config.high:g} Hz'] if config.enabled else []
+    if config.notch is not None:
+        parts.append(f'notch {config.notch:g} Hz')
+    return 'Filtrada · ' + ' + '.join(parts) if parts else 'Sin filtrar'
 
 
 class ReviewUI:
@@ -141,6 +154,10 @@ class ReviewUI:
             self.root.bind(f'<KeyPress-{key.upper()}>', lambda event, s=state: self.shortcut(event, s))
 
     def configuration_dialog(self):
+        """Filter settings with the current state, quick presets and a live «al aplicar» summary.
+
+        The cut-off fields are greyed out while the band-pass is off, so it is clear that
+        typing values is not enough: the filter must be switched on (or a preset chosen)."""
         dialog = tk.Toplevel(self.root)
         dialog.title('Configuración de filtrado')
         dialog.transient(self.root)
@@ -148,33 +165,101 @@ class ReviewUI:
         style_dialog(dialog)
         body = ttk.Frame(dialog, padding=20)
         body.pack(fill='both')
-        enabled = tk.BooleanVar(value=self.config.enabled)
-        low = tk.StringVar(value=f'{self.config.low:g}')
-        high = tk.StringVar(value=f'{self.config.high:g}')
-        ttk.Checkbutton(body, text='Aplicar pasabanda', variable=enabled).pack(anchor='w', pady=6)
-        for label, variable in (('Corte inferior (Hz)', low), ('Corte superior (Hz)', high)):
-            ttk.Label(body, text=label).pack(anchor='w')
-            ttk.Entry(body, textvariable=variable).pack(fill='x', pady=(0, 8))
-        notch_enabled = tk.BooleanVar(value=self.config.notch is not None)
-        notch_frequency = tk.StringVar(value=f'{self.config.notch or 50:g}')
+        current = self.config
+        ttk.Label(body, text='Estado actual: ' + filter_state_text(current), style='Bold.TLabel',
+                  foreground=IRIS_DARK if current.active else AMBER_DARK).pack(anchor='w')
+        ttk.Label(body, text='Por defecto la señal se muestra sin filtrar. Activá el pasabanda y/o el notch, '
+                             'o elegí un ajuste rápido, y presioná «Aplicar».',
+                  style='Muted.TLabel', wraplength=430).pack(anchor='w', pady=(2, 10))
+
+        enabled = tk.BooleanVar(value=current.enabled)
+        low = tk.StringVar(value=f'{current.low:g}')
+        high = tk.StringVar(value=f'{current.high:g}')
+        notch_enabled = tk.BooleanVar(value=current.notch is not None)
+        notch_frequency = tk.StringVar(value=f'{current.notch or 50:g}')
+
+        def preset(band, notch):
+            enabled.set(band)
+            if band:
+                low.set('0.2'); high.set('45')
+            notch_enabled.set(notch is not None)
+            if notch is not None:
+                notch_frequency.set(str(notch))
+            refresh()
+
+        ttk.Label(body, text='Ajustes rápidos', style='Bold.TLabel').pack(anchor='w')
+        presets = ttk.Frame(body)
+        presets.pack(fill='x', pady=(4, 12))
+        for column, (text, band, notch) in enumerate((('Sin filtrar', False, None),
+                                                      ('Pasabanda 0,2–45 Hz', True, None),
+                                                      ('0,2–45 Hz + notch 50 Hz', True, 50))):
+            presets.columnconfigure(column, weight=1, uniform='presets')
+            ttk.Button(presets, text=text, command=lambda b=band, n=notch: preset(b, n)).grid(
+                row=0, column=column, sticky='ew', padx=(0 if column == 0 else 6, 0))
+
+        ttk.Checkbutton(body, text='Activar pasabanda (FIR)', variable=enabled,
+                        command=lambda: refresh()).pack(anchor='w')
+        band_row = ttk.Frame(body, padding=(24, 4, 0, 8))
+        band_row.pack(fill='x')
+        entries = []
+        for column, (label, variable) in enumerate((('Corte inferior (Hz)', low), ('Corte superior (Hz)', high))):
+            band_row.columnconfigure(column, weight=1, uniform='cuts')
+            cell = ttk.Frame(band_row)
+            cell.grid(row=0, column=column, sticky='ew', padx=(0 if column == 0 else 10, 0))
+            ttk.Label(cell, text=label).pack(anchor='w')
+            entry = ttk.Entry(cell, textvariable=variable, width=10)
+            entry.pack(fill='x')
+            entries.append(entry)
         notch_row = ttk.Frame(body)
-        notch_row.pack(fill='x', pady=8)
-        notch_box = ttk.Combobox(notch_row, textvariable=notch_frequency,
-                                 values=('50', '60'), width=5,
-                                 state='readonly' if notch_enabled.get() else 'disabled')
-        ttk.Checkbutton(notch_row, text='Aplicar notch', variable=notch_enabled,
-                        command=lambda: notch_box.configure(
-                            state='readonly' if notch_enabled.get() else 'disabled')).pack(side='left')
+        notch_row.pack(fill='x', pady=(0, 10))
+        ttk.Checkbutton(notch_row, text='Activar notch (red eléctrica)', variable=notch_enabled,
+                        command=lambda: refresh()).pack(side='left')
+        notch_box = ttk.Combobox(notch_row, textvariable=notch_frequency, values=('50', '60'), width=5)
         notch_box.pack(side='left', padx=8)
+        notch_box.bind('<<ComboboxSelected>>', lambda e: refresh())
         ttk.Label(notch_row, text='Hz').pack(side='left')
-        ttk.Label(body, text='Pasabanda FIR · Fase cero · Ventana Hamming\nNotch IIR · Fase cero · Q = 30\nAmbos se aplican al canal continuo completo.',
-                  style='Muted.TLabel').pack(anchor='w', pady=5)
+
+        # What «Aplicar» will do, kept in sync with the controls.
+        summary = tk.StringVar()
+        note = tk.Frame(body, background=IRIS_LIGHT)
+        note.pack(fill='x', pady=(0, 8))
+        stripe = tk.Frame(note, background=IRIS, width=4)
+        stripe.pack(side='left', fill='y')
+        summary_label = ttk.Label(note, textvariable=summary, style='Info.TLabel', padding=(10, 8),
+                                  wraplength=410)
+        summary_label.pack(side='left', fill='x', expand=True)
+        ttk.Label(body, text='Pasabanda FIR · Fase cero · Ventana Hamming · Notch IIR · Fase cero · Q = 30.\n'
+                             'Se aplican al canal continuo completo, antes de dividir en épocas.',
+                  style='Muted.TLabel').pack(anchor='w', pady=(0, 4))
         error = tk.StringVar()
-        ttk.Label(body, textvariable=error, foreground='#a12b25', wraplength=420).pack(fill='x')
-        ttk.Button(body, text='Restablecer valores del paper',
-                   command=lambda: (low.set('0.2'), high.set('45'))).pack(fill='x', pady=8)
+        ttk.Label(body, textvariable=error, foreground=ERROR, wraplength=430).pack(fill='x')
+
+        def refresh(*args):
+            for entry in entries:
+                entry.configure(state='normal' if enabled.get() else 'disabled')
+            notch_box.configure(state='readonly' if notch_enabled.get() else 'disabled')
+            parts = []
+            if enabled.get():
+                parts.append(f"pasabanda {low.get().strip() or '?'}–{high.get().strip() or '?'} Hz")
+            if notch_enabled.get():
+                parts.append(f'notch {notch_frequency.get()} Hz')
+            if parts:
+                summary.set('Al aplicar: la señal se filtrará con ' + ' y '.join(parts) + '.')
+                stripe.configure(background=IRIS)
+                note.configure(background=IRIS_LIGHT)
+            else:
+                summary.set('Al aplicar: la señal se mostrará SIN FILTRAR (pasabanda y notch apagados).')
+                stripe.configure(background=AMBER)
+                note.configure(background=AMBER_LIGHT)
+            summary_label.configure(background=note.cget('background'))
+            error.set('')
+
+        for variable in (low, high):
+            variable.trace_add('write', refresh)
+        refresh()
+
         buttons = ttk.Frame(body)
-        buttons.pack(fill='x')
+        buttons.pack(fill='x', pady=(8, 0))
         def apply():
             try:
                 candidate = FilterConfig(enabled.get(), float(low.get().replace(',', '.')),
@@ -188,6 +273,8 @@ class ReviewUI:
             self.apply_config(candidate)
         ttk.Button(buttons, text='Aplicar', style='Accent.TButton', command=apply).pack(side='right')
         ttk.Button(buttons, text='Cancelar', command=dialog.destroy).pack(side='right', padx=8)
+        dialog.bind('<Return>', lambda e: apply())
+        dialog.bind('<Escape>', lambda e: dialog.destroy())
         dialog.grab_set()
 
     def apply_config(self, candidate):
@@ -367,6 +454,72 @@ class ReviewUI:
         else:
             self.draw_overlays()
         self.update_controls()
+
+    # ------------------------------------------------------------ mouse on the plot
+    def plot_press(self, event):
+        """Left drag: zoom to the selected rectangle. Right drag: pan. Double click: restore."""
+        self.drag = None
+        if self.busy or event.inaxes not in self.figure.axes or event.xdata is None:
+            return
+        if event.button == 1 and event.dblclick:
+            self.restore_view()
+            return
+        if event.button not in (1, 3):
+            return
+        ax = event.inaxes
+        self.drag = dict(button=event.button, ax=ax, x=event.x, y=event.y, xdata=event.xdata,
+                         ydata=event.ydata, xlim=ax.get_xlim(), ylim=ax.get_ylim(), rect=None, moved=False)
+        if event.button == 3:
+            self.canvas.get_tk_widget().configure(cursor='fleur')
+
+    def plot_motion(self, event):
+        drag = getattr(self, 'drag', None)
+        if not drag or event.x is None:
+            return
+        ax = drag['ax']
+        if not drag['moved'] and abs(event.x - drag['x']) + abs(event.y - drag['y']) < DRAG_PIXELS:
+            return
+        drag['moved'] = True
+        if drag['button'] == 3:
+            (x0, x1), (y0, y1) = drag['xlim'], drag['ylim']
+            dx = (event.x - drag['x']) * (x1 - x0) / ax.bbox.width
+            dy = (event.y - drag['y']) * (y1 - y0) / ax.bbox.height
+            ax.set_xlim(x0 - dx, x1 - dx)     # shared x: every panel moves together
+            ax.set_ylim(y0 - dy, y1 - dy)
+        else:
+            x, y = ax.transData.inverted().transform((event.x, event.y))
+            if drag['rect'] is None:
+                drag['rect'] = ax.add_patch(Rectangle((drag['xdata'], drag['ydata']), 0, 0, facecolor=IRIS,
+                                                      alpha=.15, edgecolor=IRIS, linestyle='--', zorder=10))
+            drag['rect'].set_bounds(min(drag['xdata'], x), min(drag['ydata'], y),
+                                    abs(x - drag['xdata']), abs(y - drag['ydata']))
+        self.canvas.draw_idle()
+
+    def plot_release(self, event):
+        drag, self.drag = getattr(self, 'drag', None), None
+        self.canvas.get_tk_widget().configure(cursor='')
+        if not drag:
+            return
+        ax = drag['ax']
+        if drag['rect'] is not None:
+            drag['rect'].remove()
+        if drag['button'] == 1 and not drag['moved']:
+            self.plot_clicked(SimpleNamespace(inaxes=ax, xdata=drag['xdata']))   # plain click: select the época
+            return
+        if drag['button'] == 1 and event.x is not None:
+            x, y = ax.transData.inverted().transform((event.x, event.y))
+            if abs(x - drag['xdata']) > 1e-3:
+                ax.set_xlim(sorted((drag['xdata'], x)))
+            if abs(y - drag['ydata']) > 1e-9:
+                ax.set_ylim(sorted((drag['ydata'], y)))
+            self.status.set('Zoom aplicado. Doble clic en el gráfico para volver a la ventana completa.')
+        self.canvas.draw_idle()
+
+    def restore_view(self):
+        for ax, (xlim, ylim) in zip(self.figure.axes, getattr(self, 'home_limits', [])):
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+        self.canvas.draw_idle()
 
     def plot_clicked(self, event):
         if self.busy or self.toolbar.mode or not self.store or event.inaxes not in self.figure.axes:

@@ -24,6 +24,7 @@ class ScreeningUI:
 
     def build_screening(self, parent):
         card = self.card(parent, 'POSIBLES ARTEFACTOS')
+        ttk.Label(card, text='Búsqueda por amplitud', style='CardBold.TLabel').pack(anchor='w', pady=(4, 0))
         intro = ttk.Label(card, style='CardMuted.TLabel',
                           text='Pico a pico por época de 5 s. Sin avisos: aceptación y guardado '
                                'automáticos. Conserva las decisiones manuales.')
@@ -64,6 +65,7 @@ class ScreeningUI:
         summary = ttk.Label(card, textvariable=self.screening_summary, style='CardMuted.TLabel')
         summary.pack(fill='x', anchor='w', pady=(6, 0))
         autowrap(summary)
+        return card   # the ICA section is added below, in the same card
 
     def clear_screening(self, *args):
         if self.screening_pending:
