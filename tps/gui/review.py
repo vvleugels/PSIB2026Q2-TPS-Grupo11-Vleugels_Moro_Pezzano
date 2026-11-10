@@ -17,6 +17,7 @@ COLORS = {'Sin revisar': '#edf1f2', 'Aceptada': '#d5eee2', 'Con artefactos': '#f
 DISPLAY_MODES = ('Un electrodo', 'Varios (hasta 8)', 'Todos apilados')
 STACK_PAGES = ('Todos', '32', '16')   # channels visible at once; the rest via the plot scrollbar
 TRACE = '#0e7c86'
+SINGLE_RANGE_UV = (-100.0, 100.0)   # fixed y range in the single-electrode view
 DRAG_PIXELS = 6    # mouse movement below this is a click, not a drag
 BAD_TRACE = '#b8c2c4'
 BAD_LABEL = '#a12b25'
@@ -722,6 +723,13 @@ class ReviewUI:
         self.plot_view.itemconfigure(self.plot_window, width=width, height=height)
         self.plot_view.configure(scrollregion=(0, 0, width, height))
 
+    def y_limits(self, segment, values):
+        """One electrode: fixed ±100 µV, so the scale does not jump between windows and épocas.
+        Several electrodes: each panel fitted to its own signal."""
+        if len(segment.channels) <= 1 and not self.multi.get():
+            return SINGLE_RANGE_UV
+        return self.padded_limits(values)
+
     @staticmethod
     def padded_limits(values):
         """y limits with 15 % padding, like ax.margins(y=.15) on the data alone."""
@@ -829,7 +837,7 @@ class ReviewUI:
             for ax, line, values in zip(self.figure.axes, lines, segment.values_uv):
                 line.set_data(segment.times, values)
                 ax.set_xlim(segment.start, segment.stop)
-                ax.set_ylim(*self.padded_limits(values))
+                ax.set_ylim(*self.y_limits(segment, values))
             self.reset_toolbar()
             self.toolbar.push_current()
             self.draw_overlays()
@@ -844,7 +852,7 @@ class ReviewUI:
             line.get_path().should_simplify = False
             self.segment_lines.append(line)
             ax.set_xlim(segment.start, segment.stop)
-            ax.set_ylim(*self.padded_limits(values))
+            ax.set_ylim(*self.y_limits(segment, values))
             ax.set_ylabel(f'{channel}\nµV')
             ax.xaxis.set_major_locator(MultipleLocator(5))
             ax.grid(axis='x', color='#bdccce', linewidth=.8)
