@@ -188,11 +188,14 @@ class ICATests(unittest.TestCase):
         out = self.root/'batch-out'
         command = [sys.executable, '-m', 'tps.pipeline.batch', '--data-dir', str(data),
                    '--out-dir', str(out), '--annotations-dir', str(self.annotations),
-                   '--ica-mode', 'confirmed', '--jobs', '2']
+                   '--ica-mode', 'confirmed', '--jobs', '2', '--no-bandpass', '--notch', '50']
         completed = subprocess.run(command, cwd=Path(__file__).resolve().parents[1],
                                    capture_output=True, text=True, timeout=60)
         self.assertEqual(completed.returncode, 0, completed.stderr[-2000:])
         coverage = json.loads((out/'ica_coverage.json').read_text())
+        used = json.loads((out/'config_used.json').read_text())['filter']
+        self.assertFalse(used['enabled'])
+        self.assertEqual(used['notch'], 50)
         self.assertEqual(coverage['processing_modes'], ['confirmed'])
         self.assertEqual((coverage['confirmed'], coverage['excluded']), (1, 1))
         import csv

@@ -114,8 +114,54 @@ class FigureTests(unittest.TestCase):
                 (folder / name).write_bytes((self.results / name).read_bytes())
             made = make_all(folder)
             self.assertNotIn('psd_regions_open', made)
-            self.assertIn('topomap_open', made)   # no cluster file: maps without markers
+            self.assertIn('topomap_open', made)
+            (folder / 'psd_channels.csv').write_bytes((self.results / 'psd_channels.csv').read_bytes())
+            made = make_all(folder)
+            self.assertIn('psd_regions_open', made)
+            curves = [line for line in made['psd_regions_open'].axes[0].lines if line.get_label().startswith(('NS (', 'SD ('))]
+            self.assertEqual(len(curves), 2)   # no cluster file: maps without markers
 
 
 if __name__ == '__main__':
     unittest.main()
+
+
+@unittest.skipIf(pd is None, 'pandas not installed')
+class EmptyClusterTests(unittest.TestCase):
+    def test_one_pair_exports_headers_and_legacy_empty_csv_still_renders(self):
+        from synthetic_features import make_features, theta_beta_from, make_psd
+        from tps.analysis.stats import run_all
+        from tps.analysis.figures import make_all, load_inputs
+        from tps.analysis.report import read
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            features = make_features(1, {}, ('open',))
+            features.to_csv(root / 'features_long.csv', index=False)
+            make_psd(features).to_csv(root / 'psd_channels.csv', index=False)
+            theta_beta_from(features).to_csv(root / 'theta_beta.csv', index=False)
+            from unittest.mock import patch
+            from tps.analysis.figures import standard_info
+            info = standard_info(sorted(features['channel'].unique()))
+            with patch('tps.analysis.stats.montage_info', return_value=info):
+                run_all(root, root, n_permutations=100)
+            clusters = pd.read_csv(root / 'cluster_results.csv')
+            channels = pd.read_csv(root / 'stats_cluster_channels.csv')
+            descriptive = pd.read_csv(root / 'stats_region_log_power.csv')
+            one = descriptive[descriptive['n'] == 1]
+            self.assertFalse(one.empty)
+            self.assertTrue(one['mean_diff'].notna().all())
+            self.assertTrue(one['p_wilcoxon'].isna().all())
+            self.assertTrue(clusters.empty)
+            self.assertTrue(channels.empty)
+            self.assertIn('significant', clusters.columns)
+            self.assertIn('cluster_p', channels.columns)
+            # Files already produced by older versions must also be usable.
+            (root / 'cluster_results.csv').write_text('\n')
+            self.assertIsNone(load_inputs(root)['clusters'])
+            self.assertIsNone(read(root, 'cluster_results.csv'))
+            made = make_all(root)
+            self.assertIn('topomap_open', made)
+            self.assertIn('psd_regions_open', made)
+            curves = [line for line in made['psd_regions_open'].axes[0].lines if line.get_label().startswith(('NS (', 'SD ('))]
+            self.assertEqual(len(curves), 2)
+            self.assertTrue((root / 'report.md').exists())

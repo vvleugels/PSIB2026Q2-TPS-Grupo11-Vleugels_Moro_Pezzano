@@ -68,7 +68,12 @@ def paired_test(ns: np.ndarray, sd: np.ndarray) -> dict:
     row = dict(n=n, mean_ns=np.nan, mean_sd=np.nan, mean_diff=np.nan, median_diff=np.nan,
                ci95_low=np.nan, ci95_high=np.nan, cohens_dz=np.nan, rank_biserial=np.nan,
                wilcoxon_W=np.nan, p_wilcoxon=np.nan, t=np.nan, p_ttest=np.nan)
-    if n < 3:   # too few pairs for any test; keep the row so the gap is visible
+    # Descriptive differences remain meaningful with one pair; inference is separate.
+    row['inference_status'] = 'insufficient_pairs' if n < 3 else 'computed'
+    if n:
+        row.update(mean_ns=float(ns[keep].mean()), mean_sd=float(sd[keep].mean()),
+                   mean_diff=float(d.mean()), median_diff=float(np.median(d)))
+    if n < 3:   # Project policy, not a requirement for drawing descriptive figures.
         return row
     sd_d = d.std(ddof=1)
     half = stats.t.ppf(0.975, n - 1) * sd_d / math.sqrt(n)
@@ -272,7 +277,14 @@ def cluster_tests(features: pd.DataFrame, info, n_permutations: int = 5000, seed
                                      n_channels=0, channels='', t_sum=np.nan, p_cluster=np.nan,
                                      significant=False, n_subjects=n, n_permutations=n_permutations,
                                      cluster_threshold_t=float(threshold)))
-    return pd.DataFrame(clusters), pd.DataFrame(per_channel)
+    # Keep headers even when there are too few complete pairs to run a test.
+    cluster_columns = ['eyes', 'analysis', 'band', 'cluster', 'sign', 'n_channels',
+                       'channels', 't_sum', 'p_cluster', 'significant', 'n_subjects',
+                       'n_permutations', 'cluster_threshold_t']
+    channel_columns = ['eyes', 'analysis', 'band', 'channel', 't', 'mean_diff',
+                       'n_subjects', 'n_imputed_zero', 'cluster', 'cluster_p']
+    return (pd.DataFrame(clusters, columns=cluster_columns),
+            pd.DataFrame(per_channel, columns=channel_columns))
 
 
 # ---------------------------------------------------------------------------------- main

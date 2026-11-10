@@ -91,12 +91,15 @@ class ResultsUI:
         self.runner = Runner(self.project_dir, self.results_dir)
         self.study_batch = None
         self.run_ica = tk.StringVar(value=SIGNAL_FILTERED)
+        self.run_ica.trace_add('write', lambda *_: self.update_run_controls() if hasattr(self, 'run_all_button') else None)
         self.run_signal_text = tk.StringVar(value='')
         self.signal_label.trace_add('write', self.refresh_run_signal)   # explorer filter changed
         self.run_eyes = tk.StringVar(value='Ambos')
         self.run_jobs = tk.StringVar(value=str(Options().jobs))
         self.run_force = tk.BooleanVar(value=False)
         self.run_permutations = tk.StringVar(value='5000')
+        self.run_filter_description = tk.StringVar(value='')
+        self.saved_filter_description = tk.StringVar(value='')
         self.run_progress_text = tk.StringVar(value='')
         self.run_step_text = tk.StringVar(value='')
         self.results_instruction = tk.StringVar()
@@ -168,6 +171,10 @@ class ResultsUI:
                 autowrap(signal_note)
                 self.option_row(options, 'Ojos', ttk.Combobox(options, textvariable=self.run_eyes, width=10,
                                                               values=list(EYES_OPTIONS), state='readonly'))
+                ttk.Label(options, textvariable=self.run_filter_description, wraplength=280,
+                          style='CardMuted.TLabel').pack(fill='x', pady=5)
+                ttk.Label(options, textvariable=self.saved_filter_description, wraplength=280,
+                          style='CardMuted.TLabel').pack(fill='x', pady=5)
                 self.jobs_box = ttk.Spinbox(options, from_=1, to=max(1, os.cpu_count() or 1),
                                             textvariable=self.run_jobs, width=6)
                 self.option_row(options, 'Procesos en paralelo', self.jobs_box)
@@ -179,7 +186,8 @@ class ResultsUI:
                                                     textvariable=self.run_permutations, width=8)
                 self.option_row(options, 'Permutaciones (clusters)', self.permutations_box)
             else:
-                ttk.Label(options, text='Topomapas, PSD, gráficos pareados, theta/beta y tabla de hipótesis.',
+                ttk.Label(options, text='Figuras descriptivas desde 1 par NS/SD. Pruebas estadísticas: mínimo 3 pares; '
+                                           'con menos pares se muestran sin inferencia.',
                           style='CardMuted.TLabel', wraplength=260).pack(anchor='w')
             button = ttk.Button(inner, text='Ejecutar', command=lambda s=step: self.run_pipeline([s]))
             button.pack(fill='x')
@@ -692,6 +700,8 @@ class ResultsUI:
             return
         self.run_log.configure(state='normal')
         self.run_log.delete('1.0', 'end')
+        self.run_log.insert('end', 'Configuración para el lote: ' + options.filtering.label
+                            + (' + ICA confirmada por registro' if options.ica_mode == 'confirmed' else ' · Sin ICA') + '\n')
         self.run_log.configure(state='disabled')
         self.run_progress.configure(mode='determinate', value=0)
         self.run_progress_text.set('')
@@ -724,6 +734,24 @@ class ResultsUI:
         self.run_log.configure(state='disabled')
 
     def update_run_controls(self):
+        filtering = self.config
+        self.run_filter_description.set(
+            ('Pasabanda: ' + f'{filtering.low:g}–{filtering.high:g} Hz' if filtering.enabled else 'Pasabanda: apagado')
+            + (' · Notch: ' + f'{filtering.notch:g} Hz' if filtering.notch else ' · Notch: apagado')
+            + '\nSe copian al iniciar el lote. ICA usa la última revisión confirmada de cada registro.')
+        try:
+            import json
+            from tps.core.processing import FilterConfig
+            saved = json.loads((self.results_dir / 'config_used.json').read_text(encoding='utf-8'))
+            used = saved['filter']
+            previous = FilterConfig(used['enabled'], used['low'], used['high'], used.get('notch'))
+            mode = 'confirmed' if self.run_ica.get() == SIGNAL_ICA else 'original'
+            differs = previous != filtering or saved.get('ica_mode', 'original') != mode
+            self.saved_filter_description.set('Resultados guardados: ' + previous.label +
+                (' + ICA' if saved.get('ica_mode') == 'confirmed' else ' · Sin ICA') +
+                ('\nConfiguración distinta: ejecutá Potencias por lote para actualizar.' if differs else ''))
+        except (OSError, ValueError, KeyError):
+            self.saved_filter_description.set('Todavía no hay una configuración de resultados guardada.')
         running = self.runner.running
         for button in [*self.step_buttons.values(), self.run_all_button]:
             button.configure(state='disabled' if running else 'normal')

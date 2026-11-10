@@ -9,6 +9,7 @@ Figures show group-level spectral differences only; no clinical interpretation i
 from __future__ import annotations
 
 import argparse
+import json
 import math
 from pathlib import Path
 import sys
@@ -163,12 +164,16 @@ def plot_psd_by_region(psd: pd.DataFrame, eyes: str, out_dir: Path) -> Figure:
     for ax, (region, data) in zip(axes, regions.items()):
         for cond in ('NS', 'SD'):
             values = data[cond]
-            if len(values) < 2:
+            if not len(values):
                 continue
-            mean, low, high = _ci95(values)
+            mean = np.mean(values, axis=0)
+            low = high = None
+            if len(values) >= 2:
+                mean, low, high = _ci95(values)
             # Averaging log10 PSD = geometric mean; plotted back on a log axis in µV²/Hz.
             ax.plot(frequencies, 10 ** mean, color=COLORS[cond], lw=1.8, label=LABELS[cond])
-            ax.fill_between(frequencies, 10 ** low, 10 ** high, color=COLORS[cond], alpha=0.25, lw=0)
+            if low is not None:
+                ax.fill_between(frequencies, 10 ** low, 10 ** high, color=COLORS[cond], alpha=0.25, lw=0)
         for edge in config.SPECTRAL.edges:
             ax.axvline(edge, color='0.75', lw=0.8, ls='--', zorder=0)
         ax.set_yscale('log')
@@ -179,7 +184,7 @@ def plot_psd_by_region(psd: pd.DataFrame, eyes: str, out_dir: Path) -> Figure:
         ax.grid(alpha=0.2, which='both')
     axes[0].set_ylabel('PSD (µV²/Hz)')
     axes[0].legend(loc='upper right')
-    fig.suptitle(f'{EYES_TITLE[eyes]}: group-average PSD, shaded = 95 % CI; dashed = band edges', fontsize=13)
+    fig.suptitle(f'{EYES_TITLE[eyes]}: mean PSD; 95 % CI only with n ≥ 2; dashed = band edges', fontsize=13)
     _save(fig, out_dir, f'psd_regions_{eyes}')
     return fig
 
@@ -297,7 +302,7 @@ def captions(inputs: dict, summary: pd.DataFrame | None) -> dict[str, str]:
             f'{EYES_TITLE[eyes]}. Group-average power spectral density per region for NS (teal) and SD '
             f'(rose): geometric mean over participants of the region-averaged Welch PSD (2 s Hann, 50 % '
             f'overlap, 0.5 Hz resolution). Shaded areas: 95 % confidence interval of the mean (t-based, on '
-            f'log10 PSD). Dashed lines: band edges ({", ".join(f"{e:g}" for e in config.SPECTRAL.edges)} Hz). '
+            f'log10 PSD, only for n ≥ 2; n = 1 is shown without an interval). Dashed lines: band edges ({", ".join(f"{e:g}" for e in config.SPECTRAL.edges)} Hz). '
             'Only participants with both sessions and at least half of the region\'s channels are included.')
         text[f'paired_{eyes}'] = (
             f'{EYES_TITLE[eyes]}. Mean log10 absolute power (µV²) per band and region. Grey lines: one '
@@ -320,6 +325,13 @@ def captions(inputs: dict, summary: pd.DataFrame | None) -> dict[str, str]:
         f'observed direction of SD − NS, corrected p (BH-FDR across 20 band × region tests; H3 single '
         f'test), rank-biserial r and Cohen\'s dz. "supported" = expected sign and p < .05. Relative power '
         f'is relative to {low:g}–{high:g} Hz. Group-level spectral differences only.')
+    processing = inputs.get('processing')
+    if processing and 'filter' in processing:
+        from tps.core.processing import FilterConfig
+        used = processing['filter']
+        label = FilterConfig(used['enabled'], used['low'], used['high'], used.get('notch')).label
+        detail = ' Processing: ' + label + (' + confirmed ICA.' if processing.get('ica_mode') == 'confirmed' else '; no ICA.')
+        text = {key: value + detail for key, value in text.items()}
     return text
 
 
@@ -340,7 +352,13 @@ def load_inputs(results_dir: Path) -> dict:
     """Read the batch and statistics outputs; missing optional files become None."""
     def read(name: str) -> pd.DataFrame | None:
         path = results_dir / name
-        return pd.read_csv(path) if path.is_file() else None
+        if not path.is_file():
+            return None
+        try:
+            return pd.read_csv(path)
+        except pd.errors.EmptyDataError:
+            # Older statistics exports could contain a newline without headers.
+            return None
     inputs = dict(features=read('features_long.csv'), regions=read('features_region.csv'),
                   region_stats=read('stats_region_log_power.csv'), rel_stats=read('stats_region_rel_power.csv'),
                   tbr_stats=read('stats_frontal_theta_beta.csv'),
@@ -348,6 +366,10 @@ def load_inputs(results_dir: Path) -> dict:
                   theta_beta=read('theta_beta.csv'))
     if inputs['features'] is None or inputs['regions'] is None:
         raise FileNotFoundError('Run python -m tps.pipeline.batch and python -m tps.analysis.stats first.')
+    try:
+        inputs['processing'] = json.loads((results_dir / 'config_used.json').read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        inputs['processing'] = None
     inputs['tbr'] = frontal_theta_beta(inputs['theta_beta']) if inputs['theta_beta'] is not None else None
     return inputs
 

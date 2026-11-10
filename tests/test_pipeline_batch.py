@@ -228,3 +228,32 @@ class InventoryAndResumeTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ExplicitFilterTests(unittest.TestCase):
+    def test_filter_is_shared_by_screening_and_psd_in_both_rejection_modes(self):
+        from tps.core.processing import FilterConfig
+        from unittest.mock import patch
+        filtering = FilterConfig(False, .2, 45, 50)
+        baseline = config.FILTER
+        for mode in ('global', 'per_channel'):
+            recording = synthetic({'Cz': sine(10, 10) + sine(50, 20)})
+            self.addCleanup(recording.close)
+            with patch.object(run_batch, 'scan_recording', wraps=run_batch.scan_recording) as scan:
+                raw = run_batch.process_recording(recording, mode, FilterConfig())
+                corrected = run_batch.process_recording(recording, mode, filtering)
+                self.assertEqual(scan.call_args.args[-1], filtering)
+            index = raw['psd']['frequencies'].index(50.)
+            self.assertLess(corrected['psd']['channels']['Cz'][index], raw['psd']['channels']['Cz'][index] * .01)
+            self.assertEqual(raw['psd']['frequencies'][-1], SFREQ/2)
+        self.assertEqual(config.FILTER, baseline)
+        self.assertNotEqual(run_batch.config_hash(filtering), run_batch.config_hash(FilterConfig()))
+        self.assertNotEqual(run_batch.config_hash(FilterConfig(True, 1, 30)), run_batch.config_hash())
+
+    def test_runner_transmits_all_filter_switches(self):
+        from tps.gui.runner import Options, command
+        from tps.core.processing import FilterConfig
+        for setting in (FilterConfig(), FilterConfig(notch=60), FilterConfig(True, 1, 35, 50)):
+            args = command('batch', Options(filtering=setting), Path('results'))
+            parsed = run_batch.parse_args(args[3:])
+            self.assertEqual(run_batch.filter_from_args(parsed), setting)

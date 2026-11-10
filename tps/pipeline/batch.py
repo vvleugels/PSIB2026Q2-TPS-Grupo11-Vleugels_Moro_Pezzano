@@ -39,15 +39,18 @@ FEATURE_COLUMNS = ['sub', 'ses', 'condition', 'eyes', 'channel', 'band', 'abs_po
 THETA_BETA_COLUMNS = ['sub', 'ses', 'condition', 'eyes', 'channel', 'ratio']
 EXCLUSION_COLUMNS = ['sub', 'ses', 'condition', 'eyes', 'level', 'channel', 'epoch', 'criterion', 'reason']
 # Bumped whenever the per-recording output format changes, so old caches are recomputed.
-CACHE_FORMAT = 4   # 4: bad-channel criteria and manual marks; 3: ICA provenance
+CACHE_FORMAT = 5   # 5: explicit filter provenance and PSD range; 4: bad-channel criteria
 # PSD bins exported to psd_channels.csv: up to the filter's upper cutoff, where the spectrum
 # is still meaningful (0.5 Hz resolution with 2 s Welch segments).
 PSD_MAX_HZ = config.FILTER.high
 
 
-def config_hash() -> str:
+def config_hash(filter_config=None) -> str:
     """Short fingerprint of the analysis settings; cached results are reused only if it matches."""
-    text = json.dumps({'format': CACHE_FORMAT, **config.as_dict()}, sort_keys=True)
+    settings = config.as_dict()
+    if filter_config is not None:
+        settings['filter'] = filter_config.context()
+    text = json.dumps({'format': CACHE_FORMAT, **settings}, sort_keys=True)
     return hashlib.sha256(text.encode()).hexdigest()[:12]
 
 
@@ -272,7 +275,7 @@ def process_recording(recording: Recording, rejection_mode: str | None = None,
     good = [c for c in recording.channels if c not in decision.bad_channels]
     for channel in good:
         frequencies, psd = channel_psd(recording, channel, decision.used, effective, filtering)
-        keep = frequencies <= PSD_MAX_HZ
+        keep = frequencies <= (filtering.high if filtering.enabled else recording.sfreq / 2)
         kept_frequencies = frequencies[keep].tolist()
         spectra[channel] = psd[keep].tolist()
         bands = band_powers(frequencies, psd, config.SPECTRAL.edges)
@@ -295,8 +298,9 @@ def channel_features(recording: Recording, channel: str, epochs: list, effective
                      ) -> tuple[list[dict], dict, list, list]:
     """Feature rows, theta/beta row and PSD of one channel over the given clean epochs."""
     study = recording.study
+    filtering = filtering or config.FILTER
     frequencies, psd = channel_psd(recording, channel, epochs, effective, filtering)
-    keep = frequencies <= PSD_MAX_HZ
+    keep = frequencies <= (filtering.high if filtering.enabled else recording.sfreq / 2)
     rows, powers = [], {}
     for name, band in zip(config.BANDS, band_powers(frequencies, psd, config.SPECTRAL.edges)):
         powers[name] = band['absolute_uv2']
@@ -382,6 +386,7 @@ def run_one(study: Study, cache_dir: Path, digest: str, selection=None, data_dir
                 recording.close()
     result['config_hash'] = digest
     result['input_selection'] = selection
+    result['filter'] = (filtering or config.FILTER).context()
     result['summary']['processing_mode'] = selection['mode'] if selection else 'original'
     result['summary']['filter'] = (filtering or config.FILTER).label
     result['summary']['ica_revision'] = (result.get('ica') or {}).get('revision', '')
@@ -551,6 +556,7 @@ def filter_from_args(args: argparse.Namespace) -> FilterConfig:
 def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
     mode = getattr(args, 'ica_mode', 'original')
     filtering = filter_from_args(args)
+    log.info('Procesamiento: %s; ICA: %s', filtering.label, mode)
     annotations_dir = getattr(args, 'annotations_dir', Path(args.data_dir).parent / 'annotations')
     from tps.core.ica import snapshot
     all_studies = [s for group in discover(args.data_dir).values() for s in group]

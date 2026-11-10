@@ -293,6 +293,22 @@ class ResultsTabTests(unittest.TestCase):
         self.assertEqual(app.view_tabs.index('current'), 2)
         self.assertEqual(len(app.table_tree.get_children()), 3)   # sub-01 ses-1 open rows only
 
+    def test_group_options_snapshot_active_filters(self):
+        from tps.core.processing import FilterConfig
+        app = self.app
+        app.config = FilterConfig(True, 2, 35, 50)
+        app.run_ica.set('Filtrado activo + ICA confirmada')
+        selected = app.run_options()
+        self.assertEqual(selected.filtering, app.config)
+        self.assertEqual(selected.ica_mode, 'confirmed')
+        self.assertIn('2–35', app.run_filter_description.get())
+        self.assertIn('50 Hz', app.run_filter_description.get())
+        app.config = FilterConfig()
+        app.run_ica.set('Filtrado activo')
+        self.assertEqual(app.run_options().filtering, FilterConfig())
+        self.assertEqual(app.run_options().ica_mode, 'original')
+        self.assertEqual(selected.filtering.notch, 50)  # already-started work is immutable
+
 
 if __name__ == '__main__':
     unittest.main()

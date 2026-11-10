@@ -194,6 +194,10 @@ indica cuál es):
 - **Filtrado activo + ICA confirmada**: primero la ICA confirmada de cada registro y
   después el mismo filtrado.
 
+El pasabanda y notch se copian al iniciar el lote; cambiar los filtros durante una
+ejecución requiere volver a ejecutar Potencias por lote para aplicarlos. El panel
+muestra los parámetros actuales y los de los resultados guardados.
+
 El lote nunca ajusta modelos ni elige componentes: excluye e informa registros sin
 corrección válida (antes de ejecutarlo se avisa cuántos registros tienen ICA
 confirmada). El aviso ámbar indica con qué señal se calcularon los resultados y
@@ -477,3 +481,21 @@ filtrado, conservación del origen, límites de épocas, persistencia y fallos d
 escritura; también cubren navegación, multicanal y respuestas asíncronas obsoletas.
 Las pruebas de GUI requieren pantalla y se omiten si no hay una disponible.
 Con Xvfb: `xvfb-run -a python -m unittest discover -s tests -v`.
+
+### Configuración explícita del lote y muestras pequeñas
+
+Desde la GUI, los filtros activos se transmiten como parámetros a los procesos de
+trabajo, sin modificar la configuración global. Desde CLI, los valores por defecto
+siguen siendo pasabanda 0,2–45 Hz y notch apagado; se imprimen al iniciar y se guardan
+en `config_used.json`. Se pueden elegir explícitamente, por ejemplo:
+
+```bash
+python -m tps.pipeline.batch --bandpass enabled --low-hz 1 --high-hz 40 --notch-hz 50 --ica-mode confirmed
+python -m tps.pipeline.batch --bandpass disabled --notch-hz 0 --ica-mode original
+```
+
+Las figuras descriptivas y diferencias NS/SD se muestran desde **un par completo**.
+La PSD de un solo participante se dibuja sin intervalo de confianza. El mínimo de
+**3 pares** es una política de las pruebas inferenciales del proyecto, no de las
+figuras ni de ICA; no garantiza por sí solo una muestra suficiente. Con menos pares
+las medias/diferencias siguen disponibles y los p-valores quedan sin calcular.

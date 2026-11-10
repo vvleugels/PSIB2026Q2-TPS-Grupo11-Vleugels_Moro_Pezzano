@@ -57,7 +57,12 @@ def md_table(table: pd.DataFrame, columns: list[str] | None = None) -> str:
 
 def read(results_dir: Path, name: str) -> pd.DataFrame | None:
     path = results_dir / name
-    return pd.read_csv(path) if path.is_file() else None
+    if not path.is_file():
+        return None
+    try:
+        return pd.read_csv(path)
+    except pd.errors.EmptyDataError:
+        return None
 
 
 def captions(figures_dir: Path) -> dict[str, str]:
@@ -84,6 +89,9 @@ def build_report(results_dir: Path) -> str:
         'Group-level spectral differences only; no clinical interpretation. «Accepted» epochs only',
         'mean «within the amplitude limits», not visual inspection. Details: `docs/pipeline.md`.',
         '',
+        'Descriptive figures and differences are available from one complete NS/SD pair. '
+        'Inferential paired and cluster tests require at least three pairs (project policy); '
+        'missing p-values mean not tested, not evidence of no difference.', '',
         '## Region mapping', '', md_table(region_table()), '',
     ]
 

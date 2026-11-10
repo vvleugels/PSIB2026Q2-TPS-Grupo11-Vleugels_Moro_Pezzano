@@ -302,6 +302,7 @@ class ReviewUI:
             self.update_screening_signal()
             self.signal_label.set(candidate.label)
             self.refresh_ica()
+            self.update_run_controls()
             if segment is not None:
                 self.segment_loaded(segment)
             else:
