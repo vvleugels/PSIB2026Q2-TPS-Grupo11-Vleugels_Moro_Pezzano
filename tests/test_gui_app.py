@@ -393,6 +393,21 @@ class GuiTests(unittest.TestCase):
             self.assertFalse(a.screening_pending)
         self.assertEqual(a.patient.get(), 'sub-02')
 
+    def test_filter_applies_in_every_display_mode(self):
+        """Regression: in «Todos apilados» the filter failed (channel limit of 8)."""
+        from tps.core.processing import FilterConfig
+        self.select()
+        a = self.app
+        for mode in ('Un electrodo', 'Varios (hasta 8)', 'Todos apilados'):
+            a.display_mode.set(mode); a.display_mode_changed(); self.wait_ready()
+            a.apply_config(FilterConfig()); self.wait_ready()
+            self.assertFalse(a.config.active, mode)
+            a.apply_config(FilterConfig(True, 2, 30)); self.wait_ready()
+            self.assertTrue(a.config.active, mode)
+            self.assertIn('Filtrado activo', a.filter_badge.cget('text'))
+            self.assertNotIn('No se aplicó', a.status.get())
+        a.display_mode.set('Un electrodo'); a.display_mode_changed(); self.wait_ready()
+
     def test_screening_uses_active_filter_and_invalidates_only_after_successful_change(self):
         from tps.core.processing import FilterConfig
         self.select()

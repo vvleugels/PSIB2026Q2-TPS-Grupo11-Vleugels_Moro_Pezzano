@@ -287,11 +287,12 @@ class ReviewUI:
         recording = self.recording
         channels = self.visible_channels()
         start = self.start
+        limit = None if self.stacked else 8   # «Todos apilados» shows every channel
         self.status.set('Preparando configuración de filtrado…')
         def work():
             recording.filter.prepare(candidate)
             if channels:
-                return recording.read_channels(channels, start, candidate)
+                return recording.read_channels(channels, start, candidate, limit=limit)
             return None
         def done(segment):
             self.invalidate_spectrum()
