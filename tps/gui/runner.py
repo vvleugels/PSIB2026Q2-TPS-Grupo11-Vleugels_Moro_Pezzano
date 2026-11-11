@@ -27,7 +27,9 @@ class Options:
     eyes: str | None = None          # None = both, 'open' or 'closed'
     jobs: int = max(1, (os.cpu_count() or 2) // 2)
     force: bool = False
-    ica_mode: str = 'original'      # 'confirmed': apply each recording's confirmed ICA first
+    ica_mode: str = 'original'      # 'confirmed': apply each recording's confirmed ICA first;
+                                    # 'available': confirmed ICA where one exists, filters only elsewhere
+    recordings_file: Path | None = None   # only the recordings listed there (supervised selection)
     filtering: object = None        # FilterConfig of the explorer; None = config.FILTER
     data_dir: Path | None = None
     annotations_dir: Path | None = None
@@ -50,6 +52,8 @@ def command(step: str, options: Options, results_dir: Path) -> list[str]:
             argv += ['--annotations-dir', str(options.annotations_dir)]
         if options.eyes:
             argv += ['--eyes', options.eyes]
+        if options.recordings_file is not None:
+            argv += ['--recordings-file', str(options.recordings_file)]
         if options.force:
             argv.append('--force')
         return argv

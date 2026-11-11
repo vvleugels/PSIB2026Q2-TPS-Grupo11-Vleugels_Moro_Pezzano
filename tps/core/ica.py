@@ -186,9 +186,26 @@ def manual_bad_channels(recording, data_dir, annotations_dir):
     return {channel: value['reason'] for channel, value in sorted(store.bad_channels.items())}
 
 
+def manual_artifact_epochs(recording, data_dir, annotations_dir):
+    """{str(epoch index): reason} of the épocas marked «Con artefactos» by hand; {} without a valid file.
+
+    Keys are strings so the selection survives a JSON round trip unchanged (batch caches)."""
+    from tps.core.annotations import AnnotationStore, STATES
+    store = AnnotationStore(annotations_dir, recording, data_dir)
+    if store.blocked:
+        return {}
+    return {str(r['index']): r.get('reason') or '' for r in store.records if r['state'] == STATES[2]}
+
+
+ICA_MODES = ('original', 'confirmed', 'available')
+
+
 def snapshot(studies, data_dir, annotations_dir, mode):
-    """Immutable input selection, including explicit failures; never silently fall back."""
-    if mode not in ('original', 'confirmed'):
+    """Immutable input selection, including explicit failures; never silently fall back.
+
+    mode 'available' applies the confirmed ICA where one exists and stores mode='original'
+    for the other recordings, so every recording says which signal it used."""
+    if mode not in ICA_MODES:
         raise ValueError('Modo ICA inválido.')
     from tps.core.data import open_recording
     result = {}
@@ -198,7 +215,12 @@ def snapshot(studies, data_dir, annotations_dir, mode):
             try:
                 value = dict(source=source_identity(recording, data_dir), mode=mode)
                 value['bad_channels'] = manual_bad_channels(recording, data_dir, annotations_dir)
-                if mode == 'confirmed':
+                value['artifact_epochs'] = manual_artifact_epochs(recording, data_dir, annotations_dir)
+                if mode == 'available':
+                    # No confirmed ICA -> filters only; a damaged one is still an error.
+                    has_ica = (revision_root(annotations_dir, study) / 'latest.json').exists()
+                    value['mode'] = 'confirmed' if has_ica else 'original'
+                if value['mode'] == 'confirmed':
                     _, metadata = read_revision(annotations_dir, study)
                     validate_revision(recording, data_dir, metadata)
                     value.update(revision=metadata['revision'], model_sha256=metadata['model_sha256'])

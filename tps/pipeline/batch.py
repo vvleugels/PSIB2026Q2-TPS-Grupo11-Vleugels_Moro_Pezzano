@@ -83,6 +83,18 @@ def file_problem(study: Study) -> str | None:
     return None
 
 
+def read_recordings_file(path: Path) -> set[str]:
+    """Recording stems (e.g. sub-03_ses-1_task-eyesopen_eeg) from a text file; '#' starts a comment."""
+    stems = set()
+    for line in Path(path).read_text(encoding='utf-8-sig').splitlines():
+        line = line.split('#', 1)[0].strip()
+        if line:
+            stems.add(Path(line).name.removesuffix('.set'))
+    if not stems:
+        raise ValueError(f'{path}: no recordings found')
+    return stems
+
+
 def read_subjects_file(path: Path) -> list[str]:
     """Participant IDs from a text file: one per line, '#' starts a comment."""
     subjects = []
@@ -136,11 +148,19 @@ class EpochDecision:
     partial: list        # trailing incomplete epochs (never used)
 
 
-def decide_epochs(recording: Recording, scan: dict, known_bad: dict | None = None) -> EpochDecision:
+def manual_reason(reason: str) -> str:
+    return 'marcada a mano con artefactos' + (f': {reason}' if reason else '')
+
+
+def decide_epochs(recording: Recording, scan: dict, known_bad: dict | None = None,
+                  manual_epochs: dict | None = None) -> EpochDecision:
     """Turn per-channel screening findings into bad channels and rejected epochs.
 
     known_bad: {channel: reason} already bad for the whole recording (manual marks and the
-    automatic criteria of tps/core/badchannels.py); they never reject epochs."""
+    automatic criteria of tps/core/badchannels.py); they never reject epochs.
+    manual_epochs: {str(index): reason} of épocas marked «Con artefactos» in the explorer;
+    they are always rejected, the others go through the automatic rule."""
+    manual_epochs = manual_epochs or {}
     epochs = make_epochs(recording.raw.n_times, recording.sfreq)
     complete = [e for e in epochs if not e.partial]
     partial = [e for e in epochs if e.partial]
@@ -158,6 +178,9 @@ def decide_epochs(recording: Recording, scan: dict, known_bad: dict | None = Non
                                 f'(> {limit:.0%}); treated as a bad channel')
     used, rejected = [], {}
     for epoch in complete:
+        if str(epoch.index) in manual_epochs:
+            rejected[epoch.index] = manual_reason(manual_epochs[str(epoch.index)])
+            continue
         issues = [i for i in findings.get(epoch.index, []) if i['channel'] not in bad]
         if not issues:
             used.append(epoch)
@@ -172,14 +195,14 @@ def decide_epochs(recording: Recording, scan: dict, known_bad: dict | None = Non
     return EpochDecision(used, rejected, bad, partial)
 
 
-def decide_epochs_per_channel(recording: Recording, scan: dict, known_bad: dict | None = None
-                              ) -> tuple[dict, dict, list]:
+def decide_epochs_per_channel(recording: Recording, scan: dict, known_bad: dict | None = None,
+                              manual_epochs: dict | None = None) -> tuple[dict, dict, list]:
     """Per-channel rejection: each channel keeps the complete epochs in which it passed.
 
     Returns ({channel: [epochs]}, {channel: reason} for channels below MIN_CHANNEL_EPOCHS,
     trailing partial epochs)."""
     epochs = make_epochs(recording.raw.n_times, recording.sfreq)
-    complete = [e for e in epochs if not e.partial]
+    complete = [e for e in epochs if not e.partial and str(e.index) not in (manual_epochs or {})]
     failed = {channel: set() for channel in recording.channels}
     for epoch in complete:
         for issue in scan['findings'].get(epoch.index, []):
@@ -231,7 +254,8 @@ def known_bad_channels(recording: Recording, filtering: FilterConfig, manual: di
 
 
 def process_recording(recording: Recording, rejection_mode: str | None = None,
-                      filtering: FilterConfig | None = None, manual_bad: dict | None = None) -> dict:
+                      filtering: FilterConfig | None = None, manual_bad: dict | None = None,
+                      manual_epochs: dict | None = None) -> dict:
     """Screen, epoch and compute band powers for every good channel of one open recording.
 
     Returns a JSON-serialisable dict with feature rows, theta/beta rows, exclusions and a summary.
@@ -246,8 +270,8 @@ def process_recording(recording: Recording, rejection_mode: str | None = None,
     scan = scan_recording(recording, recording.channels, config.SCREENING, filtering)
     known, criteria = known_bad_channels(recording, filtering, manual_bad)
     if (rejection_mode or config.REJECTION_MODE) == 'per_channel':
-        return process_per_channel(recording, scan, effective, filtering, known, criteria)
-    decision = decide_epochs(recording, scan, known)
+        return process_per_channel(recording, scan, effective, filtering, known, criteria, manual_epochs)
+    decision = decide_epochs(recording, scan, known, manual_epochs)
     exclusions = [exclusion(study, 'epoch', 'incomplete final epoch (only complete 5 s epochs are used)',
                             epoch=str(e.index + 1)) for e in decision.partial]
     exclusions += [exclusion(study, 'channel', reason, channel=channel,
@@ -315,10 +339,10 @@ def channel_features(recording: Recording, channel: str, epochs: list, effective
 
 def process_per_channel(recording: Recording, scan: dict, effective: dict,
                         filtering: FilterConfig | None = None, known: dict | None = None,
-                        criteria: dict | None = None) -> dict:
+                        criteria: dict | None = None, manual_epochs: dict | None = None) -> dict:
     """Per-channel rejection: n_epochs_used / n_epochs_rejected are per channel in the outputs."""
     study = recording.study
-    kept, excluded, partial = decide_epochs_per_channel(recording, scan, known)
+    kept, excluded, partial = decide_epochs_per_channel(recording, scan, known, manual_epochs)
     criteria = criteria or {}
     complete = len([e for e in make_epochs(recording.raw.n_times, recording.sfreq) if not e.partial])
     exclusions = [exclusion(study, 'epoch', 'incomplete final epoch (only complete 5 s epochs are used)',
@@ -326,6 +350,8 @@ def process_per_channel(recording: Recording, scan: dict, effective: dict,
     exclusions += [exclusion(study, 'channel', reason, channel=channel,
                              criterion=criteria.get(channel, 'peak_to_peak'))
                    for channel, reason in sorted(excluded.items())]
+    exclusions += [exclusion(study, 'epoch', manual_reason(reason), epoch=str(int(index) + 1))
+                   for index, reason in sorted((manual_epochs or {}).items(), key=lambda x: int(x[0]))]
     used = sorted(len(epochs) for epochs in kept.values())
     median_used = used[len(used) // 2] if used else 0
     summary = dict(**labels(study), file=study.path.name, n_channels=len(recording.channels),
@@ -375,7 +401,8 @@ def run_one(study: Study, cache_dir: Path, digest: str, selection=None, data_dir
                     from tps.core.ica import apply_snapshot
                     apply_snapshot(recording, data_dir, annotations_dir, selection)
                 result = process_recording(recording, rejection_mode, filtering,
-                                           (selection or {}).get('bad_channels'))
+                                           (selection or {}).get('bad_channels'),
+                                           (selection or {}).get('artifact_epochs'))
                 from tps.core.ica import context
                 result['ica'] = context(recording)
             except Exception as exc:   # non-finite samples, filter too long, ...
@@ -502,7 +529,8 @@ def aggregate(cache_dir: Path, out_dir: Path, digest: str, pair_notes: list[dict
 # ----------------------------------------------------------------------------------- main
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    parser.add_argument('--ica-mode', choices=('original', 'confirmed'), default='original')
+    parser.add_argument('--ica-mode', choices=('original', 'confirmed', 'available'), default='original',
+                        help="'available': confirmed ICA where one exists, filters only elsewhere")
     parser.add_argument('--annotations-dir', type=Path, default=config.PROJECT_DIR / 'annotations')
     parser.add_argument('--bandpass', nargs=2, type=float, metavar=('LOW', 'HIGH'),
                         help=f'FIR band-pass cutoffs in Hz (default from config.py: '
@@ -513,6 +541,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument('--subjects', nargs='+', metavar='SUB', help='e.g. 01 02 or sub-01 (default: all)')
     parser.add_argument('--subjects-file', type=Path, metavar='FILE',
                         help='participant IDs, one per line (e.g. subsets/group20_seed2026.txt)')
+    parser.add_argument('--recordings-file', type=Path, metavar='FILE',
+                        help='only these recordings (file stems, one per line, # comments), '
+                             'e.g. subsets/recordings_supervised.txt')
     parser.add_argument('--rejection-mode', choices=('global', 'per_channel'), default=None,
                         help=f'epoch rejection (default from config.py: {config.REJECTION_MODE})')
     parser.add_argument('--data-dir', type=Path, default=config.DATA_DIR)
@@ -560,6 +591,12 @@ def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
     annotations_dir = getattr(args, 'annotations_dir', Path(args.data_dir).parent / 'annotations')
     from tps.core.ica import snapshot
     all_studies = [s for group in discover(args.data_dir).values() for s in group]
+    listed = read_recordings_file(args.recordings_file) if getattr(args, 'recordings_file', None) else None
+    if listed is not None:
+        unknown = sorted(listed - {s.path.stem for s in all_studies})
+        if unknown:
+            log.warning('Recordings not found in %s: %s', args.data_dir, ', '.join(unknown))
+        all_studies = [s for s in all_studies if s.path.stem in listed]
     selections = snapshot(all_studies, args.data_dir, annotations_dir, mode)
     rejection = getattr(args, 'rejection_mode', None) or config.REJECTION_MODE
     # The default (global) rejection leaves the fingerprint unchanged, so existing caches stay valid.
@@ -573,6 +610,7 @@ def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
         # config_hash: also mode and folders, which select the per-recording caches.
         {'config_hash': digest, 'settings_hash': config_hash(), 'created_at': datetime.now(timezone.utc).isoformat(),
          'command': ' '.join(sys.argv), 'ica_mode': mode, 'ica_inputs': selections,
+         'recordings_file': str(args.recordings_file) if getattr(args, 'recordings_file', None) else None,
          **config.as_dict(), 'filter': filtering.context(), 'filter_label': filtering.label,
          'rejection_mode': rejection, 'min_channel_epochs': config.MIN_CHANNEL_EPOCHS},
         indent=2, ensure_ascii=False), encoding='utf-8')
@@ -583,10 +621,20 @@ def run(args: argparse.Namespace, out_dir: Path, cache_dir: Path) -> int:
     studies, _ = select_studies(args.data_dir, args.eyes, subjects or None)
     # Missing NS/SD counterparts are dataset facts, so list them for the whole dataset.
     _, pair_notes = select_studies(args.data_dir, None, None)
+    if listed is not None:
+        # Only the listed recordings; the others of the same participants are noted as left out.
+        everything, _ = select_studies(args.data_dir, args.eyes, subjects or None)
+        chosen = {s.participant for s in everything if s.path.stem in listed}
+        pair_notes = [n for n in pair_notes if n['sub'] in chosen]
+        pair_notes += [exclusion(s, 'recording', 'no supervisado / descartado por el equipo '
+                                 f'(no figura en {Path(args.recordings_file).name})')
+                       for s in everything if s.participant in chosen and s.path.stem not in listed]
+        studies = [s for s in studies if s.path.stem in listed]
     todo = [s for s in studies if args.force or not finished(cache_path(cache_dir, s), digest, selections[str(s.path)])]
     log.info('%d recordings selected, %d already finished, %d to process (config %s)',
              len(studies), len(studies) - len(todo), len(todo), digest)
-    log.info('Signal: %s%s', filtering.label, ' + confirmed ICA' if mode == 'confirmed' else '')
+    log.info('Signal: %s%s', filtering.label, {'confirmed': ' + confirmed ICA',
+             'available': ' + confirmed ICA where available'}.get(mode, ''))
     started = time.monotonic()
 
     def report(done: int, study: Study, result: dict) -> None:

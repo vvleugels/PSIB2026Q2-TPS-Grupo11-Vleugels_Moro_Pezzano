@@ -187,7 +187,9 @@ def captions(inputs: dict) -> dict[str, str]:
         config_used = FilterConfig(used['enabled'], used['low'], used['high'], used.get('notch'))
         label = 'sin filtrar' if not config_used.active else config_used.label.removeprefix('Filtrada · ')
         detail = (' Procesamiento: ' + label
-                  + (' + ICA confirmada.' if processing.get('ica_mode') == 'confirmed' else '; sin ICA.'))
+                  + {'confirmed': ' + ICA confirmada.',
+                     'available': ' + ICA confirmada donde existe (el resto, solo filtros).'}.get(
+                         processing.get('ica_mode'), '; sin ICA.'))
         text = {key: value + detail for key, value in text.items()}
     return text
 

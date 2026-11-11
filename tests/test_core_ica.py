@@ -167,6 +167,38 @@ class ICATests(unittest.TestCase):
         totals = run_batch.aggregate(cache, output, 'test', [], {self.study.path.stem: selected})
         self.assertEqual(totals['recordings'], 0)
 
+    def test_available_mode_and_manual_epochs(self):
+        store = AnnotationStore(self.annotations, self.recording, self.data)
+        store.mark(2, STATES[2], 'Ocular', '', ['Fp1'], FilterConfig(True, 1, 45, 50)); store.save()
+        # Without a confirmed ICA, 'available' keeps the recording with filters only.
+        value = ica.snapshot([self.study], self.data, self.annotations, 'available')[str(self.study.path)]
+        self.assertEqual(value['mode'], 'original')
+        self.assertEqual(value['artifact_epochs'], {'2': 'Ocular'})
+        confirmed = self.confirm()
+        value = ica.snapshot([self.study], self.data, self.annotations, 'available')[str(self.study.path)]
+        self.assertEqual((value['mode'], value['revision']), ('confirmed', confirmed['revision']))
+        # The batch always rejects the épocas marked «Con artefactos».
+        ica.activate(self.recording, None, None)
+        result = run_batch.process_recording(self.recording, 'global', FilterConfig(True, 1, 45, 50),
+                                             None, value['artifact_epochs'])
+        epochs = {e['epoch']: e['reason'] for e in result['exclusions'] if e['level'] == 'epoch'}
+        self.assertIn('marcada a mano', epochs['3'])
+        result = run_batch.process_recording(self.recording, 'per_channel', FilterConfig(True, 1, 45, 50),
+                                             None, value['artifact_epochs'])
+        self.assertTrue(any('marcada a mano' in e['reason'] for e in result['exclusions']))
+
+    def test_recordings_file(self):
+        path = self.root / 'list.txt'
+        path.write_text('\n'.join(['# comment', 'sub-01_ses-1_task-eyesopen_eeg',
+                                   '# sub-01_ses-2_task-eyesopen_eeg',
+                                   'sub-01/ses-1/eeg/sub-01_ses-1_task-eyesclosed_eeg.set  # path form']),
+                        encoding='utf-8')
+        self.assertEqual(run_batch.read_recordings_file(path),
+                         {'sub-01_ses-1_task-eyesopen_eeg', 'sub-01_ses-1_task-eyesclosed_eeg'})
+        path.write_text('# only comments', encoding='utf-8')
+        with self.assertRaises(ValueError):
+            run_batch.read_recordings_file(path)
+
     def test_invalid_training_and_components(self):
         with self.assertRaises(ValueError):
             ica.fit_recording(self.recording, self.data, excluded_channels=['Fp1', 'Fp2'])

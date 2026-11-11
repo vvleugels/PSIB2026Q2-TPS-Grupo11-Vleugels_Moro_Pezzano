@@ -446,7 +446,14 @@ Opciones del lote:
 - `--rejection-mode global|per_channel`: con `global` (por defecto) una época marcada en
   cualquier canal se descarta para todos; con `per_channel` cada canal usa sus propias
   épocas limpias y se excluye si le quedan menos de `MIN_CHANNEL_EPOCHS` (10).
-- `--ica-mode original|confirmed`, `--annotations-dir`: usar la ICA confirmada de cada registro.
+- `--ica-mode original|confirmed|available`, `--annotations-dir`: usar la ICA confirmada de cada
+  registro. Con `available` se aplica donde existe y el resto usa solo filtros (queda registrado
+  por registro en `recordings_summary.csv` e `ica_coverage.json`).
+- `--recordings-file subsets/recordings_supervised.txt`: solo los registros listados (uno por
+  línea). Es la selección revisada a mano por el equipo que usa el informe; los demás registros
+  de esos participantes figuran en `exclusions.csv` como «no supervisado / descartado».
+- Las épocas marcadas «Con artefactos» en el explorador siempre se descartan; las demás pasan
+  por el criterio automático de pico a pico.
 - `--bandpass LOW HIGH`, `--no-bandpass`, `--notch 50|60`: filtrado de la señal (por
   defecto el de `tps/config.py`, pasabanda 0,2–45 Hz). La interfaz pasa el filtrado del explorador.
 

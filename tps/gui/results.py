@@ -754,7 +754,10 @@ class ResultsUI:
             mode = 'confirmed' if self.run_ica.get() == SIGNAL_ICA else 'original'
             differs = previous != filtering or saved.get('ica_mode', 'original') != mode
             self.saved_filter_description.set('Resultados guardados: ' + previous.label +
-                (' + ICA' if saved.get('ica_mode') == 'confirmed' else ' · Sin ICA') +
+                {'confirmed': ' + ICA', 'available': ' + ICA donde está confirmada'}.get(
+                    saved.get('ica_mode'), ' · Sin ICA') +
+                (f" · solo los registros de {Path(saved['recordings_file']).name}"
+                 if saved.get('recordings_file') else '') +
                 ('\nConfiguración distinta: ejecutá Potencias por lote para actualizar.' if differs else ''))
         except (OSError, ValueError, KeyError):
             self.saved_filter_description.set('Todavía no hay una configuración de resultados guardada.')

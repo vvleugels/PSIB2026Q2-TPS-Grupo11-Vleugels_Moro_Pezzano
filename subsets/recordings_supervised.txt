@@ -1,0 +1,44 @@
+# Registros revisados a mano por el equipo y aprobados para el análisis de grupo.
+# ses-1 = sueño normal (NS), ses-2 = privación del sueño (SD).
+# Uso: python -m tps.pipeline.batch --recordings-file subsets/recordings_supervised.txt ...
+
+sub-01_ses-1_task-eyesopen_eeg
+sub-01_ses-1_task-eyesclosed_eeg
+# sub-01_ses-2_task-eyesopen_eeg   # descartado: archivo EEG incompleto
+sub-01_ses-2_task-eyesclosed_eeg
+# sub-02_ses-1_task-eyesopen_eeg   # descartado: siete electrodos de mala calidad
+sub-02_ses-1_task-eyesclosed_eeg
+sub-02_ses-2_task-eyesopen_eeg
+sub-02_ses-2_task-eyesclosed_eeg
+sub-03_ses-1_task-eyesopen_eeg
+# sub-03_ses-1_task-eyesclosed_eeg   # descartado: épocas aceptadas insuficientes
+sub-03_ses-2_task-eyesopen_eeg
+# sub-03_ses-2_task-eyesclosed_eeg   # descartado: archivo EEG incompleto
+sub-04_ses-1_task-eyesopen_eeg
+sub-04_ses-1_task-eyesclosed_eeg
+sub-04_ses-2_task-eyesopen_eeg
+sub-04_ses-2_task-eyesclosed_eeg
+sub-05_ses-1_task-eyesopen_eeg
+sub-05_ses-1_task-eyesclosed_eeg
+sub-05_ses-2_task-eyesopen_eeg
+sub-05_ses-2_task-eyesclosed_eeg
+# sub-06_ses-1_task-eyesopen_eeg   # descartado: baja calidad general del participante
+# sub-06_ses-1_task-eyesclosed_eeg   # descartado: baja calidad general del participante
+# sub-06_ses-2_task-eyesopen_eeg   # descartado: baja calidad general del participante
+# sub-06_ses-2_task-eyesclosed_eeg   # descartado: baja calidad general del participante
+sub-07_ses-1_task-eyesopen_eeg
+sub-07_ses-1_task-eyesclosed_eeg
+# sub-07_ses-2_task-eyesopen_eeg   # descartado: calidad de señal insuficiente
+sub-07_ses-2_task-eyesclosed_eeg
+sub-08_ses-1_task-eyesopen_eeg
+sub-08_ses-1_task-eyesclosed_eeg
+# sub-08_ses-2_task-eyesopen_eeg   # descartado: resultados incoherentes
+# sub-08_ses-2_task-eyesclosed_eeg   # descartado: resultados incoherentes
+# sub-09_ses-1_task-eyesopen_eeg   # descartado: calidad de señal insuficiente
+sub-09_ses-1_task-eyesclosed_eeg
+sub-09_ses-2_task-eyesopen_eeg
+sub-09_ses-2_task-eyesclosed_eeg
+sub-10_ses-1_task-eyesopen_eeg
+sub-10_ses-1_task-eyesclosed_eeg
+sub-10_ses-2_task-eyesopen_eeg
+sub-10_ses-2_task-eyesclosed_eeg

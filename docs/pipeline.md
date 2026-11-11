@@ -33,7 +33,10 @@ Para cada registro:
 1. Se omiten y registran los registros cuyo `.set`/`.fdt` es un enlace git-annex sin
    contenido, o cuyo `.fdt` es más corto de lo que exige su encabezado.
 2. Con `--ica-mode confirmed` se aplica la ICA confirmada del registro. Un registro sin una
-   ICA confirmada válida se excluye (nunca se procesa sin ella en silencio).
+   ICA confirmada válida se excluye (nunca se procesa sin ella en silencio). Con
+   `--ica-mode available` se aplica donde existe y el resto se procesa solo con filtros; el modo
+   de cada registro queda en `recordings_summary.csv` (`processing_mode`).
+   Las épocas marcadas «Con artefactos» en el explorador se descartan siempre.
 3. Se filtra cada canal continuo completo con el filtrado elegido: por defecto el FIR de fase
    cero 0,2–45 Hz de `config.FILTER`; la GUI pasa el filtrado del explorador
    (`--bandpass` / `--no-bandpass` / `--notch`). El filtrado usado queda registrado en
